@@ -1,4 +1,4 @@
-use crate::game::invalid_fen_error::InvalidFENStringError;
+use crate::game::error::InvalidFENStringError;
 use crate::game::piece::Piece;
 
 pub struct Board {

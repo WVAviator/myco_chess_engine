@@ -1,4 +1,5 @@
 pub mod piece;
-pub mod invalid_fen_error;
+pub mod error;
 mod board;
 mod castling_rights;
+mod square;

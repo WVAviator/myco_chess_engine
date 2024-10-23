@@ -1,4 +1,4 @@
-use crate::game::invalid_fen_error::InvalidFENStringError;
+use crate::game::error::InvalidFENStringError;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Piece {
