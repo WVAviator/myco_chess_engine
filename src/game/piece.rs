@@ -23,37 +23,37 @@ pub enum PieceType {
 }
 
 impl Piece {
-    pub fn from_fen_char(char: &str) -> Result<Piece, InvalidFENStringError> {
+    pub fn from_fen_char(char: &char) -> Result<Piece, InvalidFENStringError> {
         match char {
-            "p" => Ok(Piece { color: Color::Black, piece_type: PieceType::Pawn }),
-            "r" => Ok(Piece { color: Color::Black, piece_type: PieceType::Rook }),
-            "n" => Ok(Piece { color: Color::Black, piece_type: PieceType::Knight }),
-            "b" => Ok(Piece { color: Color::Black, piece_type: PieceType::Bishop }),
-            "q" => Ok(Piece { color: Color::Black, piece_type: PieceType::Queen }),
-            "k" => Ok(Piece { color: Color::Black, piece_type: PieceType::King }),
-            "P" => Ok(Piece { color: Color::White, piece_type: PieceType::Pawn }),
-            "R" => Ok(Piece { color: Color::White, piece_type: PieceType::Rook }),
-            "N" => Ok(Piece { color: Color::White, piece_type: PieceType::Knight }),
-            "B" => Ok(Piece { color: Color::White, piece_type: PieceType::Bishop }),
-            "Q" => Ok(Piece { color: Color::White, piece_type: PieceType::Queen }),
-            "K" => Ok(Piece { color: Color::White, piece_type: PieceType::King }),
+            'p' => Ok(Piece { color: Color::Black, piece_type: PieceType::Pawn }),
+            'r' => Ok(Piece { color: Color::Black, piece_type: PieceType::Rook }),
+            'n' => Ok(Piece { color: Color::Black, piece_type: PieceType::Knight }),
+            'b' => Ok(Piece { color: Color::Black, piece_type: PieceType::Bishop }),
+            'q' => Ok(Piece { color: Color::Black, piece_type: PieceType::Queen }),
+            'k' => Ok(Piece { color: Color::Black, piece_type: PieceType::King }),
+            'P' => Ok(Piece { color: Color::White, piece_type: PieceType::Pawn }),
+            'R' => Ok(Piece { color: Color::White, piece_type: PieceType::Rook }),
+            'N' => Ok(Piece { color: Color::White, piece_type: PieceType::Knight }),
+            'B' => Ok(Piece { color: Color::White, piece_type: PieceType::Bishop }),
+            'Q' => Ok(Piece { color: Color::White, piece_type: PieceType::Queen }),
+            'K' => Ok(Piece { color: Color::White, piece_type: PieceType::King }),
             _ => Err(InvalidFENStringError::new(format!("Invalid piece character '{}'", char).as_str()))
         }
     }
 
-    pub fn to_fen_char(&self) -> String {
+    pub fn to_fen_char(&self) -> char {
         let char = match self.piece_type {
-            PieceType::Pawn => "p",
-            PieceType::Rook => "r",
-            PieceType::Knight => "n",
-            PieceType::Bishop => "b",
-            PieceType::Queen => "q",
-            PieceType::King => "k",
+            PieceType::Pawn => 'p',
+            PieceType::Rook => 'r',
+            PieceType::Knight => 'n',
+            PieceType::Bishop => 'b',
+            PieceType::Queen => 'q',
+            PieceType::King => 'k',
         };
 
         match self.color {
-            Color::Black => char.to_string(),
-            Color::White => char.to_string().to_uppercase(),
+            Color::Black => char,
+            Color::White => char.to_ascii_uppercase(),
         }
     }
 }
@@ -64,13 +64,13 @@ mod test {
 
     #[test]
     fn creates_black_piece_from_fen_char() {
-        let piece = Piece::from_fen_char("b").unwrap();
+        let piece = Piece::from_fen_char(&'b').unwrap();
         assert_eq!(piece, Piece { color: Color::Black, piece_type: PieceType::Bishop });
     }
 
     #[test]
     fn creates_white_piece_from_fen_char() {
-        let piece = Piece::from_fen_char("N").unwrap();
+        let piece = Piece::from_fen_char(&'N').unwrap();
         assert_eq!(piece, Piece { color: Color::White, piece_type: PieceType::Knight });
     }
 
@@ -78,19 +78,19 @@ mod test {
     fn converts_black_to_correct_fen_char() {
         let piece = Piece { color: Color::Black, piece_type: PieceType::Rook };
         let char = piece.to_fen_char();
-        assert_eq!(char, "r");
+        assert_eq!(char, 'r');
     }
 
     #[test]
     fn converts_white_to_correct_fen_char() {
         let piece = Piece { color: Color::White, piece_type: PieceType::King };
         let char = piece.to_fen_char();
-        assert_eq!(char, "K");
+        assert_eq!(char, 'K');
     }
 
     #[test]
     fn throws_error_invalid_char() {
-        let piece = Piece::from_fen_char("j");
+        let piece = Piece::from_fen_char(&'j');
         assert!(piece.is_err());
     }
 
