@@ -14,6 +14,7 @@ impl InvalidFENStringError {
     }
 }
 
+#[derive(Debug)]
 pub struct InvalidAlgebraicNotationError {
     pub message: String,
 }

@@ -1,5 +1,6 @@
 use crate::game::error::InvalidFENStringError;
 use crate::game::piece::Piece;
+use crate::game::square::Square;
 
 pub struct Board {
     pieces: Vec<Option<Piece>>,
@@ -24,21 +25,27 @@ impl Board {
         }
 
         if pieces.len() != 64 {
-            return Err(InvalidFENStringError::new("Invalid number of squares/pieces in placement data."));
+            return Err(InvalidFENStringError::new(
+                "Invalid number of squares/pieces in placement data.",
+            ));
         }
 
-        Ok(Board {
-            pieces
-        })
+        Ok(Board { pieces })
     }
 
-    pub fn at_square(&self, row: u8, col: u8) -> &Option<Piece> {
+    pub fn at_position(&self, row: u8, col: u8) -> &Option<Piece> {
         let piece_position: usize = (row * 8 + col) as usize;
         self.pieces.get(piece_position).unwrap_or(&None)
     }
 
+    pub fn at_square(&self, square: Square) -> &Option<Piece> {
+        let piece_position: usize = (square.row * 8 + square.col) as usize;
+        self.pieces.get(piece_position).unwrap_or(&None)
+    }
+
     pub fn to_board_string(&self) -> String {
-        self.pieces.chunks(8)
+        self.pieces
+            .chunks(8)
             .map(|rank| {
                 let mut line = String::new();
                 let mut empty_squares = 0;
@@ -59,26 +66,52 @@ impl Board {
                 }
 
                 line
-            }).collect::<Vec<String>>().join("/")
+            })
+            .collect::<Vec<String>>()
+            .join("/")
     }
 }
 
 #[cfg(test)]
 mod test {
-    use crate::game::piece::{Color, PieceType};
     use super::*;
+    use crate::game::piece::{Color, PieceType};
 
     #[test]
     fn properly_reads_board_string() {
         let board_string = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
         let board = Board::from_placement_data(board_string).unwrap();
 
-        assert_eq!(&Some(Piece { color: Color::Black, piece_type: PieceType::Queen }), board.at_square(0, 3));
-        assert_eq!(&Some(Piece { color: Color::Black, piece_type: PieceType::Rook }), board.at_square(0, 7));
-        assert_eq!(&Some(Piece { color: Color::Black, piece_type: PieceType::Pawn }), board.at_square(1, 5));
-        assert_eq!(&Some(Piece { color: Color::White, piece_type: PieceType::King }), board.at_square(7, 4));
-        assert_eq!(&None, board.at_square(5, 4));
-        assert_eq!(&None, board.at_square(3, 7));
+        assert_eq!(
+            &Some(Piece {
+                color: Color::Black,
+                piece_type: PieceType::Queen
+            }),
+            board.at_position(0, 3)
+        );
+        assert_eq!(
+            &Some(Piece {
+                color: Color::Black,
+                piece_type: PieceType::Rook
+            }),
+            board.at_position(0, 7)
+        );
+        assert_eq!(
+            &Some(Piece {
+                color: Color::Black,
+                piece_type: PieceType::Pawn
+            }),
+            board.at_position(1, 5)
+        );
+        assert_eq!(
+            &Some(Piece {
+                color: Color::White,
+                piece_type: PieceType::King
+            }),
+            board.at_position(7, 4)
+        );
+        assert_eq!(&None, board.at_position(5, 4));
+        assert_eq!(&None, board.at_position(3, 7));
     }
 
     #[test]

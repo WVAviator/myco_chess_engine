@@ -11,7 +11,9 @@ pub struct CastlingRights {
 impl CastlingRights {
     pub fn from_fen_castling_str(castling_str: &str) -> Result<Self, InvalidFENStringError> {
         if castling_str.len() > 4 || castling_str.len() == 0 {
-            return Err(InvalidFENStringError::new("Invalid number of characters in castling rights string."));
+            return Err(InvalidFENStringError::new(
+                "Invalid number of characters in castling rights string.",
+            ));
         }
 
         let white_kingside = castling_str.contains("K");
@@ -63,7 +65,15 @@ mod test {
         let castling_str = "KQkq";
         let castling_rights = CastlingRights::from_fen_castling_str(castling_str).unwrap();
 
-        assert_eq!(castling_rights, CastlingRights { white_kingside: true, white_queenside: true, black_kingside: true, black_queenside: true });
+        assert_eq!(
+            castling_rights,
+            CastlingRights {
+                white_kingside: true,
+                white_queenside: true,
+                black_kingside: true,
+                black_queenside: true
+            }
+        );
     }
 
     #[test]
@@ -71,12 +81,25 @@ mod test {
         let castling_str = "Kq";
         let castling_rights = CastlingRights::from_fen_castling_str(castling_str).unwrap();
 
-        assert_eq!(castling_rights, CastlingRights { white_kingside: true, white_queenside: false, black_kingside: false, black_queenside: true });
+        assert_eq!(
+            castling_rights,
+            CastlingRights {
+                white_kingside: true,
+                white_queenside: false,
+                black_kingside: false,
+                black_queenside: true
+            }
+        );
     }
 
     #[test]
     fn converts_to_castling_str() {
-        let castling_rights = CastlingRights { white_kingside: false, white_queenside: true, black_kingside:true, black_queenside: false };
+        let castling_rights = CastlingRights {
+            white_kingside: false,
+            white_queenside: true,
+            black_kingside: true,
+            black_queenside: false,
+        };
         let castling_string = castling_rights.to_fen_castling_str();
 
         assert_eq!(castling_string, "Qk")
@@ -87,6 +110,14 @@ mod test {
         let castling_str = "-";
         let castling_rights = CastlingRights::from_fen_castling_str(castling_str).unwrap();
 
-        assert_eq!(castling_rights, CastlingRights { white_kingside: false, white_queenside: false, black_kingside: false, black_queenside: false });
+        assert_eq!(
+            castling_rights,
+            CastlingRights {
+                white_kingside: false,
+                white_queenside: false,
+                black_kingside: false,
+                black_queenside: false
+            }
+        );
     }
 }
