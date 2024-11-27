@@ -1,97 +1,37 @@
-use crate::game::error::InvalidFENStringError;
+use anyhow::anyhow;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Piece {
-    pub color: Color,
-    pub piece_type: PieceType,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum Color {
-    White,
-    Black,
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum PieceType {
-    Pawn,
-    Rook,
-    Knight,
-    Bishop,
-    Queen,
-    King,
+pub enum Piece {
+    WhitePawn,
+    WhiteRook,
+    WhiteKnight,
+    WhiteBishop,
+    WhiteQueen,
+    WhiteKing,
+    BlackPawn,
+    BlackRook,
+    BlackKnight,
+    BlackBishop,
+    BlackQueen,
+    BlackKing,
 }
 
 impl Piece {
-    pub fn from_fen_char(char: &char) -> Result<Piece, InvalidFENStringError> {
-        match char {
-            'p' => Ok(Piece {
-                color: Color::Black,
-                piece_type: PieceType::Pawn,
-            }),
-            'r' => Ok(Piece {
-                color: Color::Black,
-                piece_type: PieceType::Rook,
-            }),
-            'n' => Ok(Piece {
-                color: Color::Black,
-                piece_type: PieceType::Knight,
-            }),
-            'b' => Ok(Piece {
-                color: Color::Black,
-                piece_type: PieceType::Bishop,
-            }),
-            'q' => Ok(Piece {
-                color: Color::Black,
-                piece_type: PieceType::Queen,
-            }),
-            'k' => Ok(Piece {
-                color: Color::Black,
-                piece_type: PieceType::King,
-            }),
-            'P' => Ok(Piece {
-                color: Color::White,
-                piece_type: PieceType::Pawn,
-            }),
-            'R' => Ok(Piece {
-                color: Color::White,
-                piece_type: PieceType::Rook,
-            }),
-            'N' => Ok(Piece {
-                color: Color::White,
-                piece_type: PieceType::Knight,
-            }),
-            'B' => Ok(Piece {
-                color: Color::White,
-                piece_type: PieceType::Bishop,
-            }),
-            'Q' => Ok(Piece {
-                color: Color::White,
-                piece_type: PieceType::Queen,
-            }),
-            'K' => Ok(Piece {
-                color: Color::White,
-                piece_type: PieceType::King,
-            }),
-            _ => Err(InvalidFENStringError::new(
-                format!("Invalid piece character '{}'", char).as_str(),
-            )),
-        }
-    }
-
-    pub fn to_fen_char(&self) -> char {
-        let char = match self.piece_type {
-            PieceType::Pawn => 'p',
-            PieceType::Rook => 'r',
-            PieceType::Knight => 'n',
-            PieceType::Bishop => 'b',
-            PieceType::Queen => 'q',
-            PieceType::King => 'k',
-        };
-
-        match self.color {
-            Color::Black => char,
-            Color::White => char.to_ascii_uppercase(),
+    pub fn from_fen_char(ch: char) -> Result<Self, anyhow::Error> {
+        match ch {
+          'P' => Ok(Piece::WhitePawn),
+          'R' => Ok(Piece::WhiteRook),
+          'N' => Ok(Piece::WhiteKnight),
+          'B' => Ok(Piece::WhiteBishop),
+          'Q' => Ok(Piece::WhiteQueen),
+          'K' => Ok(Piece::WhiteKing),
+          'p' => Ok(Piece::BlackPawn),
+          'r' => Ok(Piece::BlackRook),
+          'n' => Ok(Piece::BlackKnight),
+          'b' => Ok(Piece::BlackBishop),
+          'q' => Ok(Piece::BlackQueen),
+          'k' => Ok(Piece::BlackKing),
+          _ => Err(anyhow!("Invalid character in FEN string: {} does not match any known chess piece. Should be one of KQBNRPkqbnrp", ch)),
         }
     }
 }
@@ -101,52 +41,26 @@ mod test {
     use super::*;
 
     #[test]
-    fn creates_black_piece_from_fen_char() {
-        let piece = Piece::from_fen_char(&'b').unwrap();
-        assert_eq!(
-            piece,
-            Piece {
-                color: Color::Black,
-                piece_type: PieceType::Bishop
-            }
-        );
+    fn parses_correct_pieces() {
+        assert_eq!(Piece::from_fen_char('K').unwrap(), Piece::WhiteKing);
+        assert_eq!(Piece::from_fen_char('Q').unwrap(), Piece::WhiteQueen);
+        assert_eq!(Piece::from_fen_char('R').unwrap(), Piece::WhiteRook);
+        assert_eq!(Piece::from_fen_char('N').unwrap(), Piece::WhiteKnight);
+        assert_eq!(Piece::from_fen_char('B').unwrap(), Piece::WhiteBishop);
+        assert_eq!(Piece::from_fen_char('P').unwrap(), Piece::WhitePawn);
+
+        assert_eq!(Piece::from_fen_char('k').unwrap(), Piece::BlackKing);
+        assert_eq!(Piece::from_fen_char('q').unwrap(), Piece::BlackQueen);
+        assert_eq!(Piece::from_fen_char('r').unwrap(), Piece::BlackRook);
+        assert_eq!(Piece::from_fen_char('n').unwrap(), Piece::BlackKnight);
+        assert_eq!(Piece::from_fen_char('b').unwrap(), Piece::BlackBishop);
+        assert_eq!(Piece::from_fen_char('p').unwrap(), Piece::BlackPawn);
     }
 
     #[test]
-    fn creates_white_piece_from_fen_char() {
-        let piece = Piece::from_fen_char(&'N').unwrap();
-        assert_eq!(
-            piece,
-            Piece {
-                color: Color::White,
-                piece_type: PieceType::Knight
-            }
-        );
-    }
+    fn error_invalid_char() {
+        let result = Piece::from_fen_char('g');
 
-    #[test]
-    fn converts_black_to_correct_fen_char() {
-        let piece = Piece {
-            color: Color::Black,
-            piece_type: PieceType::Rook,
-        };
-        let char = piece.to_fen_char();
-        assert_eq!(char, 'r');
-    }
-
-    #[test]
-    fn converts_white_to_correct_fen_char() {
-        let piece = Piece {
-            color: Color::White,
-            piece_type: PieceType::King,
-        };
-        let char = piece.to_fen_char();
-        assert_eq!(char, 'K');
-    }
-
-    #[test]
-    fn throws_error_invalid_char() {
-        let piece = Piece::from_fen_char(&'j');
-        assert!(piece.is_err());
+        assert!(result.is_err());
     }
 }

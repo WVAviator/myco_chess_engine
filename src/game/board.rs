@@ -1,140 +1,85 @@
-use crate::game::error::InvalidFENStringError;
-use crate::game::piece::Piece;
-use crate::game::square::Square;
+use anyhow::anyhow;
 
+use super::piece::Piece;
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct Board {
-    pieces: Vec<Option<Piece>>,
+    pieces: [Option<Piece>; 64],
 }
 
 impl Board {
-    pub fn from_placement_data(placement_data: &str) -> Result<Self, InvalidFENStringError> {
-        let mut pieces = Vec::new();
+    pub fn new_empty() -> Self {
+        return Board {
+            pieces: vec![None; 64].try_into().unwrap(),
+        };
+    }
 
-        let ranks: Vec<&str> = placement_data.split('/').collect();
-        for rank in ranks {
-            for char in rank.chars() {
-                if let Some(empty_squares) = char.to_digit(10) {
-                    for _ in 0..empty_squares {
-                        pieces.push(None);
-                    }
-                    continue;
-                }
-                let piece = Piece::from_fen_char(&char)?;
-                pieces.push(Some(piece));
+    pub fn from_fen(fen_board_str: &str) -> Result<Self, anyhow::Error> {
+        let mut board = Board::new_empty();
+        let merged_ranks: String = fen_board_str.split("/").collect();
+        let mut index: usize = 0;
+
+        for sq in merged_ranks.chars() {
+            if sq.is_ascii_digit() {
+                index += sq
+                    .to_digit(10)
+                    .ok_or(anyhow!("Unable to convert digit to numeric value: {}", sq))?
+                    as usize;
+                continue;
             }
+            let piece = Piece::from_fen_char(sq)?;
+            board.set_index(index, Some(piece));
+            index += 1;
         }
 
-        if pieces.len() != 64 {
-            return Err(InvalidFENStringError::new(
-                "Invalid number of squares/pieces in placement data.",
-            ));
-        }
+        return Ok(board);
+    }
 
-        Ok(Board { pieces })
+    pub fn at_index(&self, index: usize) -> &Option<Piece> {
+        return &self.pieces[index];
     }
 
     pub fn at_position(&self, row: u8, col: u8) -> &Option<Piece> {
-        let piece_position: usize = (row * 8 + col) as usize;
-        self.pieces.get(piece_position).unwrap_or(&None)
+        return self.at_index((row * 8 + col) as usize);
     }
 
-    pub fn at_square(&self, square: Square) -> &Option<Piece> {
-        let piece_position: usize = (square.row * 8 + square.col) as usize;
-        self.pieces.get(piece_position).unwrap_or(&None)
+    pub fn set_index(&mut self, index: usize, piece: Option<Piece>) {
+        self.pieces[index] = piece;
     }
 
-    pub fn to_board_string(&self) -> String {
-        self.pieces
-            .chunks(8)
-            .map(|rank| {
-                let mut line = String::new();
-                let mut empty_squares = 0;
-                for i in 0..8 {
-                    if let Some(Some(piece)) = rank.get(i) {
-                        if empty_squares > 0 {
-                            line.push_str(empty_squares.to_string().as_str());
-                            empty_squares = 0;
-                        }
-                        line.push(piece.to_fen_char());
-                    } else {
-                        empty_squares += 1;
-                    }
-                }
-
-                if empty_squares > 0 {
-                    line.push_str(empty_squares.to_string().as_str());
-                }
-
-                line
-            })
-            .collect::<Vec<String>>()
-            .join("/")
+    pub fn set_position(&mut self, row: u8, col: u8, piece: Option<Piece>) {
+        self.set_index((row * 8 + col) as usize, piece);
     }
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::game::piece::{Color, PieceType};
 
     #[test]
-    fn properly_reads_board_string() {
-        let board_string = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
-        let board = Board::from_placement_data(board_string).unwrap();
+    fn initializes_default_setup_from_fen() {
+        let default_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+        let board = Board::from_fen(default_fen).unwrap();
 
-        assert_eq!(
-            &Some(Piece {
-                color: Color::Black,
-                piece_type: PieceType::Queen
-            }),
-            board.at_position(0, 3)
-        );
-        assert_eq!(
-            &Some(Piece {
-                color: Color::Black,
-                piece_type: PieceType::Rook
-            }),
-            board.at_position(0, 7)
-        );
-        assert_eq!(
-            &Some(Piece {
-                color: Color::Black,
-                piece_type: PieceType::Pawn
-            }),
-            board.at_position(1, 5)
-        );
-        assert_eq!(
-            &Some(Piece {
-                color: Color::White,
-                piece_type: PieceType::King
-            }),
-            board.at_position(7, 4)
-        );
-        assert_eq!(&None, board.at_position(5, 4));
-        assert_eq!(&None, board.at_position(3, 7));
+        assert_eq!(board.at_position(0, 0), &Some(Piece::BlackRook));
+        assert_eq!(board.at_position(1, 2), &Some(Piece::BlackPawn));
+        assert_eq!(board.at_position(3, 3), &None);
+        assert_eq!(board.at_position(7, 4), &Some(Piece::WhiteKing));
+        assert_eq!(board.at_position(7, 5), &Some(Piece::WhiteBishop));
     }
 
     #[test]
-    fn reads_empty_board() {
-        let board_string = "8/8/8/8/8/8/8/8";
-        let board = Board::from_placement_data(board_string).unwrap();
+    fn initializes_complex_setup_from_fen() {
+        let fen_str = "8/8/3r3R/2b4B/8/8/K1k5/8";
+        let board = Board::from_fen(fen_str).unwrap();
 
-        assert!(board.pieces.iter().all(|sq| sq == &None));
-    }
-
-    #[test]
-    fn fails_invalid_length() {
-        let board_string = "rnbqkbnr/pppppppp/8/7/8/8/PPPPPPPP/RNBQKBNR";
-        let board = Board::from_placement_data(board_string);
-
-        assert!(board.is_err());
-    }
-
-    #[test]
-    fn converts_to_fen() {
-        let board_string = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
-        let board = Board::from_placement_data(board_string).unwrap();
-        let output_board_string = board.to_board_string();
-        assert_eq!(board_string, output_board_string);
+        assert_eq!(board.at_position(2, 3), &Some(Piece::BlackRook));
+        assert_eq!(board.at_position(2, 4), &None);
+        assert_eq!(board.at_position(2, 7), &Some(Piece::WhiteRook));
+        assert_eq!(board.at_position(3, 2), &Some(Piece::BlackBishop));
+        assert_eq!(board.at_position(3, 7), &Some(Piece::WhiteBishop));
+        assert_eq!(board.at_position(6, 0), &Some(Piece::WhiteKing));
+        assert_eq!(board.at_position(6, 2), &Some(Piece::BlackKing));
+        assert_eq!(board.at_position(7, 5), &None);
     }
 }
