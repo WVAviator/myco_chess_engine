@@ -2,9 +2,9 @@ use super::{board::Square, piece::Piece};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct CMove {
-    starting_square: Square,
-    destination_square: Square,
-    promotion: Option<Piece>,
+    pub starting_square: Square,
+    pub destination_square: Square,
+    pub promotion: Option<Piece>,
 }
 
 impl CMove {
@@ -18,6 +18,14 @@ impl CMove {
                 None => String::from(""),
             }
         )
+    }
+
+    pub fn new(from: Square, to: Square, promotion: Option<Piece>) -> Self {
+        CMove {
+            starting_square: from,
+            destination_square: to,
+            promotion,
+        }
     }
 }
 

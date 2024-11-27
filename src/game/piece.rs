@@ -1,5 +1,7 @@
 use anyhow::anyhow;
 
+use super::game::Color;
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Piece {
     WhitePawn,
@@ -50,6 +52,23 @@ impl Piece {
             Piece::BlackQueen => "q",
             Piece::BlackKing => "k",
         })
+    }
+
+    pub fn get_color(&self) -> Color {
+        match self {
+            Piece::WhitePawn => Color::White,
+            Piece::WhiteRook => Color::White,
+            Piece::WhiteKnight => Color::White,
+            Piece::WhiteBishop => Color::White,
+            Piece::WhiteQueen => Color::White,
+            Piece::WhiteKing => Color::White,
+            Piece::BlackPawn => Color::Black,
+            Piece::BlackRook => Color::Black,
+            Piece::BlackKnight => Color::Black,
+            Piece::BlackBishop => Color::Black,
+            Piece::BlackQueen => Color::Black,
+            Piece::BlackKing => Color::Black,
+        }
     }
 }
 

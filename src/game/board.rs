@@ -1,3 +1,5 @@
+use std::any;
+
 use anyhow::{anyhow, bail};
 
 use super::piece::Piece;
@@ -60,11 +62,11 @@ impl Board {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Square(usize);
 
 impl Square {
-    pub fn to_algebraic(self) -> String {
+    pub fn to_algebraic(&self) -> String {
         let file = (self.0 % 8) as u8 + b'a';
         let rank = 7 - (self.0 / 8) as u8 + b'1';
         format!("{}{}", file as char, rank as char)
@@ -89,6 +91,25 @@ impl Square {
         let rank_index = 7 - (rank - b'1');
 
         Ok(Square((rank_index * 8 + file_index) as usize))
+    }
+
+    pub fn from_position(row: u8, col: u8) -> Result<Self, anyhow::Error> {
+        if row < 0 || row > 7 || col < 0 || col > 7 {
+            bail!(
+                "Attempted to create invalid square at position: {}, {}",
+                row,
+                col
+            );
+        }
+        Ok(Square(((7 - row) * 8 + col) as usize))
+    }
+
+    pub fn get_rank(&self) -> u8 {
+        7 - (self.0 / 8) as u8
+    }
+
+    pub fn get_file(&self) -> u8 {
+        (self.0 % 8) as u8
     }
 }
 
