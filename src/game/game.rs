@@ -2,7 +2,8 @@ use anyhow::{anyhow, bail, Context};
 
 use super::{
     board::{Board, Square},
-    castling_rights::{self, CastlingRights},
+    castling_rights::CastlingRights,
+    cmove::CMove,
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -13,6 +14,7 @@ pub struct Game {
     en_passant_target: Option<Square>,
     halfmove_clock: u32,
     fullmove_number: u32,
+    moves: Vec<CMove>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -93,6 +95,7 @@ impl Game {
             en_passant_target,
             halfmove_clock,
             fullmove_number,
+            moves: Vec::new(),
         })
     }
 }

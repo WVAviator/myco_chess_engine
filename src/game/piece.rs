@@ -34,6 +34,23 @@ impl Piece {
           _ => Err(anyhow!("Invalid character in FEN string: {} does not match any known chess piece. Should be one of KQBNRPkqbnrp", ch)),
         }
     }
+
+    pub fn to_fen(self) -> String {
+        String::from(match self {
+            Piece::WhitePawn => "P",
+            Piece::WhiteRook => "R",
+            Piece::WhiteKnight => "N",
+            Piece::WhiteBishop => "B",
+            Piece::WhiteQueen => "Q",
+            Piece::WhiteKing => "K",
+            Piece::BlackPawn => "p",
+            Piece::BlackRook => "r",
+            Piece::BlackKnight => "n",
+            Piece::BlackBishop => "b",
+            Piece::BlackQueen => "q",
+            Piece::BlackKing => "k",
+        })
+    }
 }
 
 #[cfg(test)]
