@@ -8,13 +8,13 @@ use super::{
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Game {
-    board: Board,
-    active_color: Color,
-    castling_rights: CastlingRights,
-    en_passant_target: Option<Square>,
-    halfmove_clock: u32,
-    fullmove_number: u32,
-    moves: Vec<CMove>,
+    pub board: Board,
+    pub active_color: Color,
+    pub castling_rights: CastlingRights,
+    pub en_passant_target: Option<Square>,
+    pub halfmove_clock: u32,
+    pub fullmove_number: u32,
+    pub moves: Vec<CMove>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -97,6 +97,11 @@ impl Game {
             fullmove_number,
             moves: Vec::new(),
         })
+    }
+
+    pub fn is_legal(&self) -> bool {
+        // TODO: Check if opponent king can be taken and return false if so
+        return true;
     }
 }
 
