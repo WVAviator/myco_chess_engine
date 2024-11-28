@@ -1,3 +1,4 @@
+use core::fmt;
 use std::ops::Deref;
 
 use anyhow::bail;
@@ -71,6 +72,12 @@ impl Deref for Square {
 
     fn deref(&self) -> &Self::Target {
         &self.0
+    }
+}
+
+impl fmt::Display for Square {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.to_algebraic())
     }
 }
 
