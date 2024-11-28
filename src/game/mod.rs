@@ -5,3 +5,4 @@ mod eval;
 mod game;
 mod gen;
 mod piece;
+mod square;

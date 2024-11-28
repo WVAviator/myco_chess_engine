@@ -1,10 +1,7 @@
 use anyhow::{anyhow, bail, Context};
 
 use super::{
-    board::{Board, Square},
-    castling_rights::CastlingRights,
-    cmove::CMove,
-    piece::Piece,
+    board::Board, castling_rights::CastlingRights, cmove::CMove, piece::Piece, square::Square,
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -107,8 +104,8 @@ impl Game {
 
     pub fn apply_move(&self, cmove: CMove) -> Result<Game, anyhow::Error> {
         let mut next_turn = self.clone();
-        let start = cmove.starting_square;
-        let dest = cmove.destination_square;
+        let start = cmove.start;
+        let dest = cmove.dest;
 
         // Update active color and fullmove number
         next_turn.active_color = match self.active_color {
@@ -124,15 +121,15 @@ impl Game {
         let is_capture = next_turn.board.at_square(dest).is_some();
         let is_pawn_advance = match next_turn.board.at_square(start) {
             Some(Piece::WhitePawn) => {
-                if start.get_rank() == 2 && dest.get_rank() == 4 {
-                    let en_passant_square = Square::from_position(3, start.get_file())?;
+                if start.get_row() == 2 && dest.get_row() == 4 {
+                    let en_passant_square = Square::from_position(3, start.get_col())?;
                     next_turn.en_passant_target = Some(en_passant_square);
                 }
                 true
             }
             Some(Piece::BlackPawn) => {
-                if start.get_rank() == 7 && dest.get_rank() == 5 {
-                    let en_passant_square = Square::from_position(6, start.get_file())?;
+                if start.get_row() == 7 && dest.get_row() == 5 {
+                    let en_passant_square = Square::from_position(6, start.get_col())?;
                     next_turn.en_passant_target = Some(en_passant_square);
                 }
                 true
@@ -189,12 +186,12 @@ impl Game {
 
         // Handle enpassant takes
         match (next_turn.board.at_square(start), self.en_passant_target) {
-            (Some(Piece::WhitePawn), Some(en_passant_square)) => {
-                let take_square = Square::from_position(5, dest.get_file())?;
+            (Some(Piece::WhitePawn), Some(_)) => {
+                let take_square = Square::from_position(5, dest.get_col())?;
                 next_turn.board.set_square(take_square, None);
             }
-            (Some(Piece::BlackPawn), Some(en_passant_square)) => {
-                let take_square = Square::from_position(4, dest.get_file())?;
+            (Some(Piece::BlackPawn), Some(_)) => {
+                let take_square = Square::from_position(4, dest.get_col())?;
                 next_turn.board.set_square(take_square, None);
             }
             _ => {}
@@ -206,56 +203,39 @@ impl Game {
                 if start == Square::from_algebraic("e1")?
                     && dest == Square::from_algebraic("g1")? =>
             {
-                let rook = next_turn
-                    .board
-                    .at_square(Square::from_algebraic("h1")?)
-                    .take();
                 next_turn
                     .board
-                    .set_square(Square::from_algebraic("f1")?, rook);
+                    .move_piece(Square::from_algebraic("h1")?, Square::from_algebraic("f1")?);
             }
             (Some(Piece::WhiteKing), start, dest)
                 if start == Square::from_algebraic("e1")?
                     && dest == Square::from_algebraic("c1")? =>
             {
-                let rook = next_turn
-                    .board
-                    .at_square(Square::from_algebraic("a1")?)
-                    .take();
                 next_turn
                     .board
-                    .set_square(Square::from_algebraic("d1")?, rook);
+                    .move_piece(Square::from_algebraic("a1")?, Square::from_algebraic("d1")?);
             }
             (Some(Piece::BlackKing), start, dest)
                 if start == Square::from_algebraic("e8")?
                     && dest == Square::from_algebraic("g8")? =>
             {
-                let rook = next_turn
-                    .board
-                    .at_square(Square::from_algebraic("h8")?)
-                    .take();
                 next_turn
                     .board
-                    .set_square(Square::from_algebraic("f8")?, rook);
+                    .move_piece(Square::from_algebraic("h8")?, Square::from_algebraic("f8")?);
             }
             (Some(Piece::BlackKing), start, dest)
                 if start == Square::from_algebraic("e8")?
                     && dest == Square::from_algebraic("c8")? =>
             {
-                let rook = next_turn
-                    .board
-                    .at_square(Square::from_algebraic("a8")?)
-                    .take();
                 next_turn
                     .board
-                    .set_square(Square::from_algebraic("d1")?, rook);
+                    .move_piece(Square::from_algebraic("a8")?, Square::from_algebraic("d8")?);
             }
             _ => {}
         }
 
         // Complete the actual move
-        let piece = next_turn.board.at_square(start).take();
-        next_turn.board.set_square(dest, piece);
+        next_turn.board.move_piece(start, dest);
 
         Ok(next_turn)
     }
@@ -299,5 +279,22 @@ mod test {
 
         assert_eq!(game.halfmove_clock, 0);
         assert_eq!(game.fullmove_number, 1);
+    }
+
+    #[test]
+    fn apply_basic_move() {
+        let game = Game::from_fen("8/k7/8/8/8/8/7K/8 w - - 14 52").unwrap();
+        let cmove = CMove::from_long_algebraic("h2h3").unwrap();
+        let next_turn = game.apply_move(cmove).unwrap();
+
+        assert_eq!(next_turn.active_color, Color::Black);
+        assert_eq!(next_turn.castling_rights, game.castling_rights);
+        assert_eq!(next_turn.en_passant_target, None);
+        assert_eq!(next_turn.fullmove_number, 52);
+        assert_eq!(next_turn.halfmove_clock, 15);
+        assert_eq!(
+            next_turn.board,
+            Board::from_fen("8/k7/8/8/8/7K/8/8").unwrap()
+        );
     }
 }
