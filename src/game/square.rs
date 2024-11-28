@@ -45,6 +45,13 @@ impl Square {
         Ok(Square(((7 - row) * 8 + col) as usize))
     }
 
+    pub fn from_index(index: usize) -> Result<Self, anyhow::Error> {
+        if index >= 64 {
+            bail!("Invalid index for board square initialization: {}", index);
+        }
+        Ok(Square(index))
+    }
+
     pub fn from_rank_file(rank: u8, file: char) -> Result<Self, anyhow::Error> {
         let algebraic = format!("{}{}", file, rank);
         Self::from_algebraic(&algebraic)
