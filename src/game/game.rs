@@ -218,7 +218,7 @@ impl Game {
             {
                 next_turn
                     .board
-                    .move_piece(Square::from_algebraic("h1")?, Square::from_algebraic("f1")?);
+                    .move_piece(Square::from_algebraic("h1")?, Square::from_algebraic("f1")?)?;
             }
             (Some(Piece::WhiteKing), start, dest)
                 if start == Square::from_algebraic("e1")?
@@ -226,7 +226,7 @@ impl Game {
             {
                 next_turn
                     .board
-                    .move_piece(Square::from_algebraic("a1")?, Square::from_algebraic("d1")?);
+                    .move_piece(Square::from_algebraic("a1")?, Square::from_algebraic("d1")?)?;
             }
             (Some(Piece::BlackKing), start, dest)
                 if start == Square::from_algebraic("e8")?
@@ -234,7 +234,7 @@ impl Game {
             {
                 next_turn
                     .board
-                    .move_piece(Square::from_algebraic("h8")?, Square::from_algebraic("f8")?);
+                    .move_piece(Square::from_algebraic("h8")?, Square::from_algebraic("f8")?)?;
             }
             (Some(Piece::BlackKing), start, dest)
                 if start == Square::from_algebraic("e8")?
@@ -242,13 +242,30 @@ impl Game {
             {
                 next_turn
                     .board
-                    .move_piece(Square::from_algebraic("a8")?, Square::from_algebraic("d8")?);
+                    .move_piece(Square::from_algebraic("a8")?, Square::from_algebraic("d8")?)?;
             }
             _ => {}
         }
 
         // Complete the actual move
-        next_turn.board.move_piece(start, dest);
+        next_turn.board.move_piece(start, dest)?;
+
+        // Handle promotions
+        match (next_turn.board.at_square(dest), dest.get_rank()) {
+            (Some(Piece::WhitePawn), 8) => {
+                if cmove.promotion.is_none() {
+                    bail!("Advanced pawn to the last rank must provide a promotion piece.");
+                }
+                next_turn.board.set_square(dest, cmove.promotion)
+            }
+            (Some(Piece::BlackPawn), 1) => {
+                if cmove.promotion.is_none() {
+                    bail!("Advanced pawn to the last rank must provide a promotion piece.");
+                }
+                next_turn.board.set_square(dest, cmove.promotion)
+            }
+            _ => {}
+        }
 
         Ok(next_turn)
     }
@@ -425,5 +442,30 @@ mod test {
             .unwrap();
         assert_eq!(turn2.board, Board::from_fen("K7/8/8/8/8/p7/8/7k").unwrap());
         assert_eq!(turn2.en_passant_target, None);
+    }
+
+    #[test]
+    fn apply_move_handles_promotion() {
+        let turn1 = Game::from_fen("K7/6P1/8/8/8/8/8/7k w - - 0 50").unwrap();
+        let turn2 = turn1
+            .apply_move(CMove::from_long_algebraic("g7g8q").unwrap())
+            .unwrap();
+        assert_eq!(turn2.board, Board::from_fen("K5Q1/8/8/8/8/8/8/7k").unwrap());
+    }
+
+    #[test]
+    fn apply_move_handles_underpromotion() {
+        let turn1 = Game::from_fen("K7/8/8/8/8/8/p7/7k b - - 0 50").unwrap();
+        let turn2 = turn1
+            .apply_move(CMove::from_long_algebraic("a2a1n").unwrap())
+            .unwrap();
+        assert_eq!(turn2.board, Board::from_fen("K7/8/8/8/8/8/8/n6k").unwrap());
+    }
+
+    #[test]
+    fn apply_move_fails_without_promotion() {
+        let turn1 = Game::from_fen("K7/8/8/8/8/8/p7/7k b - - 0 50").unwrap();
+        let turn2_result = turn1.apply_move(CMove::from_long_algebraic("a2a1").unwrap());
+        assert!(turn2_result.is_err());
     }
 }
