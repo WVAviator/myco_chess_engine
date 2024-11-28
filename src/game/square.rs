@@ -45,7 +45,7 @@ impl Square {
     }
 
     pub fn from_rank_file(rank: u8, file: char) -> Result<Self, anyhow::Error> {
-        let algebraic = format!("{}{}", rank, file);
+        let algebraic = format!("{}{}", file, rank);
         Self::from_algebraic(&algebraic)
     }
 

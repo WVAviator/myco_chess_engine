@@ -18,20 +18,31 @@ impl Board {
 
     pub fn from_fen(fen_board_str: &str) -> Result<Self, anyhow::Error> {
         let mut board = Board::new_empty();
-        let merged_ranks: String = fen_board_str.split("/").collect();
         let mut index: usize = 0;
 
-        for sq in merged_ranks.chars() {
-            if sq.is_ascii_digit() {
-                index += sq
-                    .to_digit(10)
-                    .ok_or(anyhow!("Unable to convert digit to numeric value: {}", sq))?
-                    as usize;
-                continue;
+        if fen_board_str.chars().filter(|c| c.eq(&'/')).count() != 7 || fen_board_str.len() < 15 {
+            bail!("Invalid piece placement data '{}'. There must be 8 ranks and each rank should be separated by a '/' character.", fen_board_str);
+        }
+
+        for rank in fen_board_str.split("/") {
+            let mut rank_count = 0;
+            for sq in rank.chars() {
+                if sq.is_digit(10) {
+                    let value = sq
+                        .to_digit(10)
+                        .ok_or(anyhow!("Unable to convert digit to numeric value: {}", sq))?;
+                    rank_count += value;
+                    index += value as usize;
+                } else {
+                    let piece = Piece::from_fen_char(&sq.to_string())?;
+                    board.set_index(index, Some(piece));
+                    rank_count += 1;
+                    index += 1;
+                }
             }
-            let piece = Piece::from_fen_char(&sq.to_string())?;
-            board.set_index(index, Some(piece));
-            index += 1;
+            if rank_count != 8 {
+                bail!("Invalid piece placement data. The rank '{}' has an invalid number of pieces or empty squares.", rank);
+            }
         }
 
         return Ok(board);
@@ -115,5 +126,32 @@ mod test {
         assert_eq!(board.at_position(6, 1), &None);
         assert_eq!(board.at_position(6, 2), &Some(Piece::BlackKing));
         assert_eq!(board.at_position(7, 5), &None);
+    }
+
+    #[test]
+    fn moves_piece() {
+        let fen_str = "8/8/3r3R/2b4B/8/8/K1k5/8";
+        let mut board = Board::from_fen(fen_str).unwrap();
+
+        assert_eq!(
+            board.at_square(Square::from_algebraic("a2").unwrap()),
+            &Some(Piece::WhiteKing)
+        );
+
+        board
+            .move_piece(
+                Square::from_algebraic("a2").unwrap(),
+                Square::from_algebraic("a3").unwrap(),
+            )
+            .unwrap();
+
+        assert_eq!(
+            board.at_square(Square::from_algebraic("a2").unwrap()),
+            &None
+        );
+        assert_eq!(
+            board.at_square(Square::from_algebraic("a3").unwrap()),
+            &Some(Piece::WhiteKing)
+        );
     }
 }

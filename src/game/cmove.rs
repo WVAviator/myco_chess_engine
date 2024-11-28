@@ -41,7 +41,7 @@ impl CMove {
                 }
                 4 => None,
                 _ => bail!(
-                    "Invalid long algebraic string - expecte 4 or 5 characters: {}",
+                    "Invalid long algebraic string - expected 4 or 5 characters: {}",
                     algebraic
                 ),
             }
