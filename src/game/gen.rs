@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use anyhow::{anyhow, bail};
 
 use super::{
@@ -16,6 +18,20 @@ impl<'a> MoveGenerator<'a> {
     pub fn new(game: &'a Game) -> Self {
         Self { game }
     }
+
+    pub fn generate_valid_next_turns(&self) -> Result<HashMap<CMove, Game>, anyhow::Error> {
+        let mut move_map = HashMap::new();
+        let raw_moves = self.generate_moves()?;
+        for cmove in raw_moves.iter() {
+            let next_turn = self.game.apply_move(cmove)?;
+            if next_turn.is_legal() {
+                move_map.insert(cmove.clone(), next_turn);
+            }
+        }
+
+        Ok(move_map)
+    }
+
     pub fn generate_moves(&self) -> Result<Vec<CMove>, anyhow::Error> {
         let mut moves = Vec::new();
         for i in 0..64 {
@@ -59,7 +75,17 @@ impl<'a> MoveGenerator<'a> {
                 _ => {}
             }
         }
-        Ok(moves)
+        let legal_moves = moves
+            .into_iter()
+            .filter(|cmove| {
+                let next_turn = self.game.apply_move(cmove);
+                if next_turn.is_err() {
+                    return false;
+                }
+                next_turn.unwrap().is_legal()
+            })
+            .collect();
+        Ok(legal_moves)
     }
 
     fn generate_rook_moves(&self, start: Square) -> Result<Vec<CMove>, anyhow::Error> {

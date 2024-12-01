@@ -4,7 +4,7 @@ use anyhow::anyhow;
 
 use super::game::Color;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Piece {
     WhitePawn,
     WhiteRook,

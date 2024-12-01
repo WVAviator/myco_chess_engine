@@ -2,7 +2,7 @@ use anyhow::bail;
 
 use super::{piece::Piece, square::Square};
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct CMove {
     pub start: Square,
     pub dest: Square,

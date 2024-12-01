@@ -3,7 +3,7 @@ use std::ops::Deref;
 
 use anyhow::bail;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Square(usize);
 
 impl Square {

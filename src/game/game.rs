@@ -115,7 +115,7 @@ impl Game {
         return true;
     }
 
-    pub fn apply_move(&self, cmove: CMove) -> Result<Game, anyhow::Error> {
+    pub fn apply_move(&self, cmove: &CMove) -> Result<Game, anyhow::Error> {
         let mut next_turn = self.clone();
         let start = cmove.start;
         let dest = cmove.dest;
@@ -256,13 +256,13 @@ impl Game {
                 if cmove.promotion.is_none() {
                     bail!("Advanced pawn to the last rank must provide a promotion piece.");
                 }
-                next_turn.board.set_square(dest, cmove.promotion)
+                next_turn.board.set_square(dest, cmove.promotion.clone())
             }
             (Some(Piece::BlackPawn), 1) => {
                 if cmove.promotion.is_none() {
                     bail!("Advanced pawn to the last rank must provide a promotion piece.");
                 }
-                next_turn.board.set_square(dest, cmove.promotion)
+                next_turn.board.set_square(dest, cmove.promotion.clone())
             }
             _ => {}
         }
@@ -315,7 +315,7 @@ mod test {
     fn apply_basic_move() {
         let game = Game::from_fen("8/k7/8/8/8/8/7K/8 w - - 14 52").unwrap();
         let cmove = CMove::from_long_algebraic("h2h3").unwrap();
-        let next_turn = game.apply_move(cmove).unwrap();
+        let next_turn = game.apply_move(&cmove).unwrap();
 
         assert_eq!(next_turn.active_color, Color::Black);
         assert_eq!(next_turn.castling_rights, game.castling_rights);
@@ -332,7 +332,7 @@ mod test {
     fn apply_move_original_unaffected() {
         let game = Game::new_default();
         let cmove = CMove::from_long_algebraic("h2h3").unwrap();
-        let next_turn = game.apply_move(cmove).unwrap();
+        let next_turn = game.apply_move(&cmove).unwrap();
 
         assert_eq!(game.active_color, Color::White);
         assert_eq!(game.fullmove_number, 1);
@@ -348,7 +348,7 @@ mod test {
         let turn1 = Game::from_fen("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 20").unwrap();
         // White forfeits all castling rights by moving king
         let turn2 = turn1
-            .apply_move(CMove::from_long_algebraic("e1e2").unwrap())
+            .apply_move(&CMove::from_long_algebraic("e1e2").unwrap())
             .unwrap();
         assert_eq!(
             turn2.castling_rights,
@@ -360,7 +360,7 @@ mod test {
         );
         // Black forfeits queenside rights only by moving rook
         let turn3 = turn2
-            .apply_move(CMove::from_long_algebraic("a8a6").unwrap())
+            .apply_move(&CMove::from_long_algebraic("a8a6").unwrap())
             .unwrap();
         assert_eq!(
             turn3.castling_rights,
@@ -377,7 +377,7 @@ mod test {
         let turn1 = Game::from_fen("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 20").unwrap();
         // White castles kingside
         let turn2 = turn1
-            .apply_move(CMove::from_long_algebraic("e1g1").unwrap())
+            .apply_move(&CMove::from_long_algebraic("e1g1").unwrap())
             .unwrap();
         assert_eq!(
             turn2.castling_rights,
@@ -389,7 +389,7 @@ mod test {
         );
         // Black castles queenside
         let turn3 = turn2
-            .apply_move(CMove::from_long_algebraic("e8c8").unwrap())
+            .apply_move(&CMove::from_long_algebraic("e8c8").unwrap())
             .unwrap();
         assert_eq!(
             turn3.castling_rights,
@@ -405,21 +405,21 @@ mod test {
     fn apply_move_sets_en_passant_square() {
         let turn1 = Game::new_default();
         let turn2 = turn1
-            .apply_move(CMove::from_long_algebraic("e2e4").unwrap())
+            .apply_move(&CMove::from_long_algebraic("e2e4").unwrap())
             .unwrap();
         assert_eq!(
             turn2.en_passant_target,
             Some(Square::from_algebraic("e3").unwrap())
         );
         let turn3 = turn2
-            .apply_move(CMove::from_long_algebraic("c7c5").unwrap())
+            .apply_move(&CMove::from_long_algebraic("c7c5").unwrap())
             .unwrap();
         assert_eq!(
             turn3.en_passant_target,
             Some(Square::from_algebraic("c6").unwrap())
         );
         let turn4 = turn3
-            .apply_move(CMove::from_long_algebraic("b1c3").unwrap())
+            .apply_move(&CMove::from_long_algebraic("b1c3").unwrap())
             .unwrap();
         assert_eq!(turn4.en_passant_target, None);
     }
@@ -428,7 +428,7 @@ mod test {
     fn apply_move_en_passant_white_takes() {
         let turn1 = Game::from_fen("K7/8/8/2pP4/8/8/8/7k w - c6 0 50").unwrap();
         let turn2 = turn1
-            .apply_move(CMove::from_long_algebraic("d5c6").unwrap())
+            .apply_move(&CMove::from_long_algebraic("d5c6").unwrap())
             .unwrap();
         assert_eq!(turn2.board, Board::from_fen("K7/8/2P5/8/8/8/8/7k").unwrap());
         assert_eq!(turn2.en_passant_target, None);
@@ -438,7 +438,7 @@ mod test {
     fn apply_move_en_passant_black_takes() {
         let turn1 = Game::from_fen("K7/8/8/8/Pp6/8/8/7k b - a3 0 50").unwrap();
         let turn2 = turn1
-            .apply_move(CMove::from_long_algebraic("b4a3").unwrap())
+            .apply_move(&CMove::from_long_algebraic("b4a3").unwrap())
             .unwrap();
         assert_eq!(turn2.board, Board::from_fen("K7/8/8/8/8/p7/8/7k").unwrap());
         assert_eq!(turn2.en_passant_target, None);
@@ -448,7 +448,7 @@ mod test {
     fn apply_move_handles_promotion() {
         let turn1 = Game::from_fen("K7/6P1/8/8/8/8/8/7k w - - 0 50").unwrap();
         let turn2 = turn1
-            .apply_move(CMove::from_long_algebraic("g7g8q").unwrap())
+            .apply_move(&CMove::from_long_algebraic("g7g8q").unwrap())
             .unwrap();
         assert_eq!(turn2.board, Board::from_fen("K5Q1/8/8/8/8/8/8/7k").unwrap());
     }
@@ -457,7 +457,7 @@ mod test {
     fn apply_move_handles_underpromotion() {
         let turn1 = Game::from_fen("K7/8/8/8/8/8/p7/7k b - - 0 50").unwrap();
         let turn2 = turn1
-            .apply_move(CMove::from_long_algebraic("a2a1n").unwrap())
+            .apply_move(&CMove::from_long_algebraic("a2a1n").unwrap())
             .unwrap();
         assert_eq!(turn2.board, Board::from_fen("K7/8/8/8/8/8/8/n6k").unwrap());
     }
@@ -465,7 +465,7 @@ mod test {
     #[test]
     fn apply_move_fails_without_promotion() {
         let turn1 = Game::from_fen("K7/8/8/8/8/8/p7/7k b - - 0 50").unwrap();
-        let turn2_result = turn1.apply_move(CMove::from_long_algebraic("a2a1").unwrap());
+        let turn2_result = turn1.apply_move(&CMove::from_long_algebraic("a2a1").unwrap());
         assert!(turn2_result.is_err());
     }
 }
