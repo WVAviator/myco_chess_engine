@@ -1,1 +1,1 @@
-mod game;
+mod bb_game;
