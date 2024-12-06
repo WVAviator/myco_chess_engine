@@ -9,7 +9,7 @@ impl CastlingRights {
     pub const BLACK_KINGSIDE: u8 = 4;
     pub const BLACK_QUEENSIDE: u8 = 8;
 
-    fn from_fen(fen_cr_str: &str) -> Result<Self, anyhow::Error> {
+    pub fn from_fen(fen_cr_str: &str) -> Result<Self, anyhow::Error> {
         let mut cr = 0;
         for c in fen_cr_str.chars() {
             match c {
@@ -24,15 +24,15 @@ impl CastlingRights {
         Ok(CastlingRights(cr))
     }
 
-    fn set(&mut self, value: u8) {
+    pub fn set(&mut self, value: u8) {
         self.0 |= value;
     }
 
-    fn unset(&mut self, value: u8) {
+    pub fn unset(&mut self, value: u8) {
         self.0 &= !value;
     }
 
-    fn is_set(&self, value: u8) -> bool {
+    pub fn is_set(&self, value: u8) -> bool {
         self.0 & value > 0
     }
 }
