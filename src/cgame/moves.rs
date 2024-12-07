@@ -140,6 +140,19 @@ impl fmt::Display for LongAlgebraicMove {
     }
 }
 
+impl LongAlgebraicMove {
+    fn print_list(moves: &Vec<LongAlgebraicMove>) {
+        println!(
+            "King moves: {}",
+            moves
+                .iter()
+                .map(|m| m.to_algebraic().unwrap())
+                .collect::<Vec<_>>()
+                .join(", ")
+        );
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;

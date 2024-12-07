@@ -1,5 +1,7 @@
 use anyhow::bail;
 
+use super::game::Turn;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CastlingRights(u8);
 
@@ -34,5 +36,42 @@ impl CastlingRights {
 
     pub fn is_set(&self, value: u8) -> bool {
         self.0 & value > 0
+    }
+
+    pub fn castling_positions(&self, turn: &Turn, pieces: u64) -> u64 {
+        match turn {
+            Turn::White => {
+                let mut positions = 0;
+                if self.is_set(CastlingRights::WHITE_KINGSIDE) {
+                    // f1 and g1 must be empty
+                    if 0x60 & pieces == 0 {
+                        positions |= 0x40
+                    }
+                };
+                if self.is_set(CastlingRights::WHITE_QUEENSIDE) {
+                    // b1, c1, and d1 must be empty
+                    if 0xe & pieces == 0 {
+                        positions |= 0x4
+                    }
+                };
+                positions
+            }
+            Turn::Black => {
+                let mut positions = 0;
+                if self.is_set(CastlingRights::BLACK_KINGSIDE) {
+                    // f8 and g8 must be empty
+                    if 0x6000000000000000 & pieces == 0 {
+                        positions |= 0x4000000000000000
+                    }
+                };
+                if self.is_set(CastlingRights::BLACK_QUEENSIDE) {
+                    // b8, c8, and d8 must be empty
+                    if 0xe00000000000000 & pieces == 0 {
+                        positions |= 0x400000000000000
+                    }
+                };
+                positions
+            }
+        }
     }
 }
