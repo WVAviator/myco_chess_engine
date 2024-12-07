@@ -3,7 +3,9 @@ use anyhow::{anyhow, bail, Context};
 use super::{
     board::Board,
     castling_rights::CastlingRights,
-    constants::{A_FILE, EIGHTH_RANK, FIRST_RANK, H_FILE, SECOND_RANK, SEVENTH_RANK},
+    constants::{
+        A_FILE, B_FILE, EIGHTH_RANK, FIRST_RANK, G_FILE, H_FILE, SECOND_RANK, SEVENTH_RANK,
+    },
     moves::{algebraic_to_u64, LongAlgebraicMove},
 };
 
@@ -196,6 +198,47 @@ impl Game {
 
         create_moves(dest_squares, king_position)
     }
+
+    pub fn calculate_knight_moves(&self) -> Vec<LongAlgebraicMove> {
+        let mut moves = Vec::new();
+        let knights = match self.turn {
+            Turn::White => self.board.white_knights,
+            Turn::Black => self.board.black_knights,
+        };
+        let own_pieces = match self.turn {
+            Turn::White => self.board.white_pieces(),
+            Turn::Black => self.board.black_pieces(),
+        };
+
+        let knight_dest_squares = get_knight_dest_squares(knights) & !own_pieces;
+
+        let mut dest_squares = knight_dest_squares;
+        while dest_squares != 0 {
+            let lsb = dest_squares & (!dest_squares + 1);
+            let mut possible_origins = get_knight_dest_squares(lsb) & knights;
+            while possible_origins != 0 {
+                let po_lsb = possible_origins & (!possible_origins + 1);
+                let lmove = LongAlgebraicMove::new(po_lsb, lsb);
+                moves.push(lmove);
+                possible_origins &= possible_origins - 1;
+            }
+            dest_squares &= dest_squares - 1;
+        }
+        moves
+    }
+}
+
+pub fn get_knight_dest_squares(knights: u64) -> u64 {
+    let wnw = (knights & !A_FILE & !B_FILE & !EIGHTH_RANK) << 6;
+    let nnw = (knights & !A_FILE & !SEVENTH_RANK & !EIGHTH_RANK) << 15;
+    let nne = (knights & !H_FILE & !SEVENTH_RANK & !EIGHTH_RANK) << 17;
+    let ene = (knights & !H_FILE & !G_FILE & !EIGHTH_RANK) << 10;
+    let ese = (knights & !H_FILE & !G_FILE & !FIRST_RANK) >> 6;
+    let sse = (knights & !H_FILE & !SECOND_RANK & !FIRST_RANK) >> 15;
+    let ssw = (knights & !A_FILE & !SECOND_RANK & !FIRST_RANK) >> 17;
+    let wsw = (knights & !A_FILE & !B_FILE & !FIRST_RANK) >> 10;
+
+    wnw | nnw | nne | ene | ese | sse | ssw | wsw
 }
 
 pub fn create_moves(dest_squares: u64, origin: u64) -> Vec<LongAlgebraicMove> {
@@ -368,5 +411,21 @@ mod test {
 
         assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e8e7").unwrap()));
         assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e8f8").unwrap()));
+    }
+
+    #[test]
+    fn calculate_knight_moves() {
+        let game = Game::from_fen("6k1/3b4/2P2n2/1P6/3NP3/1b3PN1/2R1P3/1K5R w - - 0 1").unwrap();
+        let moves = game.calculate_knight_moves();
+
+        assert_eq!(moves.len(), 6);
+
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("d4b3").unwrap()));
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("d4e6").unwrap()));
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("d4f5").unwrap()));
+
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("g3h5").unwrap()));
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("g3f5").unwrap()));
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("g3f1").unwrap()));
     }
 }
