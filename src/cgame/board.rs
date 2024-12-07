@@ -2,6 +2,8 @@ use std::fmt;
 
 use anyhow::{bail, Context};
 
+use super::game::Turn;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Board {
     pub white_pawns: u64,
@@ -221,6 +223,55 @@ impl Board {
 
     pub fn empty(&self) -> u64 {
         !self.occupied()
+    }
+
+    pub fn pawns(&self, turn: &Turn) -> u64 {
+        match turn {
+            Turn::White => self.white_pawns,
+            Turn::Black => self.black_pawns,
+        }
+    }
+
+    pub fn rooks(&self, turn: &Turn) -> u64 {
+        match turn {
+            Turn::White => self.white_rooks,
+            Turn::Black => self.black_rooks,
+        }
+    }
+
+    pub fn bishops(&self, turn: &Turn) -> u64 {
+        match turn {
+            Turn::White => self.white_bishops,
+            Turn::Black => self.black_bishops,
+        }
+    }
+
+    pub fn knights(&self, turn: &Turn) -> u64 {
+        match turn {
+            Turn::White => self.white_knights,
+            Turn::Black => self.black_knights,
+        }
+    }
+
+    pub fn queens(&self, turn: &Turn) -> u64 {
+        match turn {
+            Turn::White => self.white_queens,
+            Turn::Black => self.black_queens,
+        }
+    }
+
+    pub fn king(&self, turn: &Turn) -> u64 {
+        match turn {
+            Turn::White => self.white_king,
+            Turn::Black => self.black_king,
+        }
+    }
+
+    pub fn all_pieces(&self, turn: &Turn) -> u64 {
+        match turn {
+            Turn::White => self.white_pieces(),
+            Turn::Black => self.black_pieces(),
+        }
     }
 }
 

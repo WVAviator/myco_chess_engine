@@ -100,6 +100,15 @@ pub enum Turn {
     Black,
 }
 
+impl Turn {
+    pub fn other(&self) -> Turn {
+        match self {
+            Turn::White => Turn::Black,
+            Turn::Black => Turn::White,
+        }
+    }
+}
+
 impl Game {
     pub fn calculate_pinned_pieces(&self) -> u64 {
         let mut pinned_pieces = 0;
@@ -239,31 +248,21 @@ impl Game {
     }
 
     pub fn calculate_king_moves(&self) -> Vec<LongAlgebraicMove> {
-        let king_position = match self.turn {
-            Turn::White => self.board.white_king,
-            Turn::Black => self.board.black_king,
-        };
-        let own_pieces = match self.turn {
-            Turn::White => self.board.white_pieces(),
-            Turn::Black => self.board.black_pieces(),
-        };
+        let king = self.board.king(&self.turn);
+        let own_pieces = self.board.all_pieces(&self.turn);
+        let opponent_vision = self.get_opponent_vision();
 
-        let w = (king_position & !A_FILE) >> 1;
-        let nw = (king_position & !A_FILE & !EIGHTH_RANK) << 7;
-        let n = (king_position & !EIGHTH_RANK) << 8;
-        let ne = (king_position & !H_FILE & !EIGHTH_RANK) << 9;
-        let e = (king_position & !H_FILE) << 1;
-        let se = (king_position & !H_FILE & !FIRST_RANK) >> 7;
-        let s = (king_position & !FIRST_RANK) >> 8;
-        let sw = (king_position & !A_FILE & !FIRST_RANK) >> 9;
+        let mut dest_squares = get_king_dest_squares(king);
+        dest_squares &= !own_pieces;
+        dest_squares &= !opponent_vision;
+        // Cannot castle if king is curerntly in check
+        if king & opponent_vision == 0 {
+            dest_squares |= self
+                .castling_rights
+                .castling_positions(&self.turn, self.board.occupied() | opponent_vision);
+        }
 
-        let castling_dest = self
-            .castling_rights
-            .castling_positions(&self.turn, self.board.occupied());
-
-        let dest_squares = (w | nw | n | ne | e | se | s | sw | castling_dest) & !own_pieces;
-
-        create_moves(dest_squares, king_position)
+        create_moves(dest_squares, king)
     }
 
     pub fn calculate_knight_moves(&self) -> Vec<LongAlgebraicMove> {
@@ -413,6 +412,82 @@ impl Game {
 
         moves
     }
+
+    pub fn calculate_checking_king(&self) -> u64 {
+        let king = self.board.king(&self.turn);
+
+        let own_pieces = self.board.all_pieces(&self.turn);
+        let opponent_pieces = self.board.all_pieces(&self.turn.other());
+
+        let opponent_pawns = self.board.pawns(&self.turn.other());
+        let opponent_knights = self.board.knights(&self.turn.other());
+        let opponent_rooks =
+            self.board.rooks(&self.turn.other()) | self.board.queens(&self.turn.other());
+        let opponent_bishops =
+            self.board.bishops(&self.turn.other()) | self.board.queens(&self.turn.other());
+
+        let mut checking_pieces = 0;
+
+        // Pawns diagonal from the king are checking the king
+        checking_pieces |= opponent_pawns
+            & match self.turn {
+                Turn::White => (king << 7) | (king << 9),
+                Turn::Black => (king >> 7) | (king >> 9),
+            };
+
+        // Knights at knight opposition from the king are checking the king
+        checking_pieces |= opponent_knights & get_knight_dest_squares(king);
+
+        let raycast = Raycast::new(king, opponent_pieces, own_pieces);
+
+        // Rooks horizontal or vertical from the king with no obstacles
+        Direction::rook_directions().iter().for_each(|dir| {
+            checking_pieces |= opponent_rooks & raycast.get_first_hit(dir);
+        });
+
+        // Bishops diagonal from the king with no obstacles
+        Direction::bishop_directions().iter().for_each(|dir| {
+            checking_pieces |= opponent_bishops & raycast.get_first_hit(dir);
+        });
+
+        checking_pieces
+    }
+
+    /// Gets the vision of all the opponents pieces. Intended for use in determining legal moves for the king.
+    pub fn get_opponent_vision(&self) -> u64 {
+        let mut vision = 0;
+
+        let own_pieces = self.board.all_pieces(&self.turn);
+        let opponent_pieces = self.board.all_pieces(&self.turn.other());
+
+        let pawns = self.board.pawns(&self.turn.other());
+        let knights = self.board.knights(&self.turn.other());
+        let rooks = self.board.rooks(&self.turn.other()) | self.board.queens(&self.turn.other());
+        let bishops =
+            self.board.bishops(&self.turn.other()) | self.board.queens(&self.turn.other());
+        let king = self.board.king(&self.turn.other());
+
+        vision |= get_king_dest_squares(king);
+
+        vision |= match self.turn.other() {
+            Turn::White => (pawns << 7) | (pawns << 9),
+            Turn::Black => (pawns >> 7) | (pawns >> 9),
+        };
+
+        vision |= get_knight_dest_squares(knights);
+
+        let rook_raycast = Raycast::new(rooks, own_pieces | opponent_pieces, 0);
+        Direction::rook_directions().iter().for_each(|dir| {
+            vision |= rook_raycast.get_full_ray(dir);
+        });
+
+        let bishop_raycast = Raycast::new(bishops, own_pieces | opponent_pieces, 0);
+        Direction::bishop_directions().iter().for_each(|dir| {
+            vision |= bishop_raycast.get_full_ray(dir);
+        });
+
+        vision
+    }
 }
 
 pub fn get_occupied_files(pieces: u64) -> u64 {
@@ -493,6 +568,19 @@ pub fn get_knight_dest_squares(knights: u64) -> u64 {
     let wsw = (knights & !A_FILE & !B_FILE & !FIRST_RANK) >> 10;
 
     wnw | nnw | nne | ene | ese | sse | ssw | wsw
+}
+
+pub fn get_king_dest_squares(king: u64) -> u64 {
+    let w = (king & !A_FILE) >> 1;
+    let nw = (king & !A_FILE & !EIGHTH_RANK) << 7;
+    let n = (king & !EIGHTH_RANK) << 8;
+    let ne = (king & !H_FILE & !EIGHTH_RANK) << 9;
+    let e = (king & !H_FILE) << 1;
+    let se = (king & !H_FILE & !FIRST_RANK) >> 7;
+    let s = (king & !FIRST_RANK) >> 8;
+    let sw = (king & !A_FILE & !FIRST_RANK) >> 9;
+
+    w | nw | n | ne | e | se | s | sw
 }
 
 pub fn create_moves(dest_squares: u64, origin: u64) -> Vec<LongAlgebraicMove> {
@@ -669,6 +757,42 @@ mod test {
     }
 
     #[test]
+    fn king_cannot_put_self_in_check() {
+        let game = Game::from_fen("8/8/8/4k3/1pb2p2/1r3P2/6NK/1n1Q2R1 b - - 0 1").unwrap();
+        let moves = game.calculate_king_moves();
+
+        assert_eq!(moves.len(), 3);
+
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e5e6").unwrap()));
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e5f5").unwrap()));
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e5f6").unwrap()));
+    }
+
+    #[test]
+    fn king_cannot_castle_through_check() {
+        let game = Game::from_fen("8/8/k7/6P1/2b5/8/8/4K2R w K - 0 1").unwrap();
+        let moves = game.calculate_king_moves();
+
+        assert!(!moves.contains(&LongAlgebraicMove::from_algebraic("e1g1").unwrap()));
+    }
+
+    #[test]
+    fn king_cannot_castle_into_check() {
+        let game = Game::from_fen("8/8/k7/6P1/3b4/8/8/4K2R w K - 0 1").unwrap();
+        let moves = game.calculate_king_moves();
+
+        assert!(!moves.contains(&LongAlgebraicMove::from_algebraic("e1g1").unwrap()));
+    }
+
+    #[test]
+    fn king_cannot_castle_while_in_check() {
+        let game = Game::from_fen("8/8/k7/6P1/1b6/8/8/4K2R w K - 0 1").unwrap();
+        let moves = game.calculate_king_moves();
+
+        assert!(!moves.contains(&LongAlgebraicMove::from_algebraic("e1g1").unwrap()));
+    }
+
+    #[test]
     fn calculate_knight_moves() {
         let game = Game::from_fen("6k1/3b4/2P2n2/1P6/3NP3/1b3PN1/2R1P3/1K5R w - - 0 1").unwrap();
         let moves = game.calculate_knight_moves();
@@ -791,5 +915,33 @@ mod test {
 
         assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e3f2").unwrap()));
         assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e3g1").unwrap()));
+    }
+
+    #[test]
+    fn calculates_checking_pieces_rook_knight() {
+        let game = Game::from_fen("8/B5p1/3rN3/2b4p/3k2R1/4b3/8/6QK b - - 0 1").unwrap();
+        let checking_pieces = game.calculate_checking_king();
+        assert_eq!(checking_pieces, 0x100040000000); // e6, g4
+    }
+
+    #[test]
+    fn calculates_checking_pieces_queen_pawn() {
+        let game = Game::from_fen("4R3/B5p1/3r4/2b4p/3k4/4P3/8/3Q2QK b - - 0 1").unwrap();
+        let checking_pieces = game.calculate_checking_king();
+        assert_eq!(checking_pieces, 0x100008); // d1, e3
+    }
+
+    #[test]
+    fn calculates_opponent_vision() {
+        let game = Game::from_fen("8/8/8/8/1pbk1p2/1r3P2/3B2NK/1n1Q3R b - - 0 1").unwrap();
+        let opponent_vision = game.get_opponent_vision();
+        assert_eq!(opponent_vision, 0xf2f6dcfe);
+    }
+
+    #[test]
+    fn calculates_opponent_vision_2() {
+        let game = Game::from_fen("8/8/8/4k3/1pb2p2/1r3P2/6NK/1n1Q2R1 b - - 0 1").unwrap();
+        let opponent_vision = game.get_opponent_vision();
+        assert_eq!(opponent_vision, 0x8080808f8fa5cfe);
     }
 }
