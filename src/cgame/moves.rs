@@ -143,7 +143,7 @@ impl fmt::Display for LongAlgebraicMove {
 impl LongAlgebraicMove {
     pub fn print_list(moves: &Vec<LongAlgebraicMove>) {
         println!(
-            "King moves: {}",
+            "Moves: {}",
             moves
                 .iter()
                 .map(|m| m.to_algebraic().unwrap())

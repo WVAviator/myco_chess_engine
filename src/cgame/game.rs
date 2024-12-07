@@ -1,3 +1,5 @@
+use std::pin;
+
 use anyhow::{anyhow, bail, Context};
 
 use crate::cgame::moves::u64_to_algebraic;
@@ -6,7 +8,8 @@ use super::{
     board::Board,
     castling_rights::CastlingRights,
     constants::{
-        A_FILE, B_FILE, EIGHTH_RANK, FIRST_RANK, G_FILE, H_FILE, SECOND_RANK, SEVENTH_RANK,
+        ANTIDIAGONAL_MASKS, A_FILE, B_FILE, DIAGONAL_MASKS, EIGHTH_RANK, FIRST_RANK, G_FILE,
+        H_FILE, SECOND_RANK, SEVENTH_RANK,
     },
     moves::{algebraic_to_u64, LongAlgebraicMove},
     raycast::{Direction, Raycast},
@@ -290,6 +293,193 @@ impl Game {
         }
         moves
     }
+
+    pub fn calculate_rook_moves(&self) -> Vec<LongAlgebraicMove> {
+        let mut moves = Vec::new();
+        let rooks = match self.turn {
+            Turn::White => self.board.white_rooks | self.board.white_queens,
+            Turn::Black => self.board.black_rooks | self.board.black_queens,
+        };
+        let unpinned_rooks = rooks & !self.pinned_pieces;
+        let own_pieces = match self.turn {
+            Turn::White => self.board.white_pieces(),
+            Turn::Black => self.board.black_pieces(),
+        };
+        let opponent_pieces = match self.turn {
+            Turn::White => self.board.black_pieces(),
+            Turn::Black => self.board.white_pieces(),
+        };
+
+        let raycast = Raycast::new(unpinned_rooks, opponent_pieces, own_pieces);
+
+        Direction::rook_directions().iter().for_each(|dir| {
+            let mut ray = raycast.get_full_ray(dir);
+            while ray != 0 {
+                let lsb = ray & (!ray + 1);
+                let backtrack_raycast = Raycast::new(lsb, unpinned_rooks, 0);
+                let origin = backtrack_raycast.get_first_hit(&dir.reversed());
+                moves.push(LongAlgebraicMove::new(origin, lsb));
+                ray &= ray - 1;
+            }
+        });
+
+        // Pinned rooks can still move along the same axis as the king
+        let pinned_rooks = rooks & self.pinned_pieces;
+        let own_king = match self.turn {
+            Turn::White => self.board.white_king,
+            Turn::Black => self.board.black_king,
+        };
+
+        let mut bb = pinned_rooks;
+        while bb != 0 {
+            let lsb = bb & (!bb + 1);
+            if own_king & get_occupied_files(lsb) != 0 {
+                let raycast = Raycast::new(lsb, opponent_pieces, own_pieces);
+                let north = raycast.get_full_ray(&Direction::N);
+                let south = raycast.get_full_ray(&Direction::S);
+                moves.extend(create_moves(north | south, lsb));
+            }
+            if own_king & get_occupied_ranks(lsb) != 0 {
+                let raycast = Raycast::new(lsb, opponent_pieces, own_pieces);
+                let west = raycast.get_full_ray(&Direction::W);
+                let east = raycast.get_full_ray(&Direction::E);
+                moves.extend(create_moves(west | east, lsb));
+            }
+
+            bb &= bb - 1;
+        }
+
+        moves
+    }
+
+    pub fn calculate_bishop_moves(&self) -> Vec<LongAlgebraicMove> {
+        let mut moves = Vec::new();
+        let bishops = match self.turn {
+            Turn::White => self.board.white_bishops | self.board.white_queens,
+            Turn::Black => self.board.black_bishops | self.board.black_queens,
+        };
+        let unpinned_bishops = bishops & !self.pinned_pieces;
+        let own_pieces = match self.turn {
+            Turn::White => self.board.white_pieces(),
+            Turn::Black => self.board.black_pieces(),
+        };
+        let opponent_pieces = match self.turn {
+            Turn::White => self.board.black_pieces(),
+            Turn::Black => self.board.white_pieces(),
+        };
+
+        println!("Unpinned bishops: {}", unpinned_bishops);
+        let raycast = Raycast::new(unpinned_bishops, opponent_pieces, own_pieces);
+
+        Direction::bishop_directions().iter().for_each(|dir| {
+            let mut ray = raycast.get_full_ray(dir);
+            while ray != 0 {
+                let lsb = ray & (!ray + 1);
+                let backtrack_raycast = Raycast::new(lsb, unpinned_bishops, 0);
+                let origin = backtrack_raycast.get_first_hit(&dir.reversed());
+                moves.push(LongAlgebraicMove::new(origin, lsb));
+                ray &= ray - 1;
+            }
+        });
+
+        // Pinned bishops can still move along the same axis as the king
+        let pinned_bishops = bishops & self.pinned_pieces;
+        let own_king = match self.turn {
+            Turn::White => self.board.white_king,
+            Turn::Black => self.board.black_king,
+        };
+
+        println!("Pinned bishops: {}", pinned_bishops);
+        let mut bb = pinned_bishops;
+        while bb != 0 {
+            let lsb = bb & (!bb + 1);
+            if own_king & get_occupied_diagonals(lsb) != 0 {
+                println!("LSB {} same diagonal as king.", lsb);
+                let raycast = Raycast::new(lsb, opponent_pieces, own_pieces);
+                let ne = raycast.get_full_ray(&Direction::NE);
+                let sw = raycast.get_full_ray(&Direction::SW);
+                moves.extend(create_moves(ne | sw, lsb));
+            }
+            if own_king & get_occupied_antidiagonals(lsb) != 0 {
+                println!("LSB {} same antidiagonal as king.", lsb);
+                let raycast = Raycast::new(lsb, opponent_pieces, own_pieces);
+                let nw = raycast.get_full_ray(&Direction::NW);
+                let se = raycast.get_full_ray(&Direction::SE);
+                moves.extend(create_moves(nw | se, lsb));
+            }
+
+            bb &= bb - 1;
+        }
+
+        moves
+    }
+}
+
+pub fn get_occupied_files(pieces: u64) -> u64 {
+    let mut result = 0;
+    let mut bb = pieces;
+
+    while bb != 0 {
+        let lsb = bb & (!bb + 1);
+        let file = (lsb.trailing_zeros() % 8) as u64;
+        result |= 0x0101010101010101 << file;
+        bb &= bb - 1;
+    }
+
+    result
+}
+
+pub fn get_occupied_ranks(pieces: u64) -> u64 {
+    let mut result = 0;
+    let mut bb = pieces;
+
+    while bb != 0 {
+        let lsb = bb & (!bb + 1);
+        let rank = (lsb.trailing_zeros() / 8) as u64;
+        result |= 0xFF << (rank * 8);
+        bb &= bb - 1;
+    }
+
+    result
+}
+
+pub fn get_occupied_diagonals(pieces: u64) -> u64 {
+    let mut result = 0;
+    let mut bb = pieces;
+
+    while bb != 0 {
+        let lsb = bb & (!bb + 1);
+        let position = lsb.trailing_zeros() as i32;
+
+        let rank = position / 8;
+        let file = position % 8;
+        let diag_index = file - rank + 7;
+
+        result |= DIAGONAL_MASKS[diag_index as usize];
+
+        bb &= bb - 1;
+    }
+
+    result
+}
+
+pub fn get_occupied_antidiagonals(pieces: u64) -> u64 {
+    let mut result = 0;
+    let mut bb = pieces;
+
+    while bb != 0 {
+        let lsb = bb & (!bb + 1);
+        let position = lsb.trailing_zeros() as i32;
+
+        let rank = position / 8;
+        let file = position % 8;
+        let adiag_index = file + rank;
+
+        result |= ANTIDIAGONAL_MASKS[adiag_index as usize];
+        bb &= bb - 1;
+    }
+
+    result
 }
 
 pub fn get_knight_dest_squares(knights: u64) -> u64 {
@@ -511,5 +701,95 @@ mod test {
 
         let knight_moves = game.calculate_knight_moves();
         assert_eq!(knight_moves.len(), 0);
+    }
+
+    #[test]
+    fn calculates_basic_rook_moves() {
+        let game = Game::from_fen("k7/8/3p4/3r3p/8/B2N4/qb6/7K b - - 0 1").unwrap();
+
+        let moves = game.calculate_rook_moves();
+
+        assert_eq!(moves.len(), 10);
+
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("a2a1").unwrap()));
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("a2a3").unwrap()));
+
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("d5c5").unwrap()));
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("d5b5").unwrap()));
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("d5a5").unwrap()));
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("d5e5").unwrap()));
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("d5f5").unwrap()));
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("d5g5").unwrap()));
+
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("d5d4").unwrap()));
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("d5d3").unwrap()));
+    }
+
+    #[test]
+    fn calculates_basic_rook_moves_pinned() {
+        let game = Game::from_fen("8/2p5/2kr2R1/1q5p/B7/3N4/1b6/7K b - - 0 1").unwrap();
+
+        let moves = game.calculate_rook_moves();
+        LongAlgebraicMove::print_list(&moves);
+
+        assert_eq!(moves.len(), 3);
+
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("d6e6").unwrap()));
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("d6f6").unwrap()));
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("d6g6").unwrap()));
+    }
+
+    #[test]
+    fn calculates_basic_bishop_moves() {
+        let game = Game::from_fen("1k6/6p1/3r4/1q1NB2p/4BR2/8/1b6/7K w - - 0 1").unwrap();
+
+        let moves = game.calculate_bishop_moves();
+
+        assert_eq!(moves.len(), 14);
+
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e5d6").unwrap()));
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e5f6").unwrap()));
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e5g7").unwrap()));
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e5d4").unwrap()));
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e5c3").unwrap()));
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e5b2").unwrap()));
+
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e4f5").unwrap()));
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e4g6").unwrap()));
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e4h7").unwrap()));
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e4f3").unwrap()));
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e4g2").unwrap()));
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e4d3").unwrap()));
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e4c2").unwrap()));
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e4b1").unwrap()));
+    }
+
+    #[test]
+    fn calculates_bishop_moves_pinned() {
+        let game = Game::from_fen("8/B3N1p1/3r4/2b4p/3kbR2/8/8/7K b - - 0 1").unwrap();
+
+        let moves = game.calculate_bishop_moves();
+        LongAlgebraicMove::print_list(&moves);
+
+        assert_eq!(moves.len(), 2);
+
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("c5b6").unwrap()));
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("c5a7").unwrap()));
+    }
+
+    #[test]
+    fn calculates_bishop_moves_opposite_pinned() {
+        let game = Game::from_fen("8/B3N1p1/3r4/2b3Rp/3k4/4b3/8/6QK b - - 0 1").unwrap();
+
+        let moves = game.calculate_bishop_moves();
+        LongAlgebraicMove::print_list(&moves);
+
+        assert_eq!(moves.len(), 4);
+
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("c5b6").unwrap()));
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("c5a7").unwrap()));
+
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e3f2").unwrap()));
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e3g1").unwrap()));
     }
 }

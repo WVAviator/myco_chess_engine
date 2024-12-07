@@ -92,6 +92,18 @@ impl Direction {
             Direction::NW => (current & !A_FILE & !EIGHTH_RANK) << 7,
         }
     }
+    pub fn reversed(&self) -> Direction {
+        match self {
+            Direction::N => Direction::S,
+            Direction::NE => Direction::SW,
+            Direction::E => Direction::W,
+            Direction::SE => Direction::NW,
+            Direction::S => Direction::N,
+            Direction::SW => Direction::NE,
+            Direction::W => Direction::E,
+            Direction::NW => Direction::SE,
+        }
+    }
 }
 
 #[cfg(test)]
