@@ -1,5 +1,7 @@
 use anyhow::{anyhow, bail, Context};
 
+use crate::cgame::moves::u64_to_algebraic;
+
 use super::{
     board::Board,
     castling_rights::CastlingRights,
@@ -7,6 +9,7 @@ use super::{
         A_FILE, B_FILE, EIGHTH_RANK, FIRST_RANK, G_FILE, H_FILE, SECOND_RANK, SEVENTH_RANK,
     },
     moves::{algebraic_to_u64, LongAlgebraicMove},
+    raycast::{Direction, Raycast},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -17,6 +20,8 @@ pub struct Game {
     en_passant: u64,
     halfmove_clock: u32,
     fullmove_number: u32,
+
+    pinned_pieces: u64,
 }
 
 impl Game {
@@ -70,14 +75,19 @@ impl Game {
                 fen_str
             ))?;
 
-        Ok(Self {
+        let mut game = Game {
             board,
             turn,
             castling_rights,
             en_passant,
             halfmove_clock,
             fullmove_number,
-        })
+            pinned_pieces: 0,
+        };
+
+        game.pinned_pieces = game.calculate_pinned_pieces();
+
+        Ok(game)
     }
 }
 
@@ -88,10 +98,64 @@ pub enum Turn {
 }
 
 impl Game {
+    pub fn calculate_pinned_pieces(&self) -> u64 {
+        let mut pinned_pieces = 0;
+        let king = match self.turn {
+            Turn::White => self.board.white_king,
+            Turn::Black => self.board.black_king,
+        };
+        let opponent_rooks = match self.turn {
+            Turn::White => self.board.black_rooks | self.board.black_queens,
+            Turn::Black => self.board.white_rooks | self.board.white_queens,
+        };
+        let opponent_bishops = match self.turn {
+            Turn::White => self.board.black_bishops | self.board.black_queens,
+            Turn::Black => self.board.white_bishops | self.board.white_queens,
+        };
+        let player_pieces = match self.turn {
+            Turn::White => self.board.white_pieces(),
+            Turn::Black => self.board.black_pieces(),
+        };
+        let opponent_pieces = match self.turn {
+            Turn::White => self.board.black_pieces(),
+            Turn::Black => self.board.white_pieces(),
+        };
+
+        let pinnable_raycast = Raycast::new(king, player_pieces, opponent_pieces);
+
+        // Cast in rook and bishop directions from the king to the first player piece, or stop if hit an opponent piece
+        // Then, from those player pieces, continue casting in the same direction detecting rook/bishop pieces - or stop
+        // if hitting any other piece. Only rooks and bishops (incl queens) can pin.
+
+        Direction::rook_directions().iter().for_each(|dir| {
+            let pinnable_piece = pinnable_raycast.get_first_hit(dir);
+            if pinnable_piece != 0 {
+                let pin_blockers = self.board.occupied() & !opponent_rooks;
+                let pinner_raycast = Raycast::new(pinnable_piece, opponent_rooks, pin_blockers);
+                if pinner_raycast.get_first_hit(dir) != 0 {
+                    pinned_pieces |= pinnable_piece;
+                }
+            }
+        });
+
+        Direction::bishop_directions().iter().for_each(|dir| {
+            let pinnable_piece = pinnable_raycast.get_first_hit(dir);
+            if pinnable_piece != 0 {
+                let pin_blockers = self.board.occupied() & !opponent_bishops;
+                let pinner_raycast = Raycast::new(pinnable_piece, opponent_bishops, pin_blockers);
+                if pinner_raycast.get_first_hit(dir) != 0 {
+                    pinned_pieces |= pinnable_piece;
+                }
+            }
+        });
+
+        pinned_pieces
+    }
+
     pub fn calculate_white_pawn_moves(&self) -> Vec<LongAlgebraicMove> {
         let mut moves = Vec::new();
 
-        let white_pawns = self.board.white_pawns;
+        let white_pawns = self.board.white_pawns & !self.pinned_pieces;
         let occupied = self.board.occupied();
         let black_pieces = self.board.black_pieces();
 
@@ -129,7 +193,7 @@ impl Game {
     pub fn calculate_black_pawn_moves(&self) -> Vec<LongAlgebraicMove> {
         let mut moves = Vec::new();
 
-        let black_pawns = self.board.black_pawns;
+        let black_pawns = self.board.black_pawns & !self.pinned_pieces;
         let occupied = self.board.occupied();
         let white_pieces = self.board.white_pieces();
 
@@ -204,7 +268,7 @@ impl Game {
         let knights = match self.turn {
             Turn::White => self.board.white_knights,
             Turn::Black => self.board.black_knights,
-        };
+        } & !self.pinned_pieces;
         let own_pieces = match self.turn {
             Turn::White => self.board.white_pieces(),
             Turn::Black => self.board.black_pieces(),
@@ -309,6 +373,7 @@ mod test {
                 en_passant: 0,
                 halfmove_clock: 0,
                 fullmove_number: 1,
+                pinned_pieces: 0,
             }
         );
     }
@@ -427,5 +492,24 @@ mod test {
         assert!(moves.contains(&LongAlgebraicMove::from_algebraic("g3h5").unwrap()));
         assert!(moves.contains(&LongAlgebraicMove::from_algebraic("g3f5").unwrap()));
         assert!(moves.contains(&LongAlgebraicMove::from_algebraic("g3f1").unwrap()));
+    }
+
+    #[test]
+    fn identifies_pinned_pieces() {
+        let game = Game::from_fen("k3r3/4p2b/6P1/8/qBB1K3/4N3/8/4r3 w - - 0 1").unwrap();
+        let expected_pins = 0x400000100000; // e3 and g6
+        let actual_pins = game.calculate_pinned_pieces();
+        assert_eq!(actual_pins, expected_pins);
+    }
+
+    #[test]
+    fn no_moves_for_pinned_pieces() {
+        let game = Game::from_fen("k3r3/4p2b/6P1/8/qPP1K3/4N3/8/4r3 w - - 0 1").unwrap();
+
+        let pawn_moves = game.calculate_pawn_moves();
+        assert_eq!(pawn_moves.len(), 2);
+
+        let knight_moves = game.calculate_knight_moves();
+        assert_eq!(knight_moves.len(), 0);
     }
 }
