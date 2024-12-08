@@ -295,19 +295,10 @@ impl Game {
 
     pub fn calculate_rook_moves(&self) -> Vec<LongAlgebraicMove> {
         let mut moves = Vec::new();
-        let rooks = match self.turn {
-            Turn::White => self.board.white_rooks | self.board.white_queens,
-            Turn::Black => self.board.black_rooks | self.board.black_queens,
-        };
+        let rooks = self.board.rooks(&self.turn) | self.board.queens(&self.turn);
         let unpinned_rooks = rooks & !self.pinned_pieces;
-        let own_pieces = match self.turn {
-            Turn::White => self.board.white_pieces(),
-            Turn::Black => self.board.black_pieces(),
-        };
-        let opponent_pieces = match self.turn {
-            Turn::White => self.board.black_pieces(),
-            Turn::Black => self.board.white_pieces(),
-        };
+        let own_pieces = self.board.all_pieces(&self.turn);
+        let opponent_pieces = self.board.all_pieces(&self.turn.other());
 
         let raycast = Raycast::new(unpinned_rooks, opponent_pieces, own_pieces);
 
@@ -367,7 +358,6 @@ impl Game {
             Turn::Black => self.board.white_pieces(),
         };
 
-        println!("Unpinned bishops: {}", unpinned_bishops);
         let raycast = Raycast::new(unpinned_bishops, opponent_pieces, own_pieces);
 
         Direction::bishop_directions().iter().for_each(|dir| {
@@ -388,19 +378,16 @@ impl Game {
             Turn::Black => self.board.black_king,
         };
 
-        println!("Pinned bishops: {}", pinned_bishops);
         let mut bb = pinned_bishops;
         while bb != 0 {
             let lsb = bb & (!bb + 1);
             if own_king & get_occupied_diagonals(lsb) != 0 {
-                println!("LSB {} same diagonal as king.", lsb);
                 let raycast = Raycast::new(lsb, opponent_pieces, own_pieces);
                 let ne = raycast.get_full_ray(&Direction::NE);
                 let sw = raycast.get_full_ray(&Direction::SW);
                 moves.extend(create_moves(ne | sw, lsb));
             }
             if own_king & get_occupied_antidiagonals(lsb) != 0 {
-                println!("LSB {} same antidiagonal as king.", lsb);
                 let raycast = Raycast::new(lsb, opponent_pieces, own_pieces);
                 let nw = raycast.get_full_ray(&Direction::NW);
                 let se = raycast.get_full_ray(&Direction::SE);
@@ -453,23 +440,21 @@ impl Game {
         checking_pieces
     }
 
-    /// Gets the vision of all the opponents pieces. Intended for use in determining legal moves for the king.
-    pub fn get_opponent_vision(&self) -> u64 {
+    pub fn get_board_vision(board: &Board, turn: &Turn) -> u64 {
         let mut vision = 0;
 
-        let own_pieces = self.board.all_pieces(&self.turn);
-        let opponent_pieces = self.board.all_pieces(&self.turn.other());
+        let own_pieces = board.all_pieces(&turn);
+        let opponent_pieces = board.all_pieces(&turn.other());
 
-        let pawns = self.board.pawns(&self.turn.other());
-        let knights = self.board.knights(&self.turn.other());
-        let rooks = self.board.rooks(&self.turn.other()) | self.board.queens(&self.turn.other());
-        let bishops =
-            self.board.bishops(&self.turn.other()) | self.board.queens(&self.turn.other());
-        let king = self.board.king(&self.turn.other());
+        let pawns = board.pawns(&turn.other());
+        let knights = board.knights(&turn.other());
+        let rooks = board.rooks(&turn.other()) | board.queens(&turn.other());
+        let bishops = board.bishops(&turn.other()) | board.queens(&turn.other());
+        let king = board.king(&turn.other());
 
         vision |= get_king_dest_squares(king);
 
-        vision |= match self.turn.other() {
+        vision |= match turn.other() {
             Turn::White => (pawns << 7) | (pawns << 9),
             Turn::Black => (pawns >> 7) | (pawns >> 9),
         };
@@ -487,6 +472,35 @@ impl Game {
         });
 
         vision
+    }
+
+    /// Gets the vision of all the opponents pieces. Intended for use in determining legal moves for the king.
+    pub fn get_opponent_vision(&self) -> u64 {
+        Game::get_board_vision(&self.board, &self.turn)
+    }
+
+    pub fn simulate_move(&self, lmove: &LongAlgebraicMove) -> bool {
+        let mut simulated_board = self.board.clone();
+        simulated_board.apply_move(&lmove);
+
+        let opponent_vision = Game::get_board_vision(&simulated_board, &self.turn);
+
+        opponent_vision & simulated_board.king(&self.turn) == 0
+    }
+
+    pub fn calculate_legal_moves(&self) -> Vec<LongAlgebraicMove> {
+        let mut moves = Vec::new();
+
+        moves.extend(self.calculate_bishop_moves());
+        moves.extend(self.calculate_rook_moves());
+        moves.extend(self.calculate_pawn_moves());
+        moves.extend(self.calculate_king_moves());
+        moves.extend(self.calculate_knight_moves());
+
+        moves
+            .into_iter()
+            .filter(|m| self.simulate_move(m))
+            .collect()
     }
 }
 
@@ -718,12 +732,11 @@ mod test {
         let game = Game::from_fen("8/6k1/8/8/8/1n6/KP6/8 w - - 0 1").unwrap();
         let moves = game.calculate_king_moves();
 
-        assert_eq!(moves.len(), 4);
+        assert_eq!(moves.len(), 3);
 
         assert!(moves.contains(&LongAlgebraicMove::from_algebraic("a2a3").unwrap()));
         assert!(moves.contains(&LongAlgebraicMove::from_algebraic("a2b3").unwrap()));
         assert!(moves.contains(&LongAlgebraicMove::from_algebraic("a2b1").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("a2a1").unwrap()));
     }
 
     #[test]
@@ -732,15 +745,13 @@ mod test {
             Game::from_fen("rn1qk1r1/pbpp1ppp/1p6/2b1p3/4P3/1PNP3N/PBPQBnPP/R3K2R w KQq - 0 1")
                 .unwrap();
         let moves = game.calculate_king_moves();
+        LongAlgebraicMove::print_list(&moves);
 
-        assert_eq!(moves.len(), 5);
+        assert_eq!(moves.len(), 2);
 
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e1d1").unwrap()));
         assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e1f1").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e1f2").unwrap()));
 
         assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e1g1").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e1c1").unwrap()));
     }
 
     #[test]
@@ -850,6 +861,22 @@ mod test {
     }
 
     #[test]
+    fn calculates_parallel_rook_moves() {
+        let game =
+            Game::from_fen("r1bq1rk1/pppn1ppp/3bpn2/3p4/2PP4/5NP1/PP2PPBP/RNBQ1RK1 w - - 0 1")
+                .unwrap();
+
+        let moves = game.calculate_rook_moves();
+
+        assert_eq!(moves.len(), 4);
+
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("d1d2").unwrap()));
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("d1d3").unwrap()));
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("d1e1").unwrap()));
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("f1e1").unwrap()));
+    }
+
+    #[test]
     fn calculates_basic_rook_moves_pinned() {
         let game = Game::from_fen("8/2p5/2kr2R1/1q5p/B7/3N4/1b6/7K b - - 0 1").unwrap();
 
@@ -943,5 +970,58 @@ mod test {
         let game = Game::from_fen("8/8/8/4k3/1pb2p2/1r3P2/6NK/1n1Q2R1 b - - 0 1").unwrap();
         let opponent_vision = game.get_opponent_vision();
         assert_eq!(opponent_vision, 0x8080808f8fa5cfe);
+    }
+
+    #[test]
+    fn simluate_move_false_if_illegal() {
+        let game = Game::from_fen("8/8/4k3/8/5N2/8/1K6/4R3 b - - 0 1").unwrap();
+        let lmove = LongAlgebraicMove::from_algebraic("e6e7").unwrap();
+        assert_eq!(game.simulate_move(&lmove), false);
+    }
+
+    #[test]
+    fn simluate_move_true_if_legal() {
+        let game = Game::from_fen("8/8/4k3/8/5N2/8/1K6/4R3 b - - 0 1").unwrap();
+        let lmove = LongAlgebraicMove::from_algebraic("e6f6").unwrap();
+        assert_eq!(game.simulate_move(&lmove), true);
+    }
+
+    #[test]
+    fn simluate_move_true_if_blocks_check() {
+        let game = Game::from_fen("8/8/4k3/8/8/3b4/1K6/4R3 b - - 0 1").unwrap();
+        let block_check = LongAlgebraicMove::from_algebraic("d3e4").unwrap();
+        let allow_check = LongAlgebraicMove::from_algebraic("d3f5").unwrap();
+        assert_eq!(game.simulate_move(&block_check), true);
+        assert_eq!(game.simulate_move(&allow_check), false);
+    }
+
+    #[test]
+    fn legal_move_count_correct_starting_position() {
+        let game = Game::new_default();
+        let moves = game.calculate_legal_moves();
+        assert_eq!(moves.len(), 20);
+    }
+
+    #[test]
+    fn legal_move_count_correct_middle_game() {
+        let game =
+            Game::from_fen("r1bq1rk1/pppn1ppp/3bpn2/3p4/2PP4/5NP1/PP2PPBP/RNBQ1RK1 w - - 0 1")
+                .unwrap();
+        let moves = game.calculate_legal_moves();
+        assert_eq!(moves.len(), 34);
+    }
+
+    #[test]
+    fn legal_move_count_knight_king_attack() {
+        let game = Game::from_fen("8/1k6/8/3N4/5n2/4P3/6KB/r7 w - - 0 1").unwrap();
+        let moves = game.calculate_legal_moves();
+        assert_eq!(moves.len(), 6);
+    }
+
+    #[test]
+    fn legal_move_count_queen_king_attack() {
+        let game = Game::from_fen("8/1k4q1/8/4N3/8/3nP3/6KB/r7 w - - 0 1").unwrap();
+        let moves = game.calculate_legal_moves();
+        assert_eq!(moves.len(), 5);
     }
 }

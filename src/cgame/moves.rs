@@ -26,6 +26,22 @@ impl LongAlgebraicMove {
         }
     }
 
+    pub fn get_bits(&self) -> u64 {
+        self.orig_square | self.dest_square
+    }
+
+    pub fn get_orig(&self) -> u64 {
+        self.orig_square
+    }
+
+    pub fn get_dest(&self) -> u64 {
+        self.dest_square
+    }
+
+    pub fn get_promotion(&self) -> &Option<Promotion> {
+        &self.promotion
+    }
+
     pub fn new_promotion(orig_square: u64, dest_square: u64) -> Vec<Self> {
         vec![
             LongAlgebraicMove {

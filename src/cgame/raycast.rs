@@ -42,19 +42,15 @@ impl Raycast {
         let mut current = self.starting_position;
         let mut ray = 0;
 
-        // Do not detect or be blocked by self
-        let blocked = self.blocked_layer & !self.starting_position;
-        let detect = self.detection_layer & !self.starting_position;
-
         while current != 0 {
             // Advance the ray first
             current = direction.advance(current);
             // Detect if hit a blocker, flip to 0 if so
-            current &= !blocked;
+            current &= !self.blocked_layer;
             // Add the current position to the ray
             ray |= current;
             // If hit the detect layer, flip the bit to 0 - after having added the square to ray (detects captures)
-            current &= !detect;
+            current &= !self.detection_layer;
         }
 
         ray

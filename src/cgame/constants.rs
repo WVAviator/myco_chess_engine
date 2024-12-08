@@ -1,5 +1,7 @@
 pub const FIRST_RANK: u64 = 0xff;
 pub const SECOND_RANK: u64 = 0xff00;
+pub const THIRD_RANK: u64 = 0xff0000;
+pub const SIXTH_RANK: u64 = 0xff0000000000;
 pub const SEVENTH_RANK: u64 = 0xff000000000000;
 pub const EIGHTH_RANK: u64 = 0xff00000000000000;
 
