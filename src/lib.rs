@@ -1,1 +1,1 @@
-mod cgame;
+pub mod cgame;

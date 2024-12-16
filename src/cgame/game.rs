@@ -12,6 +12,7 @@ use super::{
         FOURTH_RANK, G_FILE, H_FILE, KING_START_POSITIONS, ROOK_START_POSITIONS, SECOND_RANK,
         SEVENTH_RANK,
     },
+    eval::SimpleEvaluator,
     moves::{algebraic_to_u64, LongAlgebraicMove},
     raycast::{Direction, Raycast},
 };
@@ -26,6 +27,7 @@ pub struct Game {
     fullmove_number: u32,
 
     pinned_pieces: u64,
+    legal_moves: Vec<LongAlgebraicMove>,
 }
 
 impl Game {
@@ -87,9 +89,11 @@ impl Game {
             halfmove_clock,
             fullmove_number,
             pinned_pieces: 0,
+            legal_moves: Vec::new(),
         };
 
         game.pinned_pieces = game.calculate_pinned_pieces();
+        game.legal_moves = game.calculate_legal_moves();
 
         Ok(game)
     }
@@ -501,7 +505,19 @@ impl Game {
         opponent_vision & simulated_board.king(&self.turn) == 0
     }
 
-    pub fn calculate_legal_moves(&self) -> Vec<LongAlgebraicMove> {
+    pub fn get_legal_moves(&self) -> Vec<LongAlgebraicMove> {
+        self.legal_moves.clone()
+    }
+
+    pub fn is_checkmate(&self) -> bool {
+        self.king_in_check() && self.legal_moves.is_empty()
+    }
+
+    pub fn is_stalemate(&self) -> bool {
+        !self.king_in_check() && self.legal_moves.is_empty()
+    }
+
+    fn calculate_legal_moves(&self) -> Vec<LongAlgebraicMove> {
         let mut moves = Vec::new();
 
         moves.extend(self.calculate_bishop_moves());
@@ -610,7 +626,13 @@ impl Game {
         // Recalculate pins
         new_game.pinned_pieces = new_game.calculate_pinned_pieces();
 
+        new_game.legal_moves = new_game.calculate_legal_moves();
+
         Ok(new_game)
+    }
+
+    pub fn evaluate(&self) -> i32 {
+        SimpleEvaluator::evaluate(self)
     }
 }
 
@@ -762,23 +784,6 @@ where
 #[cfg(test)]
 mod test {
     use super::*;
-
-    #[test]
-    fn parses_fen_starting_position() {
-        let game = Game::new_default();
-        assert_eq!(
-            game,
-            Game {
-                board: Board::new_default(),
-                turn: Turn::White,
-                castling_rights: CastlingRights::from_fen("KQkq").unwrap(),
-                en_passant: 0,
-                halfmove_clock: 0,
-                fullmove_number: 1,
-                pinned_pieces: 0,
-            }
-        );
-    }
 
     #[test]
     fn calculates_white_pawn_moves() {

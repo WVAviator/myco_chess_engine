@@ -2,11 +2,12 @@ use std::fmt;
 
 use anyhow::anyhow;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Eq)]
 pub struct LongAlgebraicMove {
     orig_square: u64,
     dest_square: u64,
     promotion: Option<Promotion>,
+    pub evaluation: i32,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -23,6 +24,16 @@ impl LongAlgebraicMove {
             orig_square,
             dest_square,
             promotion: None,
+            evaluation: 0,
+        }
+    }
+
+    pub fn empty_evaluation(evaluation: i32) -> Self {
+        Self {
+            orig_square: 0,
+            dest_square: 0,
+            promotion: None,
+            evaluation,
         }
     }
 
@@ -48,21 +59,25 @@ impl LongAlgebraicMove {
                 orig_square,
                 dest_square,
                 promotion: Some(Promotion::Rook),
+                evaluation: 0,
             },
             LongAlgebraicMove {
                 orig_square,
                 dest_square,
                 promotion: Some(Promotion::Bishop),
+                evaluation: 0,
             },
             LongAlgebraicMove {
                 orig_square,
                 dest_square,
                 promotion: Some(Promotion::Knight),
+                evaluation: 0,
             },
             LongAlgebraicMove {
                 orig_square,
                 dest_square,
                 promotion: Some(Promotion::Queen),
+                evaluation: 0,
             },
         ]
     }
@@ -107,6 +122,7 @@ impl LongAlgebraicMove {
             orig_square,
             dest_square,
             promotion,
+            evaluation: 0,
         })
     }
 }
@@ -169,6 +185,26 @@ impl LongAlgebraicMove {
     }
 }
 
+impl PartialEq for LongAlgebraicMove {
+    fn eq(&self, other: &Self) -> bool {
+        self.orig_square == other.orig_square
+            && self.dest_square == other.dest_square
+            && self.promotion == other.promotion
+    }
+}
+
+impl PartialOrd for LongAlgebraicMove {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.evaluation.partial_cmp(&other.evaluation)
+    }
+}
+
+impl Ord for LongAlgebraicMove {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.evaluation.cmp(&other.evaluation)
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -199,6 +235,7 @@ mod test {
             orig_square: 1 << 52,
             dest_square: 1 << 60,
             promotion: Some(Promotion::Queen),
+            evaluation: 0,
         };
         let long_algebraic_str = long_algebraic_move.to_algebraic().unwrap();
         assert_eq!(long_algebraic_str, "e7e8q");
@@ -210,6 +247,7 @@ mod test {
             orig_square: 1 << 52,
             dest_square: 1 << 60,
             promotion: Some(Promotion::Queen),
+            evaluation: 0,
         };
         assert_eq!(
             LongAlgebraicMove::from_algebraic("e7e8q").unwrap(),
