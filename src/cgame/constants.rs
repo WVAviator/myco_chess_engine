@@ -1,6 +1,8 @@
 pub const FIRST_RANK: u64 = 0xff;
 pub const SECOND_RANK: u64 = 0xff00;
 pub const THIRD_RANK: u64 = 0xff0000;
+pub const FOURTH_RANK: u64 = 0xff000000;
+pub const FIFTH_RANK: u64 = 0xff00000000;
 pub const SIXTH_RANK: u64 = 0xff0000000000;
 pub const SEVENTH_RANK: u64 = 0xff000000000000;
 pub const EIGHTH_RANK: u64 = 0xff00000000000000;
@@ -9,6 +11,9 @@ pub const A_FILE: u64 = 0x101010101010101;
 pub const B_FILE: u64 = 0x202020202020202;
 pub const G_FILE: u64 = 0x4040404040404040;
 pub const H_FILE: u64 = 0x8080808080808080;
+
+pub const ROOK_START_POSITIONS: u64 = 0x8100000000000081;
+pub const KING_START_POSITIONS: u64 = 0x1000000000000010;
 
 // Diagonal - / - NE and SW
 pub const DIAGONAL_MASKS: [u64; 15] = [

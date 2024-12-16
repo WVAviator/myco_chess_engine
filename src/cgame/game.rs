@@ -8,8 +8,9 @@ use super::{
     board::Board,
     castling_rights::CastlingRights,
     constants::{
-        ANTIDIAGONAL_MASKS, A_FILE, B_FILE, DIAGONAL_MASKS, EIGHTH_RANK, FIRST_RANK, G_FILE,
-        H_FILE, SECOND_RANK, SEVENTH_RANK,
+        ANTIDIAGONAL_MASKS, A_FILE, B_FILE, DIAGONAL_MASKS, EIGHTH_RANK, FIFTH_RANK, FIRST_RANK,
+        FOURTH_RANK, G_FILE, H_FILE, KING_START_POSITIONS, ROOK_START_POSITIONS, SECOND_RANK,
+        SEVENTH_RANK,
     },
     moves::{algebraic_to_u64, LongAlgebraicMove},
     raycast::{Direction, Raycast},
@@ -400,6 +401,10 @@ impl Game {
         moves
     }
 
+    pub fn king_in_check(&self) -> bool {
+        self.calculate_checking_king() != 0
+    }
+
     pub fn calculate_checking_king(&self) -> u64 {
         let king = self.board.king(&self.turn);
 
@@ -501,6 +506,103 @@ impl Game {
             .into_iter()
             .filter(|m| self.simulate_move(m))
             .collect()
+    }
+
+    pub fn apply_move(&self, lmove: &LongAlgebraicMove) -> Result<Game, anyhow::Error> {
+        let mut new_game = self.clone();
+
+        // Handling enpassant and halfmove clock
+        let is_pawn_move = lmove.get_orig()
+            & match new_game.turn {
+                Turn::White => new_game.board.white_pawns,
+                Turn::Black => new_game.board.black_pawns,
+            }
+            != 0;
+        let is_enpassant = lmove.get_dest() & new_game.en_passant != 0 && is_pawn_move;
+        let is_capture = lmove.get_dest()
+            & match new_game.turn {
+                Turn::White => new_game.board.black_pieces(),
+                Turn::Black => new_game.board.white_pieces(),
+            }
+            != 0
+            || is_enpassant;
+
+        if is_pawn_move || is_capture {
+            new_game.halfmove_clock = 0;
+        } else {
+            new_game.halfmove_clock += 1;
+        }
+
+        let is_pawn_double_advance = is_pawn_move
+            && lmove.get_orig() & (SECOND_RANK | SEVENTH_RANK) != 0
+            && lmove.get_dest() & (FOURTH_RANK | FIFTH_RANK) != 0;
+
+        if is_pawn_double_advance {
+            match new_game.turn {
+                Turn::White => new_game.en_passant = lmove.get_orig() << 8,
+                Turn::Black => new_game.en_passant = lmove.get_orig() >> 8,
+            }
+        } else {
+            new_game.en_passant = 0;
+        }
+
+        // Handling castling
+        let is_rook_move = lmove.get_orig() & ROOK_START_POSITIONS != 0;
+        let is_king_move = lmove.get_orig() & KING_START_POSITIONS != 0;
+
+        if is_rook_move {
+            if lmove.get_orig() == 0x1 {
+                new_game
+                    .castling_rights
+                    .unset(CastlingRights::WHITE_QUEENSIDE);
+            } else if lmove.get_orig() == 0x80 {
+                new_game
+                    .castling_rights
+                    .unset(CastlingRights::WHITE_KINGSIDE);
+            } else if lmove.get_orig() == 0x100000000000000 {
+                new_game
+                    .castling_rights
+                    .unset(CastlingRights::BLACK_QUEENSIDE);
+            } else if lmove.get_orig() == 0x8000000000000000 {
+                new_game
+                    .castling_rights
+                    .unset(CastlingRights::BLACK_KINGSIDE);
+            }
+        }
+
+        if is_king_move {
+            if lmove.get_orig() == 0x10 {
+                new_game
+                    .castling_rights
+                    .unset(CastlingRights::WHITE_KINGSIDE);
+                new_game
+                    .castling_rights
+                    .unset(CastlingRights::WHITE_QUEENSIDE);
+            } else if lmove.get_orig() == 0x1000000000000000 {
+                new_game
+                    .castling_rights
+                    .unset(CastlingRights::BLACK_KINGSIDE);
+                new_game
+                    .castling_rights
+                    .unset(CastlingRights::BLACK_QUEENSIDE);
+            }
+        }
+
+        // Note: promotions handled by the board apply_move function
+
+        // Advance turn
+        new_game.turn = new_game.turn.other();
+        if new_game.turn == Turn::White {
+            new_game.fullmove_number += 1;
+        }
+
+        // Complete move
+        new_game.board.apply_move(lmove);
+
+        // Recalculate pins
+        new_game.pinned_pieces = new_game.calculate_pinned_pieces();
+
+        Ok(new_game)
     }
 }
 
@@ -1023,5 +1125,52 @@ mod test {
         let game = Game::from_fen("8/1k4q1/8/4N3/8/3nP3/6KB/r7 w - - 0 1").unwrap();
         let moves = game.calculate_legal_moves();
         assert_eq!(moves.len(), 5);
+    }
+
+    #[test]
+    fn properly_applies_move_pawn_double_advance() {
+        let position1 =
+            Game::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap();
+        let position2 =
+            Game::from_fen("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1").unwrap();
+        let position3 =
+            Game::from_fen("rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2")
+                .unwrap();
+
+        let lmove1 = LongAlgebraicMove::from_algebraic("e2e4").unwrap();
+        let lmove2 = LongAlgebraicMove::from_algebraic("e7e5").unwrap();
+
+        let mut game = position1.clone();
+        assert_eq!(game, position1);
+
+        game = game.apply_move(&lmove1).unwrap();
+        assert_eq!(game, position2);
+
+        game = game.apply_move(&lmove2).unwrap();
+        assert_eq!(game, position3);
+    }
+
+    #[test]
+    fn properly_applies_move_castles() {
+        let position1 =
+            Game::from_fen("rnbqk2r/ppppnppp/8/2b1p3/4P3/3B1N2/PPPP1PPP/RNBQK2R w KQkq - 4 4")
+                .unwrap();
+        let position2 =
+            Game::from_fen("rnbqk2r/ppppnppp/8/2b1p3/4P3/3B1N2/PPPP1PPP/RNBQ1RK1 b kq - 5 4")
+                .unwrap();
+        let position3 =
+            Game::from_fen("rnbqkr2/ppppnppp/8/2b1p3/4P3/3B1N2/PPPP1PPP/RNBQ1RK1 w q - 6 5")
+                .unwrap();
+        let lmove1 = LongAlgebraicMove::from_algebraic("e1g1").unwrap();
+        let lmove2 = LongAlgebraicMove::from_algebraic("h8f8").unwrap();
+
+        let mut game = position1.clone();
+        assert_eq!(game, position1);
+
+        game = game.apply_move(&lmove1).unwrap();
+        assert_eq!(game, position2);
+
+        game = game.apply_move(&lmove2).unwrap();
+        assert_eq!(game, position3);
     }
 }
