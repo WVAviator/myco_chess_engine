@@ -18,8 +18,8 @@ use super::{
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Game {
-    board: Board,
-    turn: Turn,
+    pub board: Board,
+    pub turn: Turn,
     castling_rights: CastlingRights,
     en_passant: u64,
     halfmove_clock: u32,
@@ -443,6 +443,14 @@ impl Game {
         });
 
         checking_pieces
+    }
+
+    pub fn get_white_vision(&self) -> u64 {
+        Game::get_board_vision(&self.board, &Turn::White)
+    }
+
+    pub fn get_black_vision(&self) -> u64 {
+        Game::get_board_vision(&self.board, &Turn::Black)
     }
 
     pub fn get_board_vision(board: &Board, turn: &Turn) -> u64 {
