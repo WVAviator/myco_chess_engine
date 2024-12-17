@@ -220,26 +220,26 @@ impl Game {
         let double_advance = ((((black_pawns & SEVENTH_RANK) >> 8) & !occupied) >> 8) & !occupied;
         // Any pawns not on the a file can take any black pieces diagonally to the left
         let take_left =
-            ((black_pawns & !A_FILE & !SECOND_RANK) >> 7) & (white_pieces | self.en_passant);
+            ((black_pawns & !A_FILE & !SECOND_RANK) >> 9) & (white_pieces | self.en_passant);
         // Any pawns not on the h file can take any black pieces diagonally to the right
         let take_right =
-            ((black_pawns & !H_FILE & !SECOND_RANK) >> 9) & (white_pieces | self.en_passant);
+            ((black_pawns & !H_FILE & !SECOND_RANK) >> 7) & (white_pieces | self.en_passant);
         // Pawns on the seventh rank can promote if not blocked
         let promotion_advance = ((black_pawns & SECOND_RANK) >> 8) & !occupied;
-        let promotion_take_left = ((black_pawns & !A_FILE & SECOND_RANK) >> 7) & white_pieces;
-        let promotion_take_right = ((black_pawns & !H_FILE & SECOND_RANK) >> 9) & white_pieces;
+        let promotion_take_left = ((black_pawns & !A_FILE & SECOND_RANK) >> 9) & white_pieces;
+        let promotion_take_right = ((black_pawns & !H_FILE & SECOND_RANK) >> 7) & white_pieces;
 
         moves.extend(backtrack_moves(single_advance, |lsb| lsb << 8));
         moves.extend(backtrack_moves(double_advance, |lsb| lsb << 16));
-        moves.extend(backtrack_moves(take_left, |lsb| lsb << 7));
-        moves.extend(backtrack_moves(take_right, |lsb| lsb << 9));
+        moves.extend(backtrack_moves(take_left, |lsb| lsb << 9));
+        moves.extend(backtrack_moves(take_right, |lsb| lsb << 7));
 
         moves.extend(backtrack_moves_promotion(promotion_advance, |lsb| lsb << 8));
         moves.extend(backtrack_moves_promotion(promotion_take_left, |lsb| {
-            lsb << 7
+            lsb << 9
         }));
         moves.extend(backtrack_moves_promotion(promotion_take_right, |lsb| {
-            lsb << 9
+            lsb << 7
         }));
 
         moves
@@ -830,6 +830,14 @@ mod test {
         assert!(moves.contains(&LongAlgebraicMove::from_algebraic("d7d5").unwrap()));
         assert!(moves.contains(&LongAlgebraicMove::from_algebraic("c7c6").unwrap()));
         assert!(moves.contains(&LongAlgebraicMove::from_algebraic("c7b6").unwrap()));
+    }
+
+    #[test]
+    fn pawn_moves_cannot_wrap() {
+        let game = Game::from_fen("3R1n1k/1B4pp/1p6/5p2/p7/4P1P1/PP3P1P/RN4K1 b - - 0 48").unwrap();
+        let moves = game.calculate_black_pawn_moves();
+
+        assert!(!moves.contains(&LongAlgebraicMove::from_algebraic("a4h2").unwrap()));
     }
 
     #[test]

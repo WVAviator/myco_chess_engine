@@ -7,7 +7,7 @@ use anyhow::{anyhow, bail, Context};
 use rust_chess_engine::cgame::{engine::SimpleEngine, game::Game, moves::LongAlgebraicMove};
 
 fn main() {
-    println!("Hello, world!");
+    repl();
 }
 
 pub fn repl() {
@@ -22,7 +22,7 @@ pub fn repl() {
             panic!("info string \"failed to initialize stdin\" ");
         }
 
-        match buffer.as_str() {
+        match buffer.as_str().trim_end() {
             "uci" => {
                 println!("id name Myco");
                 println!("id author WVAviator");
@@ -54,6 +54,9 @@ pub fn repl() {
                         );
                     })
                 );
+                current_game = current_game.apply_move(&best_move).unwrap_or_else(|error| {
+                    panic!("info string failed to apply calculated move\n{}", error)
+                });
             }
             "stop" => {}
             "ponderhit" => {}
@@ -99,12 +102,12 @@ fn extract_fen(command: &str) -> Option<String> {
 
 fn extract_moves(command: &str) -> Result<Vec<LongAlgebraicMove>, anyhow::Error> {
     if command.starts_with("position startpos") {
-        let parts: Vec<&str> = command.splitn(3, ' ').collect();
+        let parts: Vec<&str> = command.splitn(4, ' ').collect();
         if parts.len() == 2 {
             return Ok(Vec::new());
         }
 
-        return parts[2]
+        return parts[3]
             .split(' ')
             .map(|lan| LongAlgebraicMove::from_algebraic(lan))
             .collect();

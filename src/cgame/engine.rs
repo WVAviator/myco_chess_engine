@@ -70,11 +70,6 @@ impl<'a> SimpleEngine<'a> {
 
         while Instant::now() < deadline {
             if let Some(lmove) = moves_heap.pop() {
-                println!(
-                    "info string evaluating move {} for white",
-                    lmove.to_algebraic().unwrap()
-                );
-
                 let next_turn = self.game.apply_move(&lmove)?;
                 let next_engine = SimpleEngine::new(&next_turn);
                 let time_to_eval = (deadline.duration_since(Instant::now())).div_f32(3.0);
@@ -84,12 +79,6 @@ impl<'a> SimpleEngine<'a> {
                     best_move = lmove;
                     best_move_eval = best_response.evaluation;
                     best_move.evaluation = best_response.evaluation;
-                    println!(
-                        "info string best move so far for white at depth remaining {}: {} {}",
-                        depth,
-                        best_move.to_algebraic().unwrap(),
-                        best_move.evaluation
-                    );
                 }
 
                 if best_move.evaluation == i32::MAX {
@@ -141,11 +130,6 @@ impl<'a> SimpleEngine<'a> {
 
         while Instant::now() < deadline {
             if let Some(Reverse(lmove)) = moves_heap.pop() {
-                println!(
-                    "info string evaluating move {} for black",
-                    lmove.to_algebraic().unwrap()
-                );
-
                 let next_turn = self.game.apply_move(&lmove)?;
                 let next_engine = SimpleEngine::new(&next_turn);
                 let time_to_eval = (deadline.duration_since(Instant::now())).div_f32(3.0);
@@ -155,12 +139,6 @@ impl<'a> SimpleEngine<'a> {
                     best_move = lmove;
                     best_move_eval = best_response.evaluation;
                     best_move.evaluation = best_response.evaluation;
-                    println!(
-                        "info string best move so far for black at depth remaining {}: {} {}",
-                        depth,
-                        best_move.to_algebraic().unwrap(),
-                        best_move.evaluation
-                    );
                 }
 
                 if best_move.evaluation == i32::MIN {
