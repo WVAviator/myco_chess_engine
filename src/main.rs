@@ -111,6 +111,6 @@ fn extract_moves(command: &str) -> Result<Game, anyhow::Error> {
 
 fn get_best_move(game: &Game) -> Result<LongAlgebraicMove, anyhow::Error> {
     let engine = SimpleEngine::new(&game);
-    let best_move = engine.get_best_move(6, Duration::from_secs(5))?;
+    let best_move = engine.get_best_move(8, Duration::from_secs(10))?;
     Ok(best_move)
 }
