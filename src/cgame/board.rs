@@ -325,7 +325,7 @@ impl Board {
         if self.white_king & lmove.get_orig() != 0 {
             match move_bits {
                 0x50 => self.white_rooks ^= 0xa0, // Castle kingside
-                0x14 => self.black_rooks ^= 0x9,  // Castle queenside
+                0x14 => self.white_rooks ^= 0x9,  // Castle queenside
                 _ => {}
             };
         }

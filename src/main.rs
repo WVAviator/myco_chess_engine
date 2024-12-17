@@ -79,12 +79,7 @@ fn process_position_command(cmd: &str) -> Result<Game, anyhow::Error> {
             return Game::from_fen(&fen_str).context("invalid fen string");
         }
         "startpos" => {
-            let moves = extract_moves(cmd).context("could not extract moves from command")?;
-            let mut game = Game::new_default();
-            for lmove in moves {
-                game = game.apply_move(&lmove)?;
-            }
-            return Ok(game);
+            return extract_moves(cmd).context("invalid moves list");
         }
         _ => bail!("invalid position command"),
     }
@@ -100,17 +95,15 @@ fn extract_fen(command: &str) -> Option<String> {
     None
 }
 
-fn extract_moves(command: &str) -> Result<Vec<LongAlgebraicMove>, anyhow::Error> {
+fn extract_moves(command: &str) -> Result<Game, anyhow::Error> {
     if command.starts_with("position startpos") {
         let parts: Vec<&str> = command.splitn(4, ' ').collect();
+
         if parts.len() == 2 {
-            return Ok(Vec::new());
+            return Ok(Game::new_default());
         }
 
-        return parts[3]
-            .split(' ')
-            .map(|lan| LongAlgebraicMove::from_algebraic(lan))
-            .collect();
+        return Game::from_uci_startpos(parts[3]);
     }
 
     Err(anyhow!("could not extract moves from startpos"))
@@ -118,6 +111,6 @@ fn extract_moves(command: &str) -> Result<Vec<LongAlgebraicMove>, anyhow::Error>
 
 fn get_best_move(game: &Game) -> Result<LongAlgebraicMove, anyhow::Error> {
     let engine = SimpleEngine::new(&game);
-    let best_move = engine.get_best_move(3, Duration::from_secs(3))?;
+    let best_move = engine.get_best_move(6, Duration::from_secs(5))?;
     Ok(best_move)
 }

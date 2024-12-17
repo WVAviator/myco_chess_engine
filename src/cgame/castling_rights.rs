@@ -26,6 +26,28 @@ impl CastlingRights {
         Ok(CastlingRights(cr))
     }
 
+    pub fn to_fen(&self) -> String {
+        let mut fen_str = String::new();
+        if self.is_set(CastlingRights::WHITE_KINGSIDE) {
+            fen_str.push_str("K");
+        }
+        if self.is_set(CastlingRights::WHITE_QUEENSIDE) {
+            fen_str.push_str("Q");
+        }
+        if self.is_set(CastlingRights::BLACK_KINGSIDE) {
+            fen_str.push_str("k");
+        }
+        if self.is_set(CastlingRights::BLACK_QUEENSIDE) {
+            fen_str.push_str("q");
+        }
+
+        if fen_str.len() == 0 {
+            fen_str.push_str("-");
+        }
+
+        fen_str
+    }
+
     pub fn set(&mut self, value: u8) {
         self.0 |= value;
     }
