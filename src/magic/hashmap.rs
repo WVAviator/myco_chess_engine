@@ -11,11 +11,6 @@ impl MagicHashMap {
     pub fn new() -> Self {
         let magic_number = Self::generate_magic_number_candidate();
 
-        println!(
-            "Created new magic hashmap with magic number: {}",
-            magic_number
-        );
-
         Self {
             magic_number,
             table: [0; 4096],
@@ -33,7 +28,6 @@ impl MagicHashMap {
             self.table[hash] = value;
             Ok(())
         } else {
-            println!("Existing: {} | Requested: {}", self.table[hash], value);
             Err(MagicCollisionError {})
         }
     }
