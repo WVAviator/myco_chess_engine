@@ -21,10 +21,10 @@ use super::{
 pub struct Game {
     pub board: Board,
     pub turn: Turn,
-    castling_rights: CastlingRights,
-    en_passant: u64,
-    halfmove_clock: u32,
-    fullmove_number: u32,
+    pub castling_rights: CastlingRights,
+    pub en_passant: u64,
+    pub halfmove_clock: u32,
+    pub fullmove_number: u32,
 
     pinned_pieces: u64,
     legal_moves: Vec<LongAlgebraicMove>,
@@ -824,76 +824,11 @@ mod test {
     use super::*;
 
     #[test]
-    fn calculates_white_pawn_moves() {
-        let game = Game::from_fen("1qB2bkr/PPp2p1p/6p1/2r1b1RP/4pPP1/3B4/2PPP3/NQNR2K1 b - - 0 1")
-            .unwrap();
-        let moves = game.calculate_white_pawn_moves();
-
-        assert_eq!(moves.len(), 15);
-
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("a7a8q").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("a7a8r").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("a7a8b").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("a7a8n").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("a7b8q").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("a7b8n").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("a7b8r").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("a7b8b").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("c2c3").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("c2c4").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e2e3").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("f4f5").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("f4e5").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("h5h6").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("h5g6").unwrap()));
-    }
-
-    #[test]
-    fn calculates_black_pawn_moves() {
-        let game = Game::from_fen("8/1ppp4/1P2p3/2B2k2/2K5/8/5p2/6N1 w - - 0 1").unwrap();
-        let moves = game.calculate_black_pawn_moves();
-
-        assert_eq!(moves.len(), 13);
-
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("f2f1q").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("f2f1r").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("f2f1b").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("f2f1n").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("f2g1q").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("f2g1r").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("f2g1b").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("f2g1n").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e6e5").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("d7d6").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("d7d5").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("c7c6").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("c7b6").unwrap()));
-    }
-
-    #[test]
-    fn pawn_moves_cannot_wrap() {
-        let game = Game::from_fen("3R1n1k/1B4pp/1p6/5p2/p7/4P1P1/PP3P1P/RN4K1 b - - 0 48").unwrap();
-        let moves = game.calculate_black_pawn_moves();
-
-        assert!(!moves.contains(&LongAlgebraicMove::from_algebraic("a4h2").unwrap()));
-    }
-
-    #[test]
     fn round_trip_fen_conversion() {
         let fen_str = String::from("3R1n1k/1B4pp/1p6/5p2/p7/4P1P1/PP3P1P/RN4K1 b - - 0 48");
         let game = Game::from_fen(&fen_str).unwrap();
         let result_fen = game.to_fen();
         assert_eq!(result_fen, fen_str);
-    }
-
-    #[test]
-    fn calculates_black_pawn_moves_en_passant() {
-        let game = Game::from_fen("8/8/8/5k2/2K1pP2/8/8/8 b - f3 0 1").unwrap();
-        let moves = game.calculate_black_pawn_moves();
-
-        assert_eq!(moves.len(), 2);
-
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e4f3").unwrap()));
     }
 
     #[test]
@@ -1057,31 +992,6 @@ mod test {
         assert!(moves.contains(&LongAlgebraicMove::from_algebraic("d6e6").unwrap()));
         assert!(moves.contains(&LongAlgebraicMove::from_algebraic("d6f6").unwrap()));
         assert!(moves.contains(&LongAlgebraicMove::from_algebraic("d6g6").unwrap()));
-    }
-
-    #[test]
-    fn calculates_basic_bishop_moves() {
-        let game = Game::from_fen("1k6/6p1/3r4/1q1NB2p/4BR2/8/1b6/7K w - - 0 1").unwrap();
-
-        let moves = game.calculate_bishop_moves();
-
-        assert_eq!(moves.len(), 14);
-
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e5d6").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e5f6").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e5g7").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e5d4").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e5c3").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e5b2").unwrap()));
-
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e4f5").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e4g6").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e4h7").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e4f3").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e4g2").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e4d3").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e4c2").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e4b1").unwrap()));
     }
 
     #[test]
