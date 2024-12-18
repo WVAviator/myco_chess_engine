@@ -1,15 +1,43 @@
 use anyhow::anyhow;
 
 use crate::{
-    cgame::{game::Game, moves::LongAlgebraicMove},
+    cgame::{
+        game::{Game, Turn},
+        moves::LongAlgebraicMove,
+    },
     magic::{get_bishop_magic_map, masks::get_bishop_mask},
 };
 
-pub trait BishopMoveGenerator {
+pub trait BishopMoveGen {
+    fn generate_bishop_vision(&self, turn: &Turn) -> u64;
     fn generate_pseudolegal_bishop_moves(&self) -> Result<Vec<LongAlgebraicMove>, anyhow::Error>;
 }
 
-impl BishopMoveGenerator for Game {
+impl BishopMoveGen for Game {
+    fn generate_bishop_vision(&self, turn: &Turn) -> u64 {
+        let mut vision = 0;
+
+        let bishop_pieces = self.board.bishops(turn) | self.board.queens(turn);
+        let player_pieces = self.board.all_pieces(turn);
+        let opponent_pieces = self.board.all_pieces(&turn.other());
+
+        let mut remaining_bishops = bishop_pieces;
+        while remaining_bishops != 0 {
+            let current_bishop = remaining_bishops & (!remaining_bishops + 1);
+            let blockers =
+                (player_pieces | opponent_pieces) & get_bishop_mask(current_bishop).unwrap();
+            let bishop_moves = get_bishop_magic_map()
+                .get(current_bishop.trailing_zeros() as usize)
+                .unwrap()
+                .get(blockers)
+                & !player_pieces;
+            vision |= bishop_moves;
+
+            remaining_bishops &= remaining_bishops - 1;
+        }
+
+        vision
+    }
     fn generate_pseudolegal_bishop_moves(&self) -> Result<Vec<LongAlgebraicMove>, anyhow::Error> {
         let mut moves = Vec::new();
 

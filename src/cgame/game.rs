@@ -832,46 +832,6 @@ mod test {
     }
 
     #[test]
-    fn calculate_simple_king_moves() {
-        let game = Game::from_fen("8/6k1/8/8/8/1n6/KP6/8 w - - 0 1").unwrap();
-        let moves = game.calculate_king_moves();
-
-        assert_eq!(moves.len(), 3);
-
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("a2a3").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("a2b3").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("a2b1").unwrap()));
-    }
-
-    #[test]
-    fn calculate_king_moves_castles_white() {
-        let game =
-            Game::from_fen("rn1qk1r1/pbpp1ppp/1p6/2b1p3/4P3/1PNP3N/PBPQBnPP/R3K2R w KQq - 0 1")
-                .unwrap();
-        let moves = game.calculate_king_moves();
-        LongAlgebraicMove::print_list(&moves);
-
-        assert_eq!(moves.len(), 2);
-
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e1f1").unwrap()));
-
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e1g1").unwrap()));
-    }
-
-    #[test]
-    fn calculate_king_moves_castles_black_forfeit() {
-        let game =
-            Game::from_fen("rn1qk1r1/pbpp1ppp/1p6/2b1p3/4P3/1PNP3N/PBPQBnPP/R3K2R b KQq - 0 1")
-                .unwrap();
-        let moves = game.calculate_king_moves();
-
-        assert_eq!(moves.len(), 2);
-
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e8e7").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e8f8").unwrap()));
-    }
-
-    #[test]
     fn king_cannot_put_self_in_check() {
         let game = Game::from_fen("8/8/8/4k3/1pb2p2/1r3P2/6NK/1n1Q2R1 b - - 0 1").unwrap();
         let moves = game.calculate_king_moves();

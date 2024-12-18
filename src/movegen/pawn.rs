@@ -5,10 +5,29 @@ use crate::cgame::{
 };
 
 pub trait PawnMoveGen {
+    fn generate_pawn_vision(&self, turn: &Turn) -> u64;
     fn generate_psuedolegal_pawn_moves(&self) -> Result<Vec<LongAlgebraicMove>, anyhow::Error>;
 }
 
 impl PawnMoveGen for Game {
+    fn generate_pawn_vision(&self, turn: &Turn) -> u64 {
+        let mut vision = 0;
+
+        let pawns = self.board.pawns(turn);
+        let own_pieces = self.board.all_pieces(turn);
+        match turn {
+            Turn::White => {
+                vision |= ((pawns & !A_FILE) << 7) & !own_pieces;
+                vision |= ((pawns & !H_FILE) << 9) & !own_pieces;
+            }
+            Turn::Black => {
+                vision |= ((pawns & !A_FILE) >> 9) & !own_pieces;
+                vision |= ((pawns & !H_FILE) >> 7) & !own_pieces;
+            }
+        }
+
+        vision
+    }
     fn generate_psuedolegal_pawn_moves(&self) -> Result<Vec<LongAlgebraicMove>, anyhow::Error> {
         let mut moves = Vec::new();
         let pawns = self.board.pawns(&self.turn);
@@ -94,7 +113,7 @@ where
     let mut moves = Vec::new();
 
     while bb != 0 {
-        let lsb = bb & (!bb + 1); // Extract the least significant bit
+        let lsb = bb & (!bb + 1);
         let origin = calculate_origin(lsb);
         let lmove = LongAlgebraicMove::new(origin, lsb);
         moves.push(lmove);
@@ -124,7 +143,7 @@ where
 #[cfg(test)]
 mod test {
     use super::*;
-    
+
     #[test]
     fn calculates_white_pawn_moves() {
         let game = Game::from_fen("1qB2bkr/PPp2p1p/6p1/2r1b1RP/4pPP1/3B4/2PPP3/NQNR2K1 w - - 0 1")
@@ -189,5 +208,4 @@ mod test {
 
         assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e4f3").unwrap()));
     }
-
 }

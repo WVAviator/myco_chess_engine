@@ -1,17 +1,45 @@
 use anyhow::anyhow;
 
 use crate::{
-    cgame::{game::Game, moves::LongAlgebraicMove},
+    cgame::{
+        game::{Game, Turn},
+        moves::LongAlgebraicMove,
+    },
     magic::{get_rook_magic_map, masks::get_rook_mask},
 };
 
-pub trait RookMoveGenerator {
+pub trait RookMoveGen {
+    fn generate_rook_vision(&self, turn: &Turn) -> u64;
     fn generate_pseudolegal_rook_moves(&self) -> Result<Vec<LongAlgebraicMove>, anyhow::Error>;
 }
 
-impl RookMoveGenerator for Game {
-    /// This function generates all pseudolegal rook moves for the given game. The rook positions are each used to index a magic
-    /// bitboard for fast calculation of moves based on blocking pieces. Does not account for pins or blocking checks. Includes queens.
+impl RookMoveGen for Game {
+    fn generate_rook_vision(&self, turn: &Turn) -> u64 {
+        let mut vision = 0;
+
+        let rook_pieces = self.board.rooks(turn) | self.board.queens(turn);
+        let player_pieces = self.board.all_pieces(turn);
+        let opponent_pieces = self.board.all_pieces(&turn.other());
+
+        let mut remaining_rooks = rook_pieces;
+        while remaining_rooks != 0 {
+            let current_rook = remaining_rooks & (!remaining_rooks + 1);
+            let blockers = (player_pieces | opponent_pieces) & get_rook_mask(current_rook).unwrap();
+
+            let rook_moves = get_rook_magic_map()
+                .get(current_rook.trailing_zeros() as usize)
+                .unwrap()
+                .get(blockers)
+                & !player_pieces;
+
+            vision |= rook_moves;
+
+            remaining_rooks &= remaining_rooks - 1;
+        }
+
+        vision
+    }
+
     fn generate_pseudolegal_rook_moves(&self) -> Result<Vec<LongAlgebraicMove>, anyhow::Error> {
         let mut moves = Vec::new();
 
