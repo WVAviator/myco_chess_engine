@@ -95,8 +95,6 @@ impl Simulate for Game {
 
 #[cfg(test)]
 mod test {
-    use crate::movegen::MoveGen;
-
     use super::*;
 
     #[test]
@@ -204,5 +202,28 @@ mod test {
         assert!(!game
             .check_move_legality(&LongAlgebraicMove::from_algebraic("e5d6").unwrap())
             .unwrap());
+    }
+
+    #[test]
+    fn simluate_move_false_if_illegal() {
+        let game = Game::from_fen("8/8/4k3/8/5N2/8/1K6/4R3 b - - 0 1").unwrap();
+        let lmove = LongAlgebraicMove::from_algebraic("e6e7").unwrap();
+        assert_eq!(game.check_move_legality(&lmove).unwrap(), false);
+    }
+
+    #[test]
+    fn simluate_move_true_if_legal() {
+        let game = Game::from_fen("8/8/4k3/8/5N2/8/1K6/4R3 b - - 0 1").unwrap();
+        let lmove = LongAlgebraicMove::from_algebraic("e6f6").unwrap();
+        assert_eq!(game.check_move_legality(&lmove).unwrap(), true);
+    }
+
+    #[test]
+    fn simluate_move_true_if_blocks_check() {
+        let game = Game::from_fen("8/8/4k3/8/8/3b4/1K6/4R3 b - - 0 1").unwrap();
+        let block_check = LongAlgebraicMove::from_algebraic("d3e4").unwrap();
+        let allow_check = LongAlgebraicMove::from_algebraic("d3f5").unwrap();
+        assert_eq!(game.check_move_legality(&block_check).unwrap(), true);
+        assert_eq!(game.check_move_legality(&allow_check).unwrap(), false);
     }
 }

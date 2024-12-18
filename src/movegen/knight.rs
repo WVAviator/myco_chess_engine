@@ -55,7 +55,7 @@ impl KnightMoveGen for Game {
 
                 moves.push(LongAlgebraicMove::new(current_knight, dest));
 
-                remaining_destinations &= remaining_destinations + 1;
+                remaining_destinations &= remaining_destinations - 1;
             }
             remaining_knights &= remaining_knights - 1;
         }

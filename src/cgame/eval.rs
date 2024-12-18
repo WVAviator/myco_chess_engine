@@ -1,3 +1,5 @@
+use crate::movegen::MoveGen;
+
 use super::game::{Game, Turn};
 
 pub struct SimpleEvaluator {}
@@ -28,8 +30,8 @@ impl SimpleEvaluator {
             return 0;
         }
 
-        let white_vision = game.get_white_vision();
-        let black_vision = game.get_black_vision();
+        let white_vision = game.generate_vision(&Turn::White).unwrap();
+        let black_vision = game.generate_vision(&Turn::Black).unwrap();
 
         let white_pieces = game.board.white_pieces();
         let black_pieces = game.board.black_pieces();

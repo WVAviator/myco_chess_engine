@@ -202,7 +202,7 @@ mod test {
     #[test]
     fn calculates_black_pawn_moves_en_passant() {
         let game = Game::from_fen("8/8/8/5k2/2K1pP2/8/8/8 b - f3 0 1").unwrap();
-        let moves = game.calculate_black_pawn_moves();
+        let moves = game.generate_psuedolegal_pawn_moves().unwrap();
 
         assert_eq!(moves.len(), 2);
 

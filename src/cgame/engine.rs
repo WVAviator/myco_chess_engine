@@ -6,6 +6,8 @@ use std::{
 
 use anyhow::anyhow;
 
+use crate::movegen::MoveGen;
+
 use super::{
     eval::SimpleEvaluator,
     game::{Game, Turn},
@@ -48,7 +50,7 @@ impl<'a> SimpleEngine<'a> {
 
         let mut moves_heap: BinaryHeap<LongAlgebraicMove> = self
             .game
-            .get_legal_moves()
+            .generate_legal_moves()?
             .into_iter()
             .map(|lmove| {
                 let game = self.game.apply_move(&lmove).unwrap();
@@ -107,7 +109,7 @@ impl<'a> SimpleEngine<'a> {
 
         let mut moves_heap: BinaryHeap<Reverse<LongAlgebraicMove>> = self
             .game
-            .get_legal_moves()
+            .generate_legal_moves()?
             .into_iter()
             .map(|lmove| {
                 let game = self.game.apply_move(&lmove).unwrap();
