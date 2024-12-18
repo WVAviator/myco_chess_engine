@@ -3,7 +3,7 @@ use std::fmt;
 use anyhow::anyhow;
 
 #[derive(Debug, Clone, Eq)]
-pub struct LongAlgebraicMove {
+pub struct SimpleMove {
     orig_square: u64,
     dest_square: u64,
     promotion: Option<Promotion>,
@@ -18,9 +18,9 @@ pub enum Promotion {
     Queen,
 }
 
-impl LongAlgebraicMove {
+impl SimpleMove {
     pub fn new(orig_square: u64, dest_square: u64) -> Self {
-        LongAlgebraicMove {
+        SimpleMove {
             orig_square,
             dest_square,
             promotion: None,
@@ -55,25 +55,25 @@ impl LongAlgebraicMove {
 
     pub fn new_promotion(orig_square: u64, dest_square: u64) -> Vec<Self> {
         vec![
-            LongAlgebraicMove {
+            SimpleMove {
                 orig_square,
                 dest_square,
                 promotion: Some(Promotion::Rook),
                 evaluation: 0,
             },
-            LongAlgebraicMove {
+            SimpleMove {
                 orig_square,
                 dest_square,
                 promotion: Some(Promotion::Bishop),
                 evaluation: 0,
             },
-            LongAlgebraicMove {
+            SimpleMove {
                 orig_square,
                 dest_square,
                 promotion: Some(Promotion::Knight),
                 evaluation: 0,
             },
-            LongAlgebraicMove {
+            SimpleMove {
                 orig_square,
                 dest_square,
                 promotion: Some(Promotion::Queen),
@@ -103,8 +103,8 @@ impl LongAlgebraicMove {
             return Err(anyhow!("Invalid algebraic move: {}", algebraic));
         }
 
-        let orig_square = algebraic_to_u64(&algebraic[0..2])?;
-        let dest_square = algebraic_to_u64(&algebraic[2..4])?;
+        let orig_square = algebraic_to_u64(&algebraic[0..2]);
+        let dest_square = algebraic_to_u64(&algebraic[2..4]);
 
         let promotion = if len == 5 {
             match &algebraic[4..5] {
@@ -118,7 +118,7 @@ impl LongAlgebraicMove {
             None
         };
 
-        Ok(LongAlgebraicMove {
+        Ok(SimpleMove {
             orig_square,
             dest_square,
             promotion,
@@ -127,9 +127,9 @@ impl LongAlgebraicMove {
     }
 }
 
-pub fn algebraic_to_u64(square: &str) -> Result<u64, anyhow::Error> {
+pub fn algebraic_to_u64(square: &str) -> u64 {
     if square.len() != 2 {
-        return Err(anyhow!("Invalid square format: {}", square));
+        panic!("Invalid square format: {}", square);
     }
 
     let chars: Vec<char> = square.chars().collect();
@@ -137,7 +137,7 @@ pub fn algebraic_to_u64(square: &str) -> Result<u64, anyhow::Error> {
     let rank = chars[1];
 
     if !('a'..='h').contains(&file) || !('1'..='8').contains(&rank) {
-        return Err(anyhow!("Invalid square coordinates: {}", square));
+        panic!("Invalid square coordinates: {}", square);
     }
 
     let file_index = (file as u8 - b'a') as u64;
@@ -145,7 +145,7 @@ pub fn algebraic_to_u64(square: &str) -> Result<u64, anyhow::Error> {
 
     let square_bit = 1u64 << (rank_index * 8 + file_index);
 
-    Ok(square_bit)
+    square_bit
 }
 
 pub fn u64_to_algebraic(square: u64) -> Result<String, anyhow::Error> {
@@ -166,14 +166,14 @@ pub fn u64_to_algebraic(square: u64) -> Result<String, anyhow::Error> {
     Ok(format!("{}{}", file_char, rank_char))
 }
 
-impl fmt::Display for LongAlgebraicMove {
+impl fmt::Display for SimpleMove {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{} ", self.to_algebraic().unwrap())
     }
 }
 
-impl LongAlgebraicMove {
-    pub fn print_list(moves: &Vec<LongAlgebraicMove>) {
+impl SimpleMove {
+    pub fn print_list(moves: &Vec<SimpleMove>) {
         println!(
             "Moves: {}",
             moves
@@ -185,7 +185,7 @@ impl LongAlgebraicMove {
     }
 }
 
-impl PartialEq for LongAlgebraicMove {
+impl PartialEq for SimpleMove {
     fn eq(&self, other: &Self) -> bool {
         self.orig_square == other.orig_square
             && self.dest_square == other.dest_square
@@ -193,13 +193,13 @@ impl PartialEq for LongAlgebraicMove {
     }
 }
 
-impl PartialOrd for LongAlgebraicMove {
+impl PartialOrd for SimpleMove {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         self.evaluation.partial_cmp(&other.evaluation)
     }
 }
 
-impl Ord for LongAlgebraicMove {
+impl Ord for SimpleMove {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.evaluation.cmp(&other.evaluation)
     }
@@ -211,11 +211,11 @@ mod test {
 
     #[test]
     fn algebraic_to_u64_correct() {
-        let square_a1 = algebraic_to_u64("a1").unwrap();
+        let square_a1 = algebraic_to_u64("a1");
         assert_eq!(square_a1, 1);
-        let square_h1 = algebraic_to_u64("h1").unwrap();
+        let square_h1 = algebraic_to_u64("h1");
         assert_eq!(square_h1, 1 << 7);
-        let square_h8 = algebraic_to_u64("h8").unwrap();
+        let square_h8 = algebraic_to_u64("h8");
         assert_eq!(square_h8, 1 << 63);
     }
 
@@ -231,7 +231,7 @@ mod test {
 
     #[test]
     fn converts_to_algebraic() {
-        let long_algebraic_move = LongAlgebraicMove {
+        let long_algebraic_move = SimpleMove {
             orig_square: 1 << 52,
             dest_square: 1 << 60,
             promotion: Some(Promotion::Queen),
@@ -243,14 +243,14 @@ mod test {
 
     #[test]
     fn converts_from_algebraic() {
-        let long_algebraic_move = LongAlgebraicMove {
+        let long_algebraic_move = SimpleMove {
             orig_square: 1 << 52,
             dest_square: 1 << 60,
             promotion: Some(Promotion::Queen),
             evaluation: 0,
         };
         assert_eq!(
-            LongAlgebraicMove::from_algebraic("e7e8q").unwrap(),
+            SimpleMove::from_algebraic("e7e8q").unwrap(),
             long_algebraic_move
         );
     }

@@ -1,14 +1,15 @@
-use std::fmt;
+use std::{fmt, sync::OnceLock};
 
 use anyhow::{bail, Context};
+use rand::random;
 
 use super::{
     constants::{EIGHTH_RANK, FIRST_RANK, SIXTH_RANK, THIRD_RANK},
     game::Turn,
-    moves::{LongAlgebraicMove, Promotion},
+    moves::{Promotion, SimpleMove},
 };
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Board {
     pub white_pawns: u64,
     pub white_rooks: u64,
@@ -295,7 +296,7 @@ impl Board {
         }
     }
 
-    pub fn apply_move(&mut self, lmove: &LongAlgebraicMove) {
+    pub fn apply_move(&mut self, lmove: &SimpleMove) {
         self.handle_castling(&lmove);
         self.handle_enpassant_takes(&lmove);
 
@@ -313,7 +314,7 @@ impl Board {
         self.handle_promotions(&lmove);
     }
 
-    fn handle_castling(&mut self, lmove: &LongAlgebraicMove) {
+    fn handle_castling(&mut self, lmove: &SimpleMove) {
         let move_bits = lmove.get_bits();
         if self.black_king & lmove.get_orig() != 0 {
             match move_bits {
@@ -331,7 +332,7 @@ impl Board {
         }
     }
 
-    fn handle_enpassant_takes(&mut self, lmove: &LongAlgebraicMove) {
+    fn handle_enpassant_takes(&mut self, lmove: &SimpleMove) {
         if lmove.get_orig() & self.black_pawns != 0 {
             if lmove.get_dest() & THIRD_RANK == 0 {
                 // Pawn destination wasn't the third rank
@@ -362,7 +363,7 @@ impl Board {
         }
     }
 
-    fn handle_promotions(&mut self, lmove: &LongAlgebraicMove) {
+    fn handle_promotions(&mut self, lmove: &SimpleMove) {
         let black_promotion = self.black_pawns & FIRST_RANK;
         let white_promotion = self.white_pawns & EIGHTH_RANK;
         self.black_pawns ^= black_promotion;
@@ -388,6 +389,35 @@ impl Board {
             None => {}
         }
     }
+
+    pub fn position_hash(&self) -> u64 {
+        let mut hash = 0;
+        let hashes = get_multiplicative_hashes();
+        hash ^= self.white_king.wrapping_mul(hashes[0]);
+        hash ^= self.white_pawns.wrapping_mul(hashes[1]);
+        hash ^= self.white_rooks.wrapping_mul(hashes[2]);
+        hash ^= self.white_knights.wrapping_mul(hashes[3]);
+        hash ^= self.white_bishops.wrapping_mul(hashes[4]);
+        hash ^= self.white_queens.wrapping_mul(hashes[5]);
+        hash ^= self.black_king.wrapping_mul(hashes[6]);
+        hash ^= self.black_pawns.wrapping_mul(hashes[7]);
+        hash ^= self.black_rooks.wrapping_mul(hashes[8]);
+        hash ^= self.black_knights.wrapping_mul(hashes[9]);
+        hash ^= self.black_bishops.wrapping_mul(hashes[10]);
+        hash ^= self.black_queens.wrapping_mul(hashes[11]);
+
+        hash
+    }
+}
+
+static MULTIPLICATIVE_HASHES: OnceLock<Vec<u64>> = OnceLock::new();
+
+fn generate_multiplicative_hashes() -> Vec<u64> {
+    (0..12).into_iter().map(|_| random::<u64>()).collect()
+}
+
+fn get_multiplicative_hashes() -> &'static Vec<u64> {
+    MULTIPLICATIVE_HASHES.get_or_init(|| generate_multiplicative_hashes())
 }
 
 impl fmt::Display for Board {
@@ -460,7 +490,7 @@ mod test {
     #[test]
     fn test_apply_regular_move() {
         let mut board = Board::from_fen("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR").unwrap();
-        let lmove = LongAlgebraicMove::from_algebraic("e7e5").unwrap();
+        let lmove = SimpleMove::from_algebraic("e7e5").unwrap();
         let expected_board =
             Board::from_fen("rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR").unwrap();
         board.apply_move(&lmove);
@@ -471,7 +501,7 @@ mod test {
     fn test_apply_take_move() {
         let mut board =
             Board::from_fen("rnbqkbnr/ppp2ppp/3p4/4p3/4PP2/8/PPPP2PP/RNBQKBNR").unwrap();
-        let lmove = LongAlgebraicMove::from_algebraic("f4e5").unwrap();
+        let lmove = SimpleMove::from_algebraic("f4e5").unwrap();
         let expected_board =
             Board::from_fen("rnbqkbnr/ppp2ppp/3p4/4P3/4P3/8/PPPP2PP/RNBQKBNR").unwrap();
         board.apply_move(&lmove);
@@ -481,7 +511,7 @@ mod test {
     #[test]
     fn test_apply_take_enpassant() {
         let mut board = Board::from_fen("rnbqkbnr/ppp3pp/3p4/4Pp2/4P3/8/PPPP2PP/RNBQKBNR").unwrap();
-        let lmove = LongAlgebraicMove::from_algebraic("e5f6").unwrap();
+        let lmove = SimpleMove::from_algebraic("e5f6").unwrap();
         let expected_board =
             Board::from_fen("rnbqkbnr/ppp3pp/3p1P2/8/4P3/8/PPPP2PP/RNBQKBNR").unwrap();
         board.apply_move(&lmove);
@@ -492,7 +522,7 @@ mod test {
     fn test_apply_castles() {
         let mut board =
             Board::from_fen("rnbqk2r/ppp1ppbp/3p1np1/8/3PP3/2PB1N2/PP3PPP/RNBQK2R").unwrap();
-        let lmove = LongAlgebraicMove::from_algebraic("e8g8").unwrap();
+        let lmove = SimpleMove::from_algebraic("e8g8").unwrap();
         let expected_board =
             Board::from_fen("rnbq1rk1/ppp1ppbp/3p1np1/8/3PP3/2PB1N2/PP3PPP/RNBQK2R").unwrap();
         board.apply_move(&lmove);
@@ -503,7 +533,7 @@ mod test {
     fn test_apply_promotion() {
         let mut board =
             Board::from_fen("rnb2rk1/pp1Pqpbp/2p1pnp1/8/3P4/2PB1N2/PP3PPP/RNBQK2R").unwrap();
-        let lmove = LongAlgebraicMove::from_algebraic("d7d8q").unwrap();
+        let lmove = SimpleMove::from_algebraic("d7d8q").unwrap();
         let expected_board =
             Board::from_fen("rnbQ1rk1/pp2qpbp/2p1pnp1/8/3P4/2PB1N2/PP3PPP/RNBQK2R").unwrap();
         board.apply_move(&lmove);

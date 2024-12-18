@@ -1,4 +1,4 @@
-use std::pin;
+use std::{hash::Hash, pin};
 
 use anyhow::{anyhow, bail, Context};
 
@@ -8,13 +8,11 @@ use super::{
     board::Board,
     castling_rights::CastlingRights,
     constants::{
-        ANTIDIAGONAL_MASKS, A_FILE, B_FILE, DIAGONAL_MASKS, EIGHTH_RANK, FIFTH_RANK, FIRST_RANK,
-        FOURTH_RANK, G_FILE, H_FILE, KING_START_POSITIONS, ROOK_START_POSITIONS, SECOND_RANK,
+        FIFTH_RANK, FOURTH_RANK, KING_START_POSITIONS, ROOK_START_POSITIONS, SECOND_RANK,
         SEVENTH_RANK,
     },
     eval::SimpleEvaluator,
-    moves::{algebraic_to_u64, LongAlgebraicMove},
-    raycast::{Direction, Raycast},
+    moves::{algebraic_to_u64, SimpleMove},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -25,6 +23,24 @@ pub struct Game {
     pub en_passant: u64,
     pub halfmove_clock: u32,
     pub fullmove_number: u32,
+    pub game_cache: GameCache,
+}
+
+#[derive(Debug, PartialEq, Clone, Eq)]
+pub struct GameCache {
+    pub white_vision: u64,
+    pub black_vision: u64,
+    pub initialized: bool,
+}
+
+impl GameCache {
+    fn new() -> Self {
+        Self {
+            white_vision: 0,
+            black_vision: 0,
+            initialized: false,
+        }
+    }
 }
 
 impl Game {
@@ -62,7 +78,7 @@ impl Game {
             .ok_or(anyhow!("Invalid FEN string: {}", fen_str))?
         {
             "-" => 0,
-            an => algebraic_to_u64(an)?,
+            an => algebraic_to_u64(an),
         };
         let halfmove_clock = fen_iter
             .next()
@@ -88,7 +104,10 @@ impl Game {
             en_passant,
             halfmove_clock,
             fullmove_number,
+            game_cache: GameCache::new(),
         };
+
+        game.initialize_cache();
 
         Ok(game)
     }
@@ -119,18 +138,37 @@ impl Game {
     }
 
     pub fn from_uci_startpos(moves_list: &str) -> Result<Self, anyhow::Error> {
-        let moves: Vec<LongAlgebraicMove> = moves_list
+        let moves: Vec<SimpleMove> = moves_list
             .split(' ')
-            .map(|m| LongAlgebraicMove::from_algebraic(m))
+            .map(|m| SimpleMove::from_algebraic(m))
             .into_iter()
-            .collect::<Result<Vec<LongAlgebraicMove>, anyhow::Error>>()?;
+            .collect::<Result<Vec<SimpleMove>, anyhow::Error>>()?;
 
         let mut game = Game::new_default();
 
         for lmove in moves {
             game = game.apply_move(&lmove)?;
         }
+
+        game.initialize_cache();
+
         Ok(game)
+    }
+
+    fn initialize_cache(&mut self) {
+        self.game_cache.white_vision = self.generate_vision(&Turn::White);
+        self.game_cache.black_vision = self.generate_vision(&Turn::Black);
+        self.game_cache.initialized = true;
+    }
+
+    pub fn position_hash(&self) -> u64 {
+        let mut hash = self.board.position_hash();
+        hash ^= self.castling_rights.position_hash();
+        hash ^= match self.turn {
+            Turn::White => 0x1b0373878da5bbdf, // Arbitrary random constants
+            Turn::Black => 0xe35a73c3791ab06d,
+        };
+        hash
     }
 }
 
@@ -151,18 +189,18 @@ impl Turn {
 
 impl Game {
     pub fn king_in_check(&self) -> bool {
-        self.generate_vision(&self.turn.other()).unwrap() & self.board.king(&self.turn) != 0
+        self.generate_vision(&self.turn.other()) & self.board.king(&self.turn) != 0
     }
 
     pub fn is_checkmate(&self) -> bool {
-        self.king_in_check() && self.generate_legal_moves().unwrap().is_empty()
+        self.king_in_check() && self.generate_legal_moves().is_empty()
     }
 
     pub fn is_stalemate(&self) -> bool {
-        !self.king_in_check() && self.generate_legal_moves().unwrap().is_empty()
+        !self.king_in_check() && self.generate_legal_moves().is_empty()
     }
 
-    pub fn apply_move(&self, lmove: &LongAlgebraicMove) -> Result<Game, anyhow::Error> {
+    pub fn apply_move(&self, lmove: &SimpleMove) -> Result<Game, anyhow::Error> {
         let mut new_game = self.clone();
 
         // Handling enpassant and halfmove clock
@@ -261,6 +299,8 @@ impl Game {
 
 #[cfg(test)]
 mod test {
+    use std::collections::HashSet;
+
     use super::*;
 
     #[test]
@@ -281,8 +321,8 @@ mod test {
             Game::from_fen("rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 3")
                 .unwrap();
 
-        let lmove1 = LongAlgebraicMove::from_algebraic("e2e4").unwrap();
-        let lmove2 = LongAlgebraicMove::from_algebraic("e7e5").unwrap();
+        let lmove1 = SimpleMove::from_algebraic("e2e4").unwrap();
+        let lmove2 = SimpleMove::from_algebraic("e7e5").unwrap();
 
         let mut game = position1.clone();
         assert_eq!(game, position1);
@@ -305,8 +345,8 @@ mod test {
         let position3 =
             Game::from_fen("rnbqkr2/ppppnppp/8/2b1p3/4P3/3B1N2/PPPP1PPP/RNBQ1RK1 w q - 6 6")
                 .unwrap();
-        let lmove1 = LongAlgebraicMove::from_algebraic("e1g1").unwrap();
-        let lmove2 = LongAlgebraicMove::from_algebraic("h8f8").unwrap();
+        let lmove1 = SimpleMove::from_algebraic("e1g1").unwrap();
+        let lmove2 = SimpleMove::from_algebraic("h8f8").unwrap();
 
         let mut game = position1.clone();
         assert_eq!(game, position1);
@@ -323,8 +363,8 @@ mod test {
         let position1 = Game::from_fen("r3k2r/8/3p4/8/8/8/8/R3K2R w KQkq - 0 1").unwrap();
         let position2 = Game::from_fen("r3k2r/8/3p4/8/8/8/8/2KR3R b kq - 1 2").unwrap();
         let position3 = Game::from_fen("2kr3r/8/3p4/8/8/8/8/2KR3R w - - 2 3").unwrap();
-        let lmove1 = LongAlgebraicMove::from_algebraic("e1c1").unwrap();
-        let lmove2 = LongAlgebraicMove::from_algebraic("e8c8").unwrap();
+        let lmove1 = SimpleMove::from_algebraic("e1c1").unwrap();
+        let lmove2 = SimpleMove::from_algebraic("e8c8").unwrap();
 
         let mut game = position1.clone();
         println!("position1: \n{}", game.board);
@@ -349,5 +389,37 @@ mod test {
         println!("moves_game: {}", moves_game.to_fen());
 
         assert_eq!(fen_game, moves_game);
+    }
+
+    #[test]
+    fn position_hash_identifies_repeat_position() {
+        let mut game =
+            Game::from_fen("rnbqkb1r/ppp2ppp/4pn2/3p4/2PP4/5N2/PP2PPPP/RNBQKB1R w KQkq - 2 7")
+                .unwrap();
+        let mut positions = HashSet::new();
+        positions.insert(game.position_hash());
+
+        game = game
+            .apply_move(&SimpleMove::from_algebraic("b1d2").unwrap())
+            .unwrap();
+        assert!(!positions.contains(&game.position_hash()));
+        positions.insert(game.position_hash());
+
+        game = game
+            .apply_move(&SimpleMove::from_algebraic("f8d6").unwrap())
+            .unwrap();
+        assert!(!positions.contains(&game.position_hash()));
+        positions.insert(game.position_hash());
+
+        game = game
+            .apply_move(&SimpleMove::from_algebraic("d2b1").unwrap())
+            .unwrap();
+        assert!(!positions.contains(&game.position_hash()));
+        positions.insert(game.position_hash());
+
+        game = game
+            .apply_move(&SimpleMove::from_algebraic("d6f8").unwrap())
+            .unwrap();
+        assert!(positions.contains(&game.position_hash()));
     }
 }

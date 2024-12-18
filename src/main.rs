@@ -4,10 +4,43 @@ use std::{
 };
 
 use anyhow::{anyhow, bail, Context};
-use rust_chess_engine::cgame::{engine::SimpleEngine, game::Game, moves::LongAlgebraicMove};
+use rust_chess_engine::{
+    cgame::{engine::SimpleEngine, game::Game, moves::SimpleMove},
+    magic::{get_bishop_magic_map, get_rook_magic_map},
+    movegen::MoveGen,
+};
 
 fn main() {
-    repl();
+    // repl();
+
+    initialize();
+    depth_test();
+}
+
+fn initialize() {
+    get_rook_magic_map();
+    get_bishop_magic_map();
+}
+
+fn depth_test() {
+    const DEPTH_LIMIT: u8 = 6;
+
+    let mut queue: Vec<(u8, Game)> = vec![(1, Game::new_default())];
+    // let mut visited: HashSet<u64> = HashSet::new();
+    while queue.len() != 0 {
+        let (depth, game) = queue.pop().unwrap();
+        // if visited.contains(&game.position_hash()) {
+        //     continue;
+        // }
+        // visited.insert(game.position_hash());
+        let moves = game.generate_legal_moves();
+        if depth >= DEPTH_LIMIT {
+            continue;
+        }
+        moves
+            .iter()
+            .for_each(|lmove| queue.push((depth + 1, game.apply_move(lmove).unwrap())));
+    }
 }
 
 pub fn repl() {
@@ -109,7 +142,7 @@ fn extract_moves(command: &str) -> Result<Game, anyhow::Error> {
     Err(anyhow!("could not extract moves from startpos"))
 }
 
-fn get_best_move(game: &Game) -> Result<LongAlgebraicMove, anyhow::Error> {
+fn get_best_move(game: &Game) -> Result<SimpleMove, anyhow::Error> {
     let engine = SimpleEngine::new(&game);
     let best_move = engine.get_best_move(8, Duration::from_secs(10))?;
     Ok(best_move)

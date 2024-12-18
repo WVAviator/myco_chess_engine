@@ -30,8 +30,8 @@ impl SimpleEvaluator {
             return 0;
         }
 
-        let white_vision = game.generate_vision(&Turn::White).unwrap();
-        let black_vision = game.generate_vision(&Turn::Black).unwrap();
+        let white_vision = game.generate_vision(&Turn::White);
+        let black_vision = game.generate_vision(&Turn::Black);
 
         let white_pieces = game.board.white_pieces();
         let black_pieces = game.board.black_pieces();

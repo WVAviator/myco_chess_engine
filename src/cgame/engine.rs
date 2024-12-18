@@ -11,7 +11,7 @@ use crate::movegen::MoveGen;
 use super::{
     eval::SimpleEvaluator,
     game::{Game, Turn},
-    moves::LongAlgebraicMove,
+    moves::SimpleMove,
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -28,7 +28,7 @@ impl<'a> SimpleEngine<'a> {
         &self,
         depth: u32,
         time_remaining: Duration,
-    ) -> Result<LongAlgebraicMove, anyhow::Error> {
+    ) -> Result<SimpleMove, anyhow::Error> {
         match self.game.turn {
             Turn::White => self.get_white_best_move(depth, time_remaining),
             Turn::Black => self.get_black_best_move(depth, time_remaining),
@@ -39,18 +39,18 @@ impl<'a> SimpleEngine<'a> {
         &self,
         depth: u32,
         time_remaining: Duration,
-    ) -> Result<LongAlgebraicMove, anyhow::Error> {
+    ) -> Result<SimpleMove, anyhow::Error> {
         let deadline = Instant::now() + time_remaining;
 
         if self.game.is_checkmate() {
-            return Ok(LongAlgebraicMove::empty_evaluation(i32::MIN));
+            return Ok(SimpleMove::empty_evaluation(i32::MIN));
         } else if self.game.is_stalemate() {
-            return Ok(LongAlgebraicMove::empty_evaluation(0));
+            return Ok(SimpleMove::empty_evaluation(0));
         }
 
-        let mut moves_heap: BinaryHeap<LongAlgebraicMove> = self
+        let mut moves_heap: BinaryHeap<SimpleMove> = self
             .game
-            .generate_legal_moves()?
+            .generate_legal_moves()
             .into_iter()
             .map(|lmove| {
                 let game = self.game.apply_move(&lmove).unwrap();
@@ -98,18 +98,18 @@ impl<'a> SimpleEngine<'a> {
         &self,
         depth: u32,
         time_remaining: Duration,
-    ) -> Result<LongAlgebraicMove, anyhow::Error> {
+    ) -> Result<SimpleMove, anyhow::Error> {
         let deadline = Instant::now() + time_remaining;
 
         if self.game.is_checkmate() {
-            return Ok(LongAlgebraicMove::empty_evaluation(i32::MAX));
+            return Ok(SimpleMove::empty_evaluation(i32::MAX));
         } else if self.game.is_stalemate() {
-            return Ok(LongAlgebraicMove::empty_evaluation(0));
+            return Ok(SimpleMove::empty_evaluation(0));
         }
 
-        let mut moves_heap: BinaryHeap<Reverse<LongAlgebraicMove>> = self
+        let mut moves_heap: BinaryHeap<Reverse<SimpleMove>> = self
             .game
-            .generate_legal_moves()?
+            .generate_legal_moves()
             .into_iter()
             .map(|lmove| {
                 let game = self.game.apply_move(&lmove).unwrap();
@@ -166,10 +166,7 @@ mod test {
 
         let best_move = engine.get_best_move(1, Duration::from_millis(100)).unwrap();
 
-        assert_eq!(
-            best_move,
-            LongAlgebraicMove::from_algebraic("c4f4").unwrap()
-        );
+        assert_eq!(best_move, SimpleMove::from_algebraic("c4f4").unwrap());
     }
 
     #[test]
@@ -179,10 +176,7 @@ mod test {
 
         let best_move = engine.get_best_move(3, Duration::from_millis(100)).unwrap();
 
-        assert_eq!(
-            best_move,
-            LongAlgebraicMove::from_algebraic("a7a6").unwrap()
-        );
+        assert_eq!(best_move, SimpleMove::from_algebraic("a7a6").unwrap());
     }
     #[test]
     fn identifies_skewers() {
@@ -191,10 +185,7 @@ mod test {
 
         let best_move = engine.get_best_move(2, Duration::from_millis(100)).unwrap();
 
-        assert_eq!(
-            best_move,
-            LongAlgebraicMove::from_algebraic("b3f3").unwrap()
-        );
+        assert_eq!(best_move, SimpleMove::from_algebraic("b3f3").unwrap());
     }
 
     #[test]
@@ -204,9 +195,6 @@ mod test {
 
         let best_move = engine.get_best_move(2, Duration::from_millis(100)).unwrap();
 
-        assert_eq!(
-            best_move,
-            LongAlgebraicMove::from_algebraic("b6d7").unwrap()
-        );
+        assert_eq!(best_move, SimpleMove::from_algebraic("b6d7").unwrap());
     }
 }

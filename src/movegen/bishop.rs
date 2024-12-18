@@ -3,18 +3,18 @@ use anyhow::anyhow;
 use crate::{
     cgame::{
         game::{Game, Turn},
-        moves::LongAlgebraicMove,
+        moves::SimpleMove,
     },
     magic::{get_bishop_magic_map, masks::get_bishop_mask},
 };
 
 pub trait BishopMoveGen {
-    fn generate_bishop_vision(&self, turn: &Turn) -> Result<u64, anyhow::Error>;
-    fn generate_pseudolegal_bishop_moves(&self) -> Result<Vec<LongAlgebraicMove>, anyhow::Error>;
+    fn generate_bishop_vision(&self, turn: &Turn) -> u64;
+    fn generate_pseudolegal_bishop_moves(&self) -> Vec<SimpleMove>;
 }
 
 impl BishopMoveGen for Game {
-    fn generate_bishop_vision(&self, turn: &Turn) -> Result<u64, anyhow::Error> {
+    fn generate_bishop_vision(&self, turn: &Turn) -> u64 {
         let mut vision = 0;
 
         let bishop_pieces = self.board.bishops(turn) | self.board.queens(turn);
@@ -28,9 +28,7 @@ impl BishopMoveGen for Game {
                 (player_pieces | opponent_pieces) & get_bishop_mask(current_bishop).unwrap();
             let bishop_moves = get_bishop_magic_map()
                 .get(current_bishop.trailing_zeros() as usize)
-                .ok_or(anyhow!(
-                    "could not find magic bitboard for requested bishop position"
-                ))?
+                .expect("could not find magic bitboard for requested bishop position")
                 .get(blockers);
 
             vision |= bishop_moves;
@@ -38,10 +36,10 @@ impl BishopMoveGen for Game {
             remaining_bishops &= remaining_bishops - 1;
         }
 
-        Ok(vision)
+        vision
     }
-    fn generate_pseudolegal_bishop_moves(&self) -> Result<Vec<LongAlgebraicMove>, anyhow::Error> {
-        let mut moves = Vec::new();
+    fn generate_pseudolegal_bishop_moves(&self) -> Vec<SimpleMove> {
+        let mut moves = Vec::with_capacity(42);
 
         let bishop_pieces = self.board.bishops(&self.turn) | self.board.queens(&self.turn);
         let player_pieces = self.board.all_pieces(&self.turn);
@@ -50,27 +48,27 @@ impl BishopMoveGen for Game {
         let mut remaining_bishops = bishop_pieces;
         while remaining_bishops != 0 {
             let current_bishop = remaining_bishops & (!remaining_bishops + 1);
-            let blockers = (player_pieces | opponent_pieces) & get_bishop_mask(current_bishop)?;
+            let blockers = (player_pieces | opponent_pieces)
+                & get_bishop_mask(current_bishop)
+                    .expect("could not find bishop blocker mask for position");
 
             let bishop_moves = get_bishop_magic_map()
                 .get(current_bishop.trailing_zeros() as usize)
-                .ok_or(anyhow!(
-                    "could not find magic bitboard for requested bishop position"
-                ))?
+                .expect("could not find magic bitboard for requested bishop position")
                 .get(blockers)
                 & !player_pieces;
 
             let mut remaining_bishop_moves = bishop_moves;
             while remaining_bishop_moves != 0 {
                 let dest = remaining_bishop_moves & (!remaining_bishop_moves + 1);
-                moves.push(LongAlgebraicMove::new(current_bishop, dest));
+                moves.push(SimpleMove::new(current_bishop, dest));
                 remaining_bishop_moves &= remaining_bishop_moves - 1;
             }
 
             remaining_bishops &= remaining_bishops - 1;
         }
 
-        Ok(moves)
+        moves
     }
 }
 
@@ -82,31 +80,33 @@ mod test {
     fn calculates_basic_bishop_moves() {
         let game = Game::from_fen("1k6/6p1/3r4/1q1NB2p/4BR2/8/1b6/7K w - - 0 1").unwrap();
 
-        let moves = game.generate_pseudolegal_bishop_moves().unwrap();
+        let moves = game.generate_pseudolegal_bishop_moves();
 
         assert_eq!(moves.len(), 14);
 
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e5d6").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e5f6").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e5g7").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e5d4").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e5c3").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e5b2").unwrap()));
+        assert!(moves.contains(&SimpleMove::from_algebraic("e5d6").unwrap()));
+        assert!(moves.contains(&SimpleMove::from_algebraic("e5f6").unwrap()));
+        assert!(moves.contains(&SimpleMove::from_algebraic("e5g7").unwrap()));
+        assert!(moves.contains(&SimpleMove::from_algebraic("e5d4").unwrap()));
+        assert!(moves.contains(&SimpleMove::from_algebraic("e5c3").unwrap()));
+        assert!(moves.contains(&SimpleMove::from_algebraic("e5b2").unwrap()));
 
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e4f5").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e4g6").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e4h7").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e4f3").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e4g2").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e4d3").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e4c2").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e4b1").unwrap()));
+        assert!(moves.contains(&SimpleMove::from_algebraic("e4f5").unwrap()));
+        assert!(moves.contains(&SimpleMove::from_algebraic("e4g6").unwrap()));
+        assert!(moves.contains(&SimpleMove::from_algebraic("e4h7").unwrap()));
+        assert!(moves.contains(&SimpleMove::from_algebraic("e4f3").unwrap()));
+        assert!(moves.contains(&SimpleMove::from_algebraic("e4g2").unwrap()));
+        assert!(moves.contains(&SimpleMove::from_algebraic("e4d3").unwrap()));
+        assert!(moves.contains(&SimpleMove::from_algebraic("e4c2").unwrap()));
+        assert!(moves.contains(&SimpleMove::from_algebraic("e4b1").unwrap()));
     }
 
     #[test]
     fn calculates_bishop_vision() {
-        let game = Game::from_fen("rn2k1r1/pbpp1ppp/1p6/2b1p3/4P3/1PNP3N/PBPQBnPP/R3K2R w KQq - 0 1").unwrap();
-        let bishop_vision = game.generate_bishop_vision(&Turn::Black).unwrap();
+        let game =
+            Game::from_fen("rn2k1r1/pbpp1ppp/1p6/2b1p3/4P3/1PNP3N/PBPQBnPP/R3K2R w KQq - 0 1")
+                .unwrap();
+        let bishop_vision = game.generate_bishop_vision(&Turn::Black);
 
         assert_eq!(bishop_vision, 0x25100f081a112000);
     }

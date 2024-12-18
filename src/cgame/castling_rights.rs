@@ -1,4 +1,7 @@
+use std::sync::OnceLock;
+
 use anyhow::bail;
+use rand::random;
 
 use super::game::Turn;
 
@@ -96,4 +99,14 @@ impl CastlingRights {
             }
         }
     }
+
+    pub fn position_hash(&self) -> u64 {
+        (self.0 as u64).wrapping_mul(*get_multiplicative_hash())
+    }
+}
+
+static CASTLING_MULTIPLICTIVE_HASH: OnceLock<u64> = OnceLock::new();
+
+fn get_multiplicative_hash() -> &'static u64 {
+    CASTLING_MULTIPLICTIVE_HASH.get_or_init(|| random::<u64>())
 }
