@@ -9,12 +9,12 @@ use crate::{
 };
 
 pub trait RookMoveGen {
-    fn generate_rook_vision(&self, turn: &Turn) -> u64;
+    fn generate_rook_vision(&self, turn: &Turn) -> Result<u64, anyhow::Error>;
     fn generate_pseudolegal_rook_moves(&self) -> Result<Vec<LongAlgebraicMove>, anyhow::Error>;
 }
 
 impl RookMoveGen for Game {
-    fn generate_rook_vision(&self, turn: &Turn) -> u64 {
+    fn generate_rook_vision(&self, turn: &Turn) -> Result<u64, anyhow::Error> {
         let mut vision = 0;
 
         let rook_pieces = self.board.rooks(turn) | self.board.queens(turn);
@@ -28,16 +28,17 @@ impl RookMoveGen for Game {
 
             let rook_moves = get_rook_magic_map()
                 .get(current_rook.trailing_zeros() as usize)
-                .unwrap()
-                .get(blockers)
-                & !player_pieces;
+                .ok_or(anyhow!(
+                    "could not find magic bitboard for requested rook position"
+                ))?
+                .get(blockers);
 
             vision |= rook_moves;
 
             remaining_rooks &= remaining_rooks - 1;
         }
 
-        vision
+        Ok(vision)
     }
 
     fn generate_pseudolegal_rook_moves(&self) -> Result<Vec<LongAlgebraicMove>, anyhow::Error> {

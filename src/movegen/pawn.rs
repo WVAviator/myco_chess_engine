@@ -5,28 +5,28 @@ use crate::cgame::{
 };
 
 pub trait PawnMoveGen {
-    fn generate_pawn_vision(&self, turn: &Turn) -> u64;
+    fn generate_pawn_vision(&self, turn: &Turn) -> Result<u64, anyhow::Error>;
     fn generate_psuedolegal_pawn_moves(&self) -> Result<Vec<LongAlgebraicMove>, anyhow::Error>;
 }
 
 impl PawnMoveGen for Game {
-    fn generate_pawn_vision(&self, turn: &Turn) -> u64 {
+    fn generate_pawn_vision(&self, turn: &Turn) -> Result<u64, anyhow::Error> {
         let mut vision = 0;
 
         let pawns = self.board.pawns(turn);
-        let own_pieces = self.board.all_pieces(turn);
+
         match turn {
             Turn::White => {
-                vision |= ((pawns & !A_FILE) << 7) & !own_pieces;
-                vision |= ((pawns & !H_FILE) << 9) & !own_pieces;
+                vision |= (pawns & !A_FILE) << 7;
+                vision |= (pawns & !H_FILE) << 9;
             }
             Turn::Black => {
-                vision |= ((pawns & !A_FILE) >> 9) & !own_pieces;
-                vision |= ((pawns & !H_FILE) >> 7) & !own_pieces;
+                vision |= (pawns & !A_FILE) >> 9;
+                vision |= (pawns & !H_FILE) >> 7;
             }
         }
 
-        vision
+        Ok(vision)
     }
     fn generate_psuedolegal_pawn_moves(&self) -> Result<Vec<LongAlgebraicMove>, anyhow::Error> {
         let mut moves = Vec::new();

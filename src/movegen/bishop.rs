@@ -9,12 +9,12 @@ use crate::{
 };
 
 pub trait BishopMoveGen {
-    fn generate_bishop_vision(&self, turn: &Turn) -> u64;
+    fn generate_bishop_vision(&self, turn: &Turn) -> Result<u64, anyhow::Error>;
     fn generate_pseudolegal_bishop_moves(&self) -> Result<Vec<LongAlgebraicMove>, anyhow::Error>;
 }
 
 impl BishopMoveGen for Game {
-    fn generate_bishop_vision(&self, turn: &Turn) -> u64 {
+    fn generate_bishop_vision(&self, turn: &Turn) -> Result<u64, anyhow::Error> {
         let mut vision = 0;
 
         let bishop_pieces = self.board.bishops(turn) | self.board.queens(turn);
@@ -28,15 +28,17 @@ impl BishopMoveGen for Game {
                 (player_pieces | opponent_pieces) & get_bishop_mask(current_bishop).unwrap();
             let bishop_moves = get_bishop_magic_map()
                 .get(current_bishop.trailing_zeros() as usize)
-                .unwrap()
-                .get(blockers)
-                & !player_pieces;
+                .ok_or(anyhow!(
+                    "could not find magic bitboard for requested bishop position"
+                ))?
+                .get(blockers);
+
             vision |= bishop_moves;
 
             remaining_bishops &= remaining_bishops - 1;
         }
 
-        vision
+        Ok(vision)
     }
     fn generate_pseudolegal_bishop_moves(&self) -> Result<Vec<LongAlgebraicMove>, anyhow::Error> {
         let mut moves = Vec::new();
@@ -99,5 +101,13 @@ mod test {
         assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e4d3").unwrap()));
         assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e4c2").unwrap()));
         assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e4b1").unwrap()));
+    }
+
+    #[test]
+    fn calculates_bishop_vision() {
+        let game = Game::from_fen("rn2k1r1/pbpp1ppp/1p6/2b1p3/4P3/1PNP3N/PBPQBnPP/R3K2R w KQq - 0 1").unwrap();
+        let bishop_vision = game.generate_bishop_vision(&Turn::Black).unwrap();
+
+        assert_eq!(bishop_vision, 0x25100f081a112000);
     }
 }

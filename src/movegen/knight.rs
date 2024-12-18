@@ -1,5 +1,7 @@
 use std::sync::OnceLock;
 
+use anyhow::anyhow;
+
 use crate::cgame::{
     constants::{
         A_FILE, B_FILE, EIGHTH_RANK, FIRST_RANK, G_FILE, H_FILE, SECOND_RANK, SEVENTH_RANK,
@@ -9,31 +11,30 @@ use crate::cgame::{
 };
 
 pub trait KnightMoveGen {
-    fn generate_knight_vision(&self, turn: &Turn) -> u64;
+    fn generate_knight_vision(&self, turn: &Turn) -> Result<u64, anyhow::Error>;
     fn generate_psuedolegal_knight_moves(&self) -> Result<Vec<LongAlgebraicMove>, anyhow::Error>;
 }
 
 impl KnightMoveGen for Game {
-    fn generate_knight_vision(&self, turn: &Turn) -> u64 {
+    fn generate_knight_vision(&self, turn: &Turn) -> Result<u64, anyhow::Error> {
         let mut vision = 0;
 
         let knights = self.board.knights(turn);
-        let own_pieces = self.board.all_pieces(turn);
 
         let mut remaining_knights = knights;
         while remaining_knights != 0 {
             let current_knight = remaining_knights & (!remaining_knights + 1);
+
             let possible_destinations = get_knight_moves()
                 .get(current_knight.trailing_zeros() as usize)
-                .unwrap()
-                & !own_pieces;
+                .ok_or(anyhow!("unable to retrieve precomputed knight move"))?;
 
             vision |= possible_destinations;
 
             remaining_knights &= remaining_knights - 1;
         }
 
-        vision
+        Ok(vision)
     }
     fn generate_psuedolegal_knight_moves(&self) -> Result<Vec<LongAlgebraicMove>, anyhow::Error> {
         let mut moves = Vec::new();
@@ -46,7 +47,7 @@ impl KnightMoveGen for Game {
             let current_knight = remaining_knights & (!remaining_knights + 1);
             let possible_destinations = get_knight_moves()
                 .get(current_knight.trailing_zeros() as usize)
-                .unwrap()
+                .ok_or(anyhow!("unable to retrieve precomputed knight move"))?
                 & !own_pieces;
             let mut remaining_destinations = possible_destinations;
             while remaining_destinations != 0 {
@@ -86,6 +87,27 @@ fn generate_all_knight_moves() -> Vec<u64> {
         .collect()
 }
 
-fn get_knight_moves() -> &'static Vec<u64> {
+pub fn get_knight_moves() -> &'static Vec<u64> {
     KNIGHT_MOVES.get_or_init(|| generate_all_knight_moves())
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn calculate_knight_moves() {
+        let game = Game::from_fen("6k1/3b4/2P2n2/1P6/3NP3/1b3PN1/2R1P3/1K5R w - - 0 1").unwrap();
+        let moves = game.generate_psuedolegal_knight_moves().unwrap();
+
+        assert_eq!(moves.len(), 6);
+
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("d4b3").unwrap()));
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("d4e6").unwrap()));
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("d4f5").unwrap()));
+
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("g3h5").unwrap()));
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("g3f5").unwrap()));
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("g3f1").unwrap()));
+    }
 }

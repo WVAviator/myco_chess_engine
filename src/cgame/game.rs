@@ -832,58 +832,6 @@ mod test {
     }
 
     #[test]
-    fn king_cannot_put_self_in_check() {
-        let game = Game::from_fen("8/8/8/4k3/1pb2p2/1r3P2/6NK/1n1Q2R1 b - - 0 1").unwrap();
-        let moves = game.calculate_king_moves();
-
-        assert_eq!(moves.len(), 3);
-
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e5e6").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e5f5").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e5f6").unwrap()));
-    }
-
-    #[test]
-    fn king_cannot_castle_through_check() {
-        let game = Game::from_fen("8/8/k7/6P1/2b5/8/8/4K2R w K - 0 1").unwrap();
-        let moves = game.calculate_king_moves();
-
-        assert!(!moves.contains(&LongAlgebraicMove::from_algebraic("e1g1").unwrap()));
-    }
-
-    #[test]
-    fn king_cannot_castle_into_check() {
-        let game = Game::from_fen("8/8/k7/6P1/3b4/8/8/4K2R w K - 0 1").unwrap();
-        let moves = game.calculate_king_moves();
-
-        assert!(!moves.contains(&LongAlgebraicMove::from_algebraic("e1g1").unwrap()));
-    }
-
-    #[test]
-    fn king_cannot_castle_while_in_check() {
-        let game = Game::from_fen("8/8/k7/6P1/1b6/8/8/4K2R w K - 0 1").unwrap();
-        let moves = game.calculate_king_moves();
-
-        assert!(!moves.contains(&LongAlgebraicMove::from_algebraic("e1g1").unwrap()));
-    }
-
-    #[test]
-    fn calculate_knight_moves() {
-        let game = Game::from_fen("6k1/3b4/2P2n2/1P6/3NP3/1b3PN1/2R1P3/1K5R w - - 0 1").unwrap();
-        let moves = game.calculate_knight_moves();
-
-        assert_eq!(moves.len(), 6);
-
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("d4b3").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("d4e6").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("d4f5").unwrap()));
-
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("g3h5").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("g3f5").unwrap()));
-        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("g3f1").unwrap()));
-    }
-
-    #[test]
     fn identifies_pinned_pieces() {
         let game = Game::from_fen("k3r3/4p2b/6P1/8/qBB1K3/4N3/8/4r3 w - - 0 1").unwrap();
         let expected_pins = 0x400000100000; // e3 and g6

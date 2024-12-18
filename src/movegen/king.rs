@@ -9,39 +9,41 @@ use crate::cgame::{
     moves::{algebraic_to_u64, LongAlgebraicMove},
 };
 
-const CASTLE_WHITE_KINGSIDE_MASK: u64 = 0x60;
-const CASTLE_WHITE_QUEENSIDE_MASK: u64 = 0xe;
-const CASTLE_BLACK_KINGSIDE_MASK: u64 = 0x6000000000000000;
-const CASTLE_BLACK_QUEENSIDE_MASK: u64 = 0xe00000000000000;
+use super::MoveGen;
 
-const CASTLE_CHECK_WK_MASK: u64 = 0x60;
-const CASTLE_CHECK_WQ_MASK: u64 = 0xc;
-const CASTLE_CHECK_BK_MASK: u64 = 0x6000000000000000;
-const CASTLE_CHECK_BQ_MASK: u64 = 0xc00000000000000;
+const CASTLE_MOVE_WK_MASK: u64 = 0x60;
+const CASTLE_MOVE_WQ_MASK: u64 = 0xe;
+const CASTLE_MOVE_BK_MASK: u64 = 0x6000000000000000;
+const CASTLE_MOVE_BQ_MASK: u64 = 0xe00000000000000;
+
+const CASTLE_CHECK_WK_MASK: u64 = 0x70;
+const CASTLE_CHECK_WQ_MASK: u64 = 0x1c;
+const CASTLE_CHECK_BK_MASK: u64 = 0x7000000000000000;
+const CASTLE_CHECK_BQ_MASK: u64 = 0x1c00000000000000;
 
 pub trait KingMoveGen {
     fn generate_pseudolegal_king_moves(&self) -> Result<Vec<LongAlgebraicMove>, anyhow::Error>;
-    fn generate_king_vision(&self, turn: &Turn) -> u64;
+    fn generate_king_vision(&self, turn: &Turn) -> Result<u64, anyhow::Error>;
 }
 
 impl KingMoveGen for Game {
-    fn generate_king_vision(&self, turn: &Turn) -> u64 {
+    fn generate_king_vision(&self, turn: &Turn) -> Result<u64, anyhow::Error> {
         let king = self.board.king(turn);
-        let own_pieces = self.board.all_pieces(turn);
 
         // No need to include castling in king vision because it cannot attack with a castle
 
-        get_king_moves()
+        let king_moves = *get_king_moves()
             .get(king.trailing_zeros() as usize)
-            .unwrap()
-            & !own_pieces
+            .ok_or(anyhow!("unable to precompute king moves"))?;
+
+        Ok(king_moves)
     }
 
     fn generate_pseudolegal_king_moves(&self) -> Result<Vec<LongAlgebraicMove>, anyhow::Error> {
         let king = self.board.king(&self.turn);
         let own_pieces = self.board.all_pieces(&self.turn);
         let occupied = self.board.occupied();
-        let opponent_vision = self.get_opponent_vision();
+        let opponent_vision = self.generate_vision(&self.turn.other())?;
 
         let mut moves = Vec::new();
 
@@ -58,47 +60,33 @@ impl KingMoveGen for Game {
             remaining_destinations &= remaining_destinations - 1;
         }
 
-        // TODO: Stop castle through check
-
         match self.turn {
             Turn::White => {
                 if self.castling_rights.is_set(CastlingRights::WHITE_KINGSIDE)
-                    && occupied & CASTLE_WHITE_KINGSIDE_MASK == 0
+                    && occupied & CASTLE_MOVE_WK_MASK == 0
                     && opponent_vision & CASTLE_CHECK_WK_MASK == 0
                 {
-                    moves.push(LongAlgebraicMove::new(
-                        king,
-                        algebraic_to_u64("g1").unwrap(),
-                    ))
+                    moves.push(LongAlgebraicMove::new(king, algebraic_to_u64("g1")?))
                 }
                 if self.castling_rights.is_set(CastlingRights::WHITE_QUEENSIDE)
-                    && occupied & CASTLE_WHITE_QUEENSIDE_MASK == 0
+                    && occupied & CASTLE_MOVE_WQ_MASK == 0
                     && opponent_vision & CASTLE_CHECK_WQ_MASK == 0
                 {
-                    moves.push(LongAlgebraicMove::new(
-                        king,
-                        algebraic_to_u64("c1").unwrap(),
-                    ))
+                    moves.push(LongAlgebraicMove::new(king, algebraic_to_u64("c1")?))
                 }
             }
             Turn::Black => {
                 if self.castling_rights.is_set(CastlingRights::BLACK_KINGSIDE)
-                    && occupied & CASTLE_BLACK_KINGSIDE_MASK == 0
+                    && occupied & CASTLE_MOVE_BK_MASK == 0
                     && opponent_vision & CASTLE_CHECK_BK_MASK == 0
                 {
-                    moves.push(LongAlgebraicMove::new(
-                        king,
-                        algebraic_to_u64("g8").unwrap(),
-                    ))
+                    moves.push(LongAlgebraicMove::new(king, algebraic_to_u64("g8")?))
                 }
                 if self.castling_rights.is_set(CastlingRights::BLACK_QUEENSIDE)
-                    && occupied & CASTLE_BLACK_QUEENSIDE_MASK == 0
+                    && occupied & CASTLE_MOVE_BQ_MASK == 0
                     && opponent_vision & CASTLE_CHECK_BQ_MASK == 0
                 {
-                    moves.push(LongAlgebraicMove::new(
-                        king,
-                        algebraic_to_u64("c8").unwrap(),
-                    ))
+                    moves.push(LongAlgebraicMove::new(king, algebraic_to_u64("c8")?))
                 }
             }
         }
@@ -130,7 +118,7 @@ fn generate_all_king_moves() -> Vec<u64> {
         .collect()
 }
 
-fn get_king_moves() -> &'static Vec<u64> {
+pub fn get_king_moves() -> &'static Vec<u64> {
     KING_MOVES.get_or_init(|| generate_all_king_moves())
 }
 
@@ -175,5 +163,41 @@ mod test {
 
         assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e8e7").unwrap()));
         assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e8f8").unwrap()));
+    }
+
+    #[test]
+    fn king_cannot_put_self_in_check() {
+        let game = Game::from_fen("8/8/8/4k3/1pb2p2/1r3P2/6NK/1n1Q2R1 b - - 0 1").unwrap();
+        let moves = game.generate_pseudolegal_king_moves().unwrap();
+
+        assert_eq!(moves.len(), 3);
+
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e5e6").unwrap()));
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e5f5").unwrap()));
+        assert!(moves.contains(&LongAlgebraicMove::from_algebraic("e5f6").unwrap()));
+    }
+
+    #[test]
+    fn king_cannot_castle_through_check() {
+        let game = Game::from_fen("8/8/k7/6P1/2b5/8/8/4K2R w K - 0 1").unwrap();
+        let moves = game.generate_pseudolegal_king_moves().unwrap();
+
+        assert!(!moves.contains(&LongAlgebraicMove::from_algebraic("e1g1").unwrap()));
+    }
+
+    #[test]
+    fn king_cannot_castle_into_check() {
+        let game = Game::from_fen("8/8/k7/6P1/3b4/8/8/4K2R w K - 0 1").unwrap();
+        let moves = game.generate_pseudolegal_king_moves().unwrap();
+
+        assert!(!moves.contains(&LongAlgebraicMove::from_algebraic("e1g1").unwrap()));
+    }
+
+    #[test]
+    fn king_cannot_castle_while_in_check() {
+        let game = Game::from_fen("8/8/k7/6P1/1b6/8/8/4K2R w K - 0 1").unwrap();
+        let moves = game.generate_pseudolegal_king_moves().unwrap();
+
+        assert!(!moves.contains(&LongAlgebraicMove::from_algebraic("e1g1").unwrap()));
     }
 }
