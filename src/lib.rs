@@ -9,6 +9,7 @@ pub mod movegen;
 mod integration_tests {
     use cgame::game::Game;
     use movegen::MoveGen;
+    use rayon::prelude::*;
 
     use super::*;
 
@@ -16,12 +17,16 @@ mod integration_tests {
         if depth == 0 {
             return 1;
         }
-        let mut node_count = 0;
+
         let moves = game.generate_legal_moves();
-        for lmove in moves {
-            node_count += perft(depth - 1, game.apply_move(&lmove));
-        }
-        node_count
+
+        moves
+            .into_par_iter() // Parallelize over legal moves
+            .map(|lmove| {
+                let new_game = game.apply_move(&lmove); // Apply the move
+                perft(depth - 1, new_game) // Recursive call for child nodes
+            })
+            .sum()
     }
 
     #[test]

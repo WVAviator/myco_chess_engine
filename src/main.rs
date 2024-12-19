@@ -1,3 +1,5 @@
+mod repl;
+
 use std::{
     collections::HashSet,
     io::{BufRead, BufReader},
@@ -5,6 +7,7 @@ use std::{
 };
 
 use anyhow::{anyhow, bail, Context};
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use rust_chess_engine::{
     cgame::{engine::SimpleEngine, game::Game, moves::SimpleMove},
     magic::{get_bishop_magic_map, get_rook_magic_map},
@@ -37,12 +40,16 @@ fn perft(depth: u8, game: Game) -> usize {
     if depth == 0 {
         return 1;
     }
-    let mut node_count = 0;
+
     let moves = game.generate_legal_moves();
-    for lmove in moves {
-        node_count += perft(depth - 1, game.apply_move(&lmove));
-    }
-    node_count
+
+    moves
+        .into_par_iter() // Parallelize over legal moves
+        .map(|lmove| {
+            let new_game = game.apply_move(&lmove); // Apply the move
+            perft(depth - 1, new_game) // Recursive call for child nodes
+        })
+        .sum()
 }
 
 pub fn repl() {
