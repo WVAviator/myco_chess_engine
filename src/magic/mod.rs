@@ -42,7 +42,7 @@ pub fn get_bishop_magic_map() -> &'static Vec<MagicHashMap> {
 }
 
 fn generate_rook_magic_hashmap(rook: u64) -> Result<MagicHashMap, anyhow::Error> {
-    let mask = get_rook_mask(rook)?;
+    let mask = get_rook_mask(rook);
     let blocker_subsets = calculate_subsets(mask);
 
     let movesets: Vec<u64> = blocker_subsets
@@ -68,7 +68,7 @@ fn generate_rook_magic_hashmap(rook: u64) -> Result<MagicHashMap, anyhow::Error>
 }
 
 fn generate_bishop_magic_hashmap(bishop: u64) -> Result<MagicHashMap, anyhow::Error> {
-    let mask = get_bishop_mask(bishop)?;
+    let mask = get_bishop_mask(bishop);
     let blocker_subsets = calculate_subsets(mask);
 
     let movesets: Vec<u64> = blocker_subsets

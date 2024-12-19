@@ -2,18 +2,12 @@ use anyhow::{anyhow, bail};
 
 use crate::cgame::constants::{A_FILE, EIGHTH_RANK, FIRST_RANK, H_FILE};
 
-pub fn get_rook_mask(rook: u64) -> Result<u64, anyhow::Error> {
-    if rook.count_ones() != 1 {
-        bail!("There must be exactly one rook piece bit set in the provided bitboard.");
-    }
-    Ok(ROOK_MASKS[rook.trailing_zeros() as usize])
+pub fn get_rook_mask(rook: u64) -> u64 {
+    ROOK_MASKS[rook.trailing_zeros() as usize]
 }
 
-pub fn get_bishop_mask(bishop: u64) -> Result<u64, anyhow::Error> {
-    if bishop.count_ones() != 1 {
-        bail!("There must be exactly one bishop piece bit set in the provided bitboard.");
-    }
-    Ok(BISHOP_MASKS[bishop.trailing_zeros() as usize])
+pub fn get_bishop_mask(bishop: u64) -> u64 {
+    BISHOP_MASKS[bishop.trailing_zeros() as usize]
 }
 
 pub const ROOK_MASKS: [u64; 64] = [
@@ -276,7 +270,7 @@ mod test {
     #[test]
     fn gets_correct_rook_mask_center() {
         let rook_square: u64 = 0x8000000; // d4
-        let mask = get_rook_mask(rook_square).unwrap();
+        let mask = get_rook_mask(rook_square);
         assert_eq!(mask, 0x8080876080800);
     }
 

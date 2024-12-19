@@ -24,6 +24,7 @@ impl Simulate for Game {
         simulated_board.apply_move(lmove);
 
         let superking = simulated_board.king(&self.turn);
+        let superking_index = superking.trailing_zeros() as usize;
         let occupied = simulated_board.occupied();
 
         // Pawns
@@ -47,7 +48,7 @@ impl Simulate for Game {
 
         // Knights
         let knight_moves = KNIGHT_MOVES
-            .get(superking.trailing_zeros() as usize)
+            .get(superking_index)
             .expect("coulf not retrieve precomputed knight move");
         if knight_moves & simulated_board.knights(&self.turn.other()) != 0 {
             return false;
@@ -55,7 +56,7 @@ impl Simulate for Game {
 
         // King
         let king_moves = KING_MOVES
-            .get(superking.trailing_zeros() as usize)
+            .get(superking_index)
             .expect("coulf not retrieve precomputed king move");
         if king_moves & simulated_board.king(&self.turn.other()) != 0 {
             return false;
@@ -63,13 +64,9 @@ impl Simulate for Game {
 
         // Bishops
         let bishop_moves = get_bishop_magic_map()
-            .get(superking.trailing_zeros() as usize)
+            .get(superking_index)
             .expect("could not retrieve magic bitboards for bishop moves")
-            .get(
-                get_bishop_mask(superking)
-                    .expect("could not retrieve blocker mask for bishop move indexing")
-                    & occupied,
-            );
+            .get(get_bishop_mask(superking) & occupied);
         if bishop_moves
             & (simulated_board.bishops(&self.turn.other())
                 | simulated_board.queens(&self.turn.other()))
@@ -80,13 +77,9 @@ impl Simulate for Game {
 
         // Rooks
         let rook_moves = get_rook_magic_map()
-            .get(superking.trailing_zeros() as usize)
+            .get(superking_index)
             .expect("could not retrieve magic bitboards for rook moves")
-            .get(
-                get_rook_mask(superking)
-                    .expect("could not retrieve blocker mask for bishop move indexing")
-                    & occupied,
-            );
+            .get(get_rook_mask(superking) & occupied);
         if rook_moves
             & (simulated_board.rooks(&self.turn.other())
                 | simulated_board.queens(&self.turn.other()))

@@ -25,8 +25,7 @@ impl BishopMoveGen for Game {
         let mut remaining_bishops = bishop_pieces;
         while remaining_bishops != 0 {
             let current_bishop = remaining_bishops & (!remaining_bishops + 1);
-            let blockers =
-                (player_pieces | opponent_pieces) & get_bishop_mask(current_bishop).unwrap();
+            let blockers = (player_pieces | opponent_pieces) & get_bishop_mask(current_bishop);
             let bishop_moves = get_bishop_magic_map()
                 .get(current_bishop.trailing_zeros() as usize)
                 .expect("could not find magic bitboard for requested bishop position")
@@ -47,9 +46,7 @@ impl BishopMoveGen for Game {
         let mut remaining_bishops = bishop_pieces;
         while remaining_bishops != 0 {
             let current_bishop = remaining_bishops & (!remaining_bishops + 1);
-            let blockers = (player_pieces | opponent_pieces)
-                & get_bishop_mask(current_bishop)
-                    .expect("could not find bishop blocker mask for position");
+            let blockers = (player_pieces | opponent_pieces) & get_bishop_mask(current_bishop);
 
             let bishop_moves = get_bishop_magic_map()
                 .get(current_bishop.trailing_zeros() as usize)

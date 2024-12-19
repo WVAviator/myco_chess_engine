@@ -25,7 +25,7 @@ impl RookMoveGen for Game {
         let mut remaining_rooks = rook_pieces;
         while remaining_rooks != 0 {
             let current_rook = remaining_rooks & (!remaining_rooks + 1);
-            let blockers = (player_pieces | opponent_pieces) & get_rook_mask(current_rook).unwrap();
+            let blockers = (player_pieces | opponent_pieces) & get_rook_mask(current_rook);
 
             let rook_moves = get_rook_magic_map()
                 .get(current_rook.trailing_zeros() as usize)
@@ -48,9 +48,7 @@ impl RookMoveGen for Game {
         let mut remaining_rooks = rook_pieces;
         while remaining_rooks != 0 {
             let current_rook = remaining_rooks & (!remaining_rooks + 1);
-            let blockers = (player_pieces | opponent_pieces)
-                & get_rook_mask(current_rook)
-                    .expect("could not find rook blocker mask for requested position");
+            let blockers = (player_pieces | opponent_pieces) & get_rook_mask(current_rook);
 
             let rook_moves = get_rook_magic_map()
                 .get(current_rook.trailing_zeros() as usize)
