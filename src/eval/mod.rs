@@ -1,4 +1,5 @@
 use bishops::BishopEval;
+use center::CenterEval;
 use development::DevelopmentEval;
 use king_safety::KingSafetyEval;
 use piece::PieceEval;
@@ -13,7 +14,9 @@ mod king_safety;
 mod piece;
 mod rooks;
 
-pub trait Eval: BishopEval + RookEval + DevelopmentEval + KingSafetyEval + PieceEval {
+pub trait Eval:
+    BishopEval + RookEval + DevelopmentEval + KingSafetyEval + PieceEval + CenterEval
+{
     fn evaluate_position(&self) -> i32;
 }
 
