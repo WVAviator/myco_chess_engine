@@ -11,7 +11,7 @@ use crate::{
 
 pub trait BishopMoveGen {
     fn generate_bishop_vision(&self, turn: &Turn) -> u64;
-    fn generate_pseudolegal_bishop_moves(&self, moves: &mut SmallVec<[SimpleMove; 128]>);
+    fn generate_pseudolegal_bishop_moves(&self, moves: &mut SmallVec<[SimpleMove; 256]>);
 }
 
 impl BishopMoveGen for Game {
@@ -39,7 +39,7 @@ impl BishopMoveGen for Game {
 
         vision
     }
-    fn generate_pseudolegal_bishop_moves(&self, moves: &mut SmallVec<[SimpleMove; 128]>) {
+    fn generate_pseudolegal_bishop_moves(&self, moves: &mut SmallVec<[SimpleMove; 256]>) {
         let bishop_pieces = self.board.bishops(&self.turn) | self.board.queens(&self.turn);
         let player_pieces = self.board.all_pieces(&self.turn);
         let opponent_pieces = self.board.all_pieces(&self.turn.other());

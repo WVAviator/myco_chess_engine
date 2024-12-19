@@ -53,7 +53,7 @@ impl<'a> SimpleEngine<'a> {
             .generate_legal_moves()
             .into_iter()
             .map(|lmove| {
-                let game = self.game.apply_move(&lmove).unwrap();
+                let game = self.game.apply_move(&lmove);
                 let mut lmove = lmove.clone();
                 lmove.evaluation = game.evaluate();
                 lmove
@@ -72,7 +72,7 @@ impl<'a> SimpleEngine<'a> {
 
         while Instant::now() < deadline {
             if let Some(lmove) = moves_heap.pop() {
-                let next_turn = self.game.apply_move(&lmove)?;
+                let next_turn = self.game.apply_move(&lmove);
                 let next_engine = SimpleEngine::new(&next_turn);
                 let time_to_eval = (deadline.duration_since(Instant::now())).div_f32(3.0);
                 let best_response = next_engine.get_best_move(depth - 1, time_to_eval)?;
@@ -112,7 +112,7 @@ impl<'a> SimpleEngine<'a> {
             .generate_legal_moves()
             .into_iter()
             .map(|lmove| {
-                let game = self.game.apply_move(&lmove).unwrap();
+                let game = self.game.apply_move(&lmove);
                 let mut lmove = lmove.clone();
                 lmove.evaluation = game.evaluate();
                 Reverse(lmove)
@@ -132,7 +132,7 @@ impl<'a> SimpleEngine<'a> {
 
         while Instant::now() < deadline {
             if let Some(Reverse(lmove)) = moves_heap.pop() {
-                let next_turn = self.game.apply_move(&lmove)?;
+                let next_turn = self.game.apply_move(&lmove);
                 let next_engine = SimpleEngine::new(&next_turn);
                 let time_to_eval = (deadline.duration_since(Instant::now())).div_f32(3.0);
                 let best_response = next_engine.get_best_move(depth - 1, time_to_eval)?;

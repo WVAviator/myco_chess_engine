@@ -19,7 +19,7 @@ mod integration_tests {
         let mut node_count = 0;
         let moves = game.generate_legal_moves();
         for lmove in moves {
-            node_count += perft(depth - 1, game.apply_move(&lmove).unwrap());
+            node_count += perft(depth - 1, game.apply_move(&lmove));
         }
         node_count
     }

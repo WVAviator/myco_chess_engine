@@ -8,7 +8,7 @@ use crate::cgame::{
 
 pub trait PawnMoveGen {
     fn generate_pawn_vision(&self, turn: &Turn) -> u64;
-    fn generate_psuedolegal_pawn_moves(&self, moves: &mut SmallVec<[SimpleMove; 128]>);
+    fn generate_psuedolegal_pawn_moves(&self, moves: &mut SmallVec<[SimpleMove; 256]>);
 }
 
 impl PawnMoveGen for Game {
@@ -30,7 +30,7 @@ impl PawnMoveGen for Game {
 
         vision
     }
-    fn generate_psuedolegal_pawn_moves(&self, mut moves: &mut SmallVec<[SimpleMove; 128]>) {
+    fn generate_psuedolegal_pawn_moves(&self, mut moves: &mut SmallVec<[SimpleMove; 256]>) {
         let pawns = self.board.pawns(&self.turn);
         let occupied = self.board.occupied();
         let opponent_pieces = self.board.all_pieces(&self.turn.other());
@@ -96,7 +96,7 @@ impl PawnMoveGen for Game {
 fn backtrack_moves<F>(
     dest_squares: u64,
     calculate_origin: F,
-    moves: &mut SmallVec<[SimpleMove; 128]>,
+    moves: &mut SmallVec<[SimpleMove; 256]>,
 ) where
     F: Fn(u64) -> u64,
 {
@@ -115,7 +115,7 @@ fn backtrack_moves<F>(
 fn backtrack_moves_promotion<F>(
     dest_squares: u64,
     calculate_origin: F,
-    moves: &mut SmallVec<[SimpleMove; 128]>,
+    moves: &mut SmallVec<[SimpleMove; 256]>,
 ) where
     F: Fn(u64) -> u64,
 {

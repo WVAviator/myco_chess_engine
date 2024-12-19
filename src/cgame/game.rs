@@ -147,7 +147,7 @@ impl Game {
         let mut game = Game::new_default();
 
         for lmove in moves {
-            game = game.apply_move(&lmove)?;
+            game = game.apply_move(&lmove);
         }
 
         game.initialize_cache();
@@ -200,24 +200,24 @@ impl Game {
         !self.king_in_check() && self.generate_legal_moves().is_empty()
     }
 
-    pub fn apply_move(&self, lmove: &SimpleMove) -> Result<Game, anyhow::Error> {
+    pub fn apply_move(&self, lmove: &SimpleMove) -> Game {
         let mut new_game = self.clone();
+        let orig = lmove.get_orig();
+        let dest = lmove.get_dest();
 
         // Handling enpassant and halfmove clock
-        let is_pawn_move = lmove.get_orig()
-            & match new_game.turn {
+        let is_pawn_move =
+            orig & match new_game.turn {
                 Turn::White => new_game.board.white_pawns,
                 Turn::Black => new_game.board.black_pawns,
-            }
-            != 0;
-        let is_enpassant = lmove.get_dest() & new_game.en_passant != 0 && is_pawn_move;
-        let is_capture = lmove.get_dest()
-            & match new_game.turn {
+            } != 0;
+        let is_enpassant = dest & new_game.en_passant != 0 && is_pawn_move;
+        let is_capture =
+            dest & match new_game.turn {
                 Turn::White => new_game.board.black_pieces(),
                 Turn::Black => new_game.board.white_pieces(),
-            }
-            != 0
-            || is_enpassant;
+            } != 0
+                || is_enpassant;
 
         if is_pawn_move || is_capture {
             new_game.halfmove_clock = 0;
@@ -226,36 +226,36 @@ impl Game {
         }
 
         let is_pawn_double_advance = is_pawn_move
-            && lmove.get_orig() & (SECOND_RANK | SEVENTH_RANK) != 0
-            && lmove.get_dest() & (FOURTH_RANK | FIFTH_RANK) != 0;
+            && orig & (SECOND_RANK | SEVENTH_RANK) != 0
+            && dest & (FOURTH_RANK | FIFTH_RANK) != 0;
 
         if is_pawn_double_advance {
             match new_game.turn {
-                Turn::White => new_game.en_passant = lmove.get_orig() << 8,
-                Turn::Black => new_game.en_passant = lmove.get_orig() >> 8,
+                Turn::White => new_game.en_passant = orig << 8,
+                Turn::Black => new_game.en_passant = orig >> 8,
             }
         } else {
             new_game.en_passant = 0;
         }
 
         // Handling castling
-        let is_rook_move = lmove.get_orig() & ROOK_START_POSITIONS != 0;
-        let is_king_move = lmove.get_orig() & KING_START_POSITIONS != 0;
+        let is_rook_move = orig & ROOK_START_POSITIONS != 0;
+        let is_king_move = orig & KING_START_POSITIONS != 0;
 
         if is_rook_move {
-            if lmove.get_orig() == 0x1 {
+            if orig == 0x1 {
                 new_game
                     .castling_rights
                     .unset(CastlingRights::WHITE_QUEENSIDE);
-            } else if lmove.get_orig() == 0x80 {
+            } else if orig == 0x80 {
                 new_game
                     .castling_rights
                     .unset(CastlingRights::WHITE_KINGSIDE);
-            } else if lmove.get_orig() == 0x100000000000000 {
+            } else if orig == 0x100000000000000 {
                 new_game
                     .castling_rights
                     .unset(CastlingRights::BLACK_QUEENSIDE);
-            } else if lmove.get_orig() == 0x8000000000000000 {
+            } else if orig == 0x8000000000000000 {
                 new_game
                     .castling_rights
                     .unset(CastlingRights::BLACK_KINGSIDE);
@@ -263,14 +263,14 @@ impl Game {
         }
 
         if is_king_move {
-            if lmove.get_orig() == 0x10 {
+            if orig == 0x10 {
                 new_game
                     .castling_rights
                     .unset(CastlingRights::WHITE_KINGSIDE);
                 new_game
                     .castling_rights
                     .unset(CastlingRights::WHITE_QUEENSIDE);
-            } else if lmove.get_orig() == 0x1000000000000000 {
+            } else if orig == 0x1000000000000000 {
                 new_game
                     .castling_rights
                     .unset(CastlingRights::BLACK_KINGSIDE);
@@ -289,7 +289,7 @@ impl Game {
         // Complete move
         new_game.board.apply_move(lmove);
 
-        Ok(new_game)
+        new_game
     }
 
     pub fn evaluate(&self) -> i32 {
@@ -335,10 +335,10 @@ mod test {
         let mut game = position1.clone();
         assert_eq!(game, position1);
 
-        game = game.apply_move(&lmove1).unwrap();
+        game = game.apply_move(&lmove1);
         assert_eq!(game, position2);
 
-        game = game.apply_move(&lmove2).unwrap();
+        game = game.apply_move(&lmove2);
         assert_eq!(game, position3);
     }
 
@@ -359,10 +359,10 @@ mod test {
         let mut game = position1.clone();
         assert_eq!(game, position1);
 
-        game = game.apply_move(&lmove1).unwrap();
+        game = game.apply_move(&lmove1);
         assert_eq!(game, position2);
 
-        game = game.apply_move(&lmove2).unwrap();
+        game = game.apply_move(&lmove2);
         assert_eq!(game, position3);
     }
 
@@ -378,11 +378,11 @@ mod test {
         println!("position1: \n{}", game.board);
         assert_eq!(game, position1);
 
-        game = game.apply_move(&lmove1).unwrap();
+        game = game.apply_move(&lmove1);
         println!("position2: \n{}", game.board);
         assert_eq!(game, position2);
 
-        game = game.apply_move(&lmove2).unwrap();
+        game = game.apply_move(&lmove2);
         println!("position3: \n{}", game.board);
         assert_eq!(game, position3);
     }
@@ -407,27 +407,19 @@ mod test {
         let mut positions = HashSet::new();
         positions.insert(game.position_hash());
 
-        game = game
-            .apply_move(&SimpleMove::from_algebraic("b1d2").unwrap())
-            .unwrap();
+        game = game.apply_move(&SimpleMove::from_algebraic("b1d2").unwrap());
         assert!(!positions.contains(&game.position_hash()));
         positions.insert(game.position_hash());
 
-        game = game
-            .apply_move(&SimpleMove::from_algebraic("f8d6").unwrap())
-            .unwrap();
+        game = game.apply_move(&SimpleMove::from_algebraic("f8d6").unwrap());
         assert!(!positions.contains(&game.position_hash()));
         positions.insert(game.position_hash());
 
-        game = game
-            .apply_move(&SimpleMove::from_algebraic("d2b1").unwrap())
-            .unwrap();
+        game = game.apply_move(&SimpleMove::from_algebraic("d2b1").unwrap());
         assert!(!positions.contains(&game.position_hash()));
         positions.insert(game.position_hash());
 
-        game = game
-            .apply_move(&SimpleMove::from_algebraic("d6f8").unwrap())
-            .unwrap();
+        game = game.apply_move(&SimpleMove::from_algebraic("d6f8").unwrap());
         assert!(positions.contains(&game.position_hash()));
     }
 }

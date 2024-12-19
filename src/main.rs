@@ -40,7 +40,7 @@ fn perft(depth: u8, game: Game) -> usize {
     let mut node_count = 0;
     let moves = game.generate_legal_moves();
     for lmove in moves {
-        node_count += perft(depth - 1, game.apply_move(&lmove).unwrap());
+        node_count += perft(depth - 1, game.apply_move(&lmove));
     }
     node_count
 }
@@ -89,9 +89,7 @@ pub fn repl() {
                         );
                     })
                 );
-                current_game = current_game.apply_move(&best_move).unwrap_or_else(|error| {
-                    panic!("info string failed to apply calculated move\n{}", error)
-                });
+                current_game = current_game.apply_move(&best_move);
             }
             "stop" => {}
             "ponderhit" => {}

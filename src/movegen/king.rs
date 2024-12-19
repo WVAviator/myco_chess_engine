@@ -23,7 +23,7 @@ const CASTLE_CHECK_BK_MASK: u64 = 0x7000000000000000;
 const CASTLE_CHECK_BQ_MASK: u64 = 0x1c00000000000000;
 
 pub trait KingMoveGen {
-    fn generate_pseudolegal_king_moves(&self, moves: &mut SmallVec<[SimpleMove; 128]>);
+    fn generate_pseudolegal_king_moves(&self, moves: &mut SmallVec<[SimpleMove; 256]>);
     fn generate_king_vision(&self, turn: &Turn) -> u64;
 }
 
@@ -38,7 +38,7 @@ impl KingMoveGen for Game {
             .expect("could not find precomputed king move")
     }
 
-    fn generate_pseudolegal_king_moves(&self, moves: &mut SmallVec<[SimpleMove; 128]>) {
+    fn generate_pseudolegal_king_moves(&self, moves: &mut SmallVec<[SimpleMove; 256]>) {
         let king = self.board.king(&self.turn);
         let own_pieces = self.board.all_pieces(&self.turn);
         let occupied = self.board.occupied();

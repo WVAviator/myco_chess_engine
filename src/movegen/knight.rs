@@ -13,7 +13,7 @@ use crate::cgame::{
 
 pub trait KnightMoveGen {
     fn generate_knight_vision(&self, turn: &Turn) -> u64;
-    fn generate_psuedolegal_knight_moves(&self, moves: &mut SmallVec<[SimpleMove; 128]>);
+    fn generate_psuedolegal_knight_moves(&self, moves: &mut SmallVec<[SimpleMove; 256]>);
 }
 
 impl KnightMoveGen for Game {
@@ -37,7 +37,7 @@ impl KnightMoveGen for Game {
 
         vision
     }
-    fn generate_psuedolegal_knight_moves(&self, moves: &mut SmallVec<[SimpleMove; 128]>) {
+    fn generate_psuedolegal_knight_moves(&self, moves: &mut SmallVec<[SimpleMove; 256]>) {
         let knights = self.board.knights(&self.turn);
         let own_pieces = self.board.all_pieces(&self.turn);
 

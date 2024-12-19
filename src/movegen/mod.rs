@@ -22,8 +22,8 @@ pub trait MoveGen:
     PawnMoveGen + KingMoveGen + BishopMoveGen + RookMoveGen + KnightMoveGen + Simulate
 {
     fn generate_vision(&self, turn: &Turn) -> u64;
-    fn generate_pseudolegal_moves(&self) -> SmallVec<[SimpleMove; 128]>;
-    fn generate_legal_moves(&self) -> Vec<SimpleMove>;
+    fn generate_pseudolegal_moves(&self) -> SmallVec<[SimpleMove; 256]>;
+    fn generate_legal_moves(&self) -> SmallVec<[SimpleMove; 256]>;
 }
 
 impl MoveGen for Game {
@@ -44,8 +44,8 @@ impl MoveGen for Game {
 
         vision
     }
-    fn generate_pseudolegal_moves(&self) -> SmallVec<[SimpleMove; 128]> {
-        let mut moves: SmallVec<[SimpleMove; 128]> = SmallVec::new();
+    fn generate_pseudolegal_moves(&self) -> SmallVec<[SimpleMove; 256]> {
+        let mut moves: SmallVec<[SimpleMove; 256]> = SmallVec::new();
 
         self.generate_pseudolegal_king_moves(&mut moves);
         self.generate_pseudolegal_bishop_moves(&mut moves);
@@ -55,19 +55,13 @@ impl MoveGen for Game {
 
         moves
     }
-    fn generate_legal_moves(&self) -> Vec<SimpleMove> {
+    fn generate_legal_moves(&self) -> SmallVec<[SimpleMove; 256]> {
         // This runs faster than .clone() so moves are not useful to cache
 
-        let pseudolegal_moves = self.generate_pseudolegal_moves();
-        let mut legal_moves = Vec::with_capacity(pseudolegal_moves.len());
+        let mut moves = self.generate_pseudolegal_moves();
+        moves.retain(|lmove| self.check_move_legality(lmove));
 
-        for lmove in pseudolegal_moves {
-            if self.check_move_legality(&lmove) {
-                legal_moves.push(lmove);
-            }
-        }
-
-        legal_moves
+        moves
     }
 }
 
@@ -163,7 +157,7 @@ mod test {
                 }
                 moves
                     .iter()
-                    .for_each(|lmove| queue.push((depth + 1, game.apply_move(lmove).unwrap())));
+                    .for_each(|lmove| queue.push((depth + 1, game.apply_move(lmove))));
             }
         })
     }

@@ -4,7 +4,7 @@ use anyhow::{bail, Context};
 use rand::random;
 
 use super::{
-    constants::{EIGHTH_RANK, FIRST_RANK, SIXTH_RANK, THIRD_RANK},
+    constants::{EIGHTH_RANK, FIFTH_RANK, FIRST_RANK, FOURTH_RANK, SIXTH_RANK, THIRD_RANK},
     game::Turn,
     moves::{Promotion, SimpleMove},
 };
@@ -49,8 +49,8 @@ impl Board {
         Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR").unwrap()
     }
 
-    pub fn iter_mut(&mut self) -> Vec<&mut u64> {
-        vec![
+    pub fn iter_mut(&mut self) -> [&mut u64; 12] {
+        [
             &mut self.white_pawns,
             &mut self.white_rooks,
             &mut self.white_knights,
@@ -300,30 +300,36 @@ impl Board {
         self.handle_castling(&lmove);
         self.handle_enpassant_takes(&lmove);
 
+        let orig = lmove.get_orig();
+        let dest = lmove.get_dest();
         let move_bits = lmove.get_bits();
 
-        for bb in self.iter_mut() {
-            if lmove.get_orig() & *bb != 0 {
-                *bb ^= move_bits;
-            } else if lmove.get_dest() & *bb != 0 {
-                //captures
-                *bb &= !lmove.get_dest()
+        let bitboards = self.iter_mut();
+
+        for bitboard in bitboards {
+            if orig & *bitboard != 0 {
+                // Moves the piece from orig to dest
+                *bitboard ^= move_bits;
+            } else if dest & *bitboard != 0 {
+                // Captures pieces located at dest
+                *bitboard &= !dest
             }
         }
 
         self.handle_promotions(&lmove);
     }
 
-    fn handle_castling(&mut self, lmove: &SimpleMove) {
+    pub fn handle_castling(&mut self, lmove: &SimpleMove) {
         let move_bits = lmove.get_bits();
-        if self.black_king & lmove.get_orig() != 0 {
+        let orig = lmove.get_orig();
+        if self.black_king & orig != 0 {
             match move_bits {
                 0x5000000000000000 => self.black_rooks ^= 0xa000000000000000, // Castle kingside
                 0x1400000000000000 => self.black_rooks ^= 0x900000000000000,  // Castle queenside
                 _ => {}
             };
         }
-        if self.white_king & lmove.get_orig() != 0 {
+        if self.white_king & orig != 0 {
             match move_bits {
                 0x50 => self.white_rooks ^= 0xa0, // Castle kingside
                 0x14 => self.white_rooks ^= 0x9,  // Castle queenside
@@ -332,38 +338,24 @@ impl Board {
         }
     }
 
-    fn handle_enpassant_takes(&mut self, lmove: &SimpleMove) {
-        if lmove.get_orig() & self.black_pawns != 0 {
-            if lmove.get_dest() & THIRD_RANK == 0 {
-                // Pawn destination wasn't the third rank
-                return;
-            }
-            if lmove.get_dest() == lmove.get_orig() >> 8 {
-                // Pawn moved one square forward, did not take
-                return;
-            }
-            if lmove.get_dest() & self.white_pieces() != 0 {
-                // The dest square had a white piece on it, regular take
-                return;
-            }
-            // Remove the taken pawn
-            self.white_pawns &= !(lmove.get_dest() << 8);
-        }
-        if lmove.get_orig() & self.white_pawns != 0 {
-            if lmove.get_dest() & SIXTH_RANK == 0 {
-                return;
-            }
-            if lmove.get_dest() == lmove.get_orig() << 8 {
-                return;
-            }
-            if lmove.get_dest() & self.black_pieces() != 0 {
-                return;
-            }
-            self.black_pawns &= !(lmove.get_dest() >> 8);
+    pub fn handle_enpassant_takes(&mut self, lmove: &SimpleMove) {
+        let orig = lmove.get_orig();
+        let dest = lmove.get_dest();
+
+        if orig & self.white_pawns & FIFTH_RANK != 0
+            && dest != orig << 8
+            && dest & self.empty() != 0
+        {
+            self.black_pawns &= !(dest >> 8);
+        } else if orig & self.black_pawns & FOURTH_RANK != 0
+            && dest != orig >> 8
+            && dest & self.empty() != 0
+        {
+            self.white_pawns &= !(dest << 8);
         }
     }
 
-    fn handle_promotions(&mut self, lmove: &SimpleMove) {
+    pub fn handle_promotions(&mut self, lmove: &SimpleMove) {
         let black_promotion = self.black_pawns & FIRST_RANK;
         let white_promotion = self.white_pawns & EIGHTH_RANK;
         self.black_pawns ^= black_promotion;

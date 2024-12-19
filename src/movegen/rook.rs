@@ -11,7 +11,7 @@ use crate::{
 
 pub trait RookMoveGen {
     fn generate_rook_vision(&self, turn: &Turn) -> u64;
-    fn generate_pseudolegal_rook_moves(&self, moves: &mut SmallVec<[SimpleMove; 128]>);
+    fn generate_pseudolegal_rook_moves(&self, moves: &mut SmallVec<[SimpleMove; 256]>);
 }
 
 impl RookMoveGen for Game {
@@ -40,7 +40,7 @@ impl RookMoveGen for Game {
         vision
     }
 
-    fn generate_pseudolegal_rook_moves(&self, moves: &mut SmallVec<[SimpleMove; 128]>) {
+    fn generate_pseudolegal_rook_moves(&self, moves: &mut SmallVec<[SimpleMove; 256]>) {
         let rook_pieces = self.board.rooks(&self.turn) | self.board.queens(&self.turn);
         let player_pieces = self.board.all_pieces(&self.turn);
         let opponent_pieces = self.board.all_pieces(&self.turn.other());
