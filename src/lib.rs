@@ -2,6 +2,7 @@
 extern crate test;
 
 pub mod cgame;
+pub mod eval;
 pub mod magic;
 pub mod movegen;
 

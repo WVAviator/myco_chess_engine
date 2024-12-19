@@ -1,0 +1,2 @@
+mod diagonals;
+mod piece;

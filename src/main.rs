@@ -1,7 +1,4 @@
-mod repl;
-
 use std::{
-    collections::HashSet,
     io::{BufRead, BufReader},
     time::{Duration, Instant},
 };
