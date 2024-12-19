@@ -1,7 +1,5 @@
-#![feature(test)]
-extern crate test;
-
 pub mod cgame;
+pub mod engine;
 pub mod eval;
 pub mod magic;
 pub mod movegen;

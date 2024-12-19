@@ -68,8 +68,6 @@ impl MoveGen for Game {
 #[cfg(test)]
 mod test {
 
-    use ::test::Bencher;
-
     use crate::magic::{get_bishop_magic_map, get_rook_magic_map};
 
     use super::*;
@@ -133,32 +131,5 @@ mod test {
 
         // A bug caused it to suggest this move in this position for some reason
         assert!(!moves.contains(&SimpleMove::from_algebraic("a1b1").unwrap()));
-    }
-
-    #[bench]
-    fn benchmark_movegen(b: &mut Bencher) {
-        get_rook_magic_map();
-        get_bishop_magic_map();
-
-        const DEPTH_LIMIT: u8 = 3;
-
-        b.iter(|| {
-            let mut queue: Vec<(u8, Game)> = vec![(1, Game::new_default())];
-            // let mut visited: HashSet<u64> = HashSet::new();
-            while queue.len() != 0 {
-                let (depth, game) = queue.pop().unwrap();
-                // if visited.contains(&game.position_hash()) {
-                //     continue;
-                // }
-                // visited.insert(game.position_hash());
-                let moves = game.generate_legal_moves();
-                if depth >= DEPTH_LIMIT {
-                    continue;
-                }
-                moves
-                    .iter()
-                    .for_each(|lmove| queue.push((depth + 1, game.apply_move(lmove))));
-            }
-        })
     }
 }

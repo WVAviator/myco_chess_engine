@@ -4,12 +4,9 @@ use std::{
     time::{Duration, Instant},
 };
 
-use anyhow::anyhow;
-
-use crate::movegen::MoveGen;
+use crate::{eval::Eval, movegen::MoveGen};
 
 use super::{
-    eval::SimpleEvaluator,
     game::{Game, Turn},
     moves::SimpleMove,
 };
@@ -55,7 +52,7 @@ impl<'a> SimpleEngine<'a> {
             .map(|lmove| {
                 let game = self.game.apply_move(&lmove);
                 let mut lmove = lmove.clone();
-                lmove.evaluation = game.evaluate();
+                lmove.evaluation = game.evaluate_position();
                 lmove
             })
             .collect();
@@ -114,7 +111,7 @@ impl<'a> SimpleEngine<'a> {
             .map(|lmove| {
                 let game = self.game.apply_move(&lmove);
                 let mut lmove = lmove.clone();
-                lmove.evaluation = game.evaluate();
+                lmove.evaluation = game.evaluate_position();
                 Reverse(lmove)
             })
             .collect();

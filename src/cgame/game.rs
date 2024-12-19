@@ -11,7 +11,6 @@ use super::{
         FIFTH_RANK, FOURTH_RANK, KING_START_POSITIONS, ROOK_START_POSITIONS, SECOND_RANK,
         SEVENTH_RANK,
     },
-    eval::SimpleEvaluator,
     moves::{algebraic_to_u64, SimpleMove},
 };
 
@@ -290,10 +289,6 @@ impl Game {
         new_game.board.apply_move(lmove);
 
         new_game
-    }
-
-    pub fn evaluate(&self) -> i32 {
-        SimpleEvaluator::evaluate(self)
     }
 }
 

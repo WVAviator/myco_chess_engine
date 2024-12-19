@@ -7,15 +7,16 @@ use anyhow::{anyhow, bail, Context};
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use rust_chess_engine::{
     cgame::{engine::SimpleEngine, game::Game, moves::SimpleMove},
+    engine::minmax::MinmaxEngine,
     magic::{get_bishop_magic_map, get_rook_magic_map},
     movegen::MoveGen,
 };
 
 fn main() {
-    // repl();
+    repl();
 
-    initialize();
-    depth_test();
+    // initialize();
+    // depth_test();
 }
 
 fn initialize() {
@@ -147,7 +148,9 @@ fn extract_moves(command: &str) -> Result<Game, anyhow::Error> {
 }
 
 fn get_best_move(game: &Game) -> Result<SimpleMove, anyhow::Error> {
-    let engine = SimpleEngine::new(&game);
-    let best_move = engine.get_best_move(8, Duration::from_secs(10))?;
+    // let engine = SimpleEngine::new(&game);
+    // let best_move = engine.get_best_move(8, Duration::from_secs(10))?;
+    let engine = MinmaxEngine::new(game, 6);
+    let best_move = engine.evaluate_best_move();
     Ok(best_move)
 }

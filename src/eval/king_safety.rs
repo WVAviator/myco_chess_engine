@@ -20,26 +20,28 @@ const CASTLE_DEFENSE_BONUS: i32 = 24;
 const CASTLE_FORFEIT_PENALTY: i32 = 32;
 
 pub trait KingSafetyEval {
-    fn calculate_castling_value(&self) -> i32;
+    fn calculate_king_safety_value(&self) -> i32;
 }
 
 impl KingSafetyEval for Game {
-    fn calculate_castling_value(&self) -> i32 {
+    fn calculate_king_safety_value(&self) -> i32 {
         let mut value = 0;
 
         // Endgame
 
         if self.board.occupied().count_ones() < ENDGAME_PIECE_COUNT {
-            value += (self.board.white_king & CENTRAL_KING_SQUARES).count_ones()
+            value += (self.board.white_king & CENTRAL_KING_SQUARES).count_ones() as i32
                 * ENDGAME_CENTRAL_KING_BONUS;
-            value -= (self.board.black_king & CENTRAL_KING_SQUARES).count_ones()
+            value -= (self.board.black_king & CENTRAL_KING_SQUARES).count_ones() as i32
                 * ENDGAME_CENTRAL_KING_BONUS;
 
-            value += (KING_MOVES[self.board.white_king.trailing_zeros()] & self.board.white_pawn)
-                .count_ones()
+            value += (KING_MOVES[self.board.white_king.trailing_zeros() as usize]
+                & self.board.white_pawns)
+                .count_ones() as i32
                 * ENDGAME_PAWN_DEFENSE_BONUS;
-            value += (KING_MOVES[self.board.black_king.trailing_zeros()] & self.board.black_pawn)
-                .count_ones()
+            value -= (KING_MOVES[self.board.black_king.trailing_zeros() as usize]
+                & self.board.black_pawns)
+                .count_ones() as i32
                 * ENDGAME_PAWN_DEFENSE_BONUS;
 
             return value;
@@ -50,16 +52,19 @@ impl KingSafetyEval for Game {
         let castled_white_king = self.board.white_king & CASTLED_WHITE_KING_SQUARES;
         let castled_black_king = self.board.black_king & CASTLED_BLACK_KING_SQUARES;
 
-        value += castled_white_king.count_ones() * CASTLED_BONUS;
-        value -= castled_black_king.count_ones() * CASTLED_BONUS;
+        value += castled_white_king.count_ones() as i32 * CASTLED_BONUS;
+        value -= castled_black_king.count_ones() as i32 * CASTLED_BONUS;
 
-        let white_castle_defenders =
-            KING_MOVES[castled_white_king.trailing_zeros()] & self.board.white_pawns;
-        let black_castle_defenders =
-            KING_MOVES[castled_black_king.trailing_zeros()] & self.board.black_pawns;
-
-        value += white_castle_defenders.count_ones() * CASTLE_DEFENSE_BONUS;
-        value -= black_castle_defenders.count_ones() * CASTLE_DEFENSE_BONUS;
+        if castled_white_king != 0 {
+            let white_castle_defenders =
+                KING_MOVES[castled_white_king.trailing_zeros() as usize] & self.board.white_pawns;
+            value += white_castle_defenders.count_ones() as i32 * CASTLE_DEFENSE_BONUS;
+        }
+        if castled_black_king != 0 {
+            let black_castle_defenders =
+                KING_MOVES[castled_black_king.trailing_zeros() as usize] & self.board.black_pawns;
+            value -= black_castle_defenders.count_ones() as i32 * CASTLE_DEFENSE_BONUS;
+        }
 
         // Castle forfeit
 
@@ -80,5 +85,7 @@ impl KingSafetyEval for Game {
         {
             value += CASTLE_FORFEIT_PENALTY;
         }
+
+        value
     }
 }

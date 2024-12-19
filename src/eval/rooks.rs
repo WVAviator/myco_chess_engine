@@ -1,6 +1,9 @@
-use crate::cgame::{
-    constants::{A_FILE, FILEOF, SECOND_RANK, SEVENTH_RANK},
-    game::{Game, Turn},
+use crate::{
+    cgame::{
+        constants::{FILEOF, SECOND_RANK, SEVENTH_RANK},
+        game::{Game, Turn},
+    },
+    movegen::rook::RookMoveGen,
 };
 
 const OPEN_FILE_ROOK_BONUS: i32 = 32;
@@ -26,7 +29,7 @@ impl RookEval for Game {
         let mut remaining_white_rooks = white_rooks;
         while remaining_white_rooks != 0 {
             let current_rook = remaining_white_rooks & (!remaining_white_rooks + 1);
-            if FILEOF[current_rook.trailing_zeros()] & all_pawns == 0 {
+            if FILEOF[current_rook.trailing_zeros() as usize] & all_pawns == 0 {
                 value += OPEN_FILE_ROOK_BONUS;
             }
             remaining_white_rooks &= remaining_white_rooks - 1;
@@ -35,7 +38,7 @@ impl RookEval for Game {
         let mut remaining_black_rooks = black_rooks;
         while remaining_black_rooks != 0 {
             let current_rook = remaining_black_rooks & (!remaining_black_rooks + 1);
-            if FILEOF[current_rook.trailing_zeros()] & all_pawns == 0 {
+            if FILEOF[current_rook.trailing_zeros() as usize] & all_pawns == 0 {
                 value -= OPEN_FILE_ROOK_BONUS;
             }
             remaining_black_rooks &= remaining_black_rooks - 1;
