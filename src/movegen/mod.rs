@@ -4,6 +4,7 @@ use knight::KnightMoveGen;
 use pawn::PawnMoveGen;
 use rook::RookMoveGen;
 use simulate::Simulate;
+use smallvec::SmallVec;
 
 use crate::cgame::{
     game::{Game, Turn},
@@ -21,7 +22,7 @@ pub trait MoveGen:
     PawnMoveGen + KingMoveGen + BishopMoveGen + RookMoveGen + KnightMoveGen + Simulate
 {
     fn generate_vision(&self, turn: &Turn) -> u64;
-    fn generate_pseudolegal_moves(&self) -> Vec<SimpleMove>;
+    fn generate_pseudolegal_moves(&self) -> SmallVec<[SimpleMove; 128]>;
     fn generate_legal_moves(&self) -> Vec<SimpleMove>;
 }
 
@@ -43,14 +44,14 @@ impl MoveGen for Game {
 
         vision
     }
-    fn generate_pseudolegal_moves(&self) -> Vec<SimpleMove> {
-        let mut moves = Vec::with_capacity(64);
+    fn generate_pseudolegal_moves(&self) -> SmallVec<[SimpleMove; 128]> {
+        let mut moves: SmallVec<[SimpleMove; 128]> = SmallVec::new();
 
-        moves.extend(self.generate_pseudolegal_king_moves());
-        moves.extend(self.generate_pseudolegal_bishop_moves());
-        moves.extend(self.generate_pseudolegal_rook_moves());
-        moves.extend(self.generate_psuedolegal_pawn_moves());
-        moves.extend(self.generate_psuedolegal_knight_moves());
+        self.generate_pseudolegal_king_moves(&mut moves);
+        self.generate_pseudolegal_bishop_moves(&mut moves);
+        self.generate_pseudolegal_rook_moves(&mut moves);
+        self.generate_psuedolegal_pawn_moves(&mut moves);
+        self.generate_psuedolegal_knight_moves(&mut moves);
 
         moves
     }

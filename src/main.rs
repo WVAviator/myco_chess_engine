@@ -1,6 +1,7 @@
 use std::{
+    collections::HashSet,
     io::{BufRead, BufReader},
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 use anyhow::{anyhow, bail, Context};
@@ -23,24 +24,25 @@ fn initialize() {
 }
 
 fn depth_test() {
-    const DEPTH_LIMIT: u8 = 6;
+    let start = Instant::now();
 
-    let mut queue: Vec<(u8, Game)> = vec![(1, Game::new_default())];
-    // let mut visited: HashSet<u64> = HashSet::new();
-    while queue.len() != 0 {
-        let (depth, game) = queue.pop().unwrap();
-        // if visited.contains(&game.position_hash()) {
-        //     continue;
-        // }
-        // visited.insert(game.position_hash());
-        let moves = game.generate_legal_moves();
-        if depth >= DEPTH_LIMIT {
-            continue;
-        }
-        moves
-            .iter()
-            .for_each(|lmove| queue.push((depth + 1, game.apply_move(lmove).unwrap())));
+    let count = perft(6, Game::new_default());
+
+    let elapsed = start.elapsed();
+    println!("Total moves generated: {}", count);
+    println!("Time elapsed: {}ms", elapsed.as_millis());
+}
+
+fn perft(depth: u8, game: Game) -> usize {
+    if depth == 0 {
+        return 1;
     }
+    let mut node_count = 0;
+    let moves = game.generate_legal_moves();
+    for lmove in moves {
+        node_count += perft(depth - 1, game.apply_move(&lmove).unwrap());
+    }
+    node_count
 }
 
 pub fn repl() {

@@ -297,6 +297,14 @@ impl Game {
     }
 }
 
+impl Hash for Game {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.board.hash(state);
+        self.castling_rights.hash(state);
+        self.en_passant.hash(state);
+    }
+}
+
 #[cfg(test)]
 mod test {
     use std::collections::HashSet;

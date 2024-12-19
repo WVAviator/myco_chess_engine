@@ -1,3 +1,5 @@
+use smallvec::SmallVec;
+
 use crate::cgame::{
     constants::{A_FILE, H_FILE, SECOND_RANK, SEVENTH_RANK, SIXTH_RANK, THIRD_RANK},
     game::{Game, Turn},
@@ -6,7 +8,7 @@ use crate::cgame::{
 
 pub trait PawnMoveGen {
     fn generate_pawn_vision(&self, turn: &Turn) -> u64;
-    fn generate_psuedolegal_pawn_moves(&self) -> Vec<SimpleMove>;
+    fn generate_psuedolegal_pawn_moves(&self, moves: &mut SmallVec<[SimpleMove; 128]>);
 }
 
 impl PawnMoveGen for Game {
@@ -28,8 +30,7 @@ impl PawnMoveGen for Game {
 
         vision
     }
-    fn generate_psuedolegal_pawn_moves(&self) -> Vec<SimpleMove> {
-        let mut moves = Vec::with_capacity(24);
+    fn generate_psuedolegal_pawn_moves(&self, mut moves: &mut SmallVec<[SimpleMove; 128]>) {
         let pawns = self.board.pawns(&self.turn);
         let occupied = self.board.occupied();
         let opponent_pieces = self.board.all_pieces(&self.turn.other());
@@ -37,81 +38,69 @@ impl PawnMoveGen for Game {
         match self.turn {
             Turn::White => {
                 let single_advance = ((pawns & !SEVENTH_RANK) << 8) & !occupied;
-                moves.extend(backtrack_moves(single_advance, |bit| bit >> 8));
+                backtrack_moves(single_advance, |bit| bit >> 8, &mut moves);
 
                 let double_advance = ((single_advance & THIRD_RANK) << 8) & !occupied;
-                moves.extend(backtrack_moves(double_advance, |bit| bit >> 16));
+                backtrack_moves(double_advance, |bit| bit >> 16, &mut moves);
 
                 let take_left =
                     ((pawns & !A_FILE & !SEVENTH_RANK) << 7) & (opponent_pieces | self.en_passant);
-                moves.extend(backtrack_moves(take_left, |bit| bit >> 7));
+                backtrack_moves(take_left, |bit| bit >> 7, &mut moves);
 
                 let take_right =
                     ((pawns & !H_FILE & !SEVENTH_RANK) << 9) & (opponent_pieces | self.en_passant);
-                moves.extend(backtrack_moves(take_right, |bit| bit >> 9));
+                backtrack_moves(take_right, |bit| bit >> 9, &mut moves);
 
                 let single_advance_promotion = ((pawns & SEVENTH_RANK) << 8) & !occupied;
-                moves.extend(backtrack_moves_promotion(single_advance_promotion, |bit| {
-                    bit >> 8
-                }));
+                backtrack_moves_promotion(single_advance_promotion, |bit| bit >> 8, &mut moves);
 
                 let take_left_promotion =
                     ((pawns & !A_FILE & SEVENTH_RANK) << 7) & (opponent_pieces | self.en_passant);
-                moves.extend(backtrack_moves_promotion(take_left_promotion, |bit| {
-                    bit >> 7
-                }));
+                backtrack_moves_promotion(take_left_promotion, |bit| bit >> 7, &mut moves);
 
                 let take_right_promotion =
                     ((pawns & !H_FILE & SEVENTH_RANK) << 9) & (opponent_pieces | self.en_passant);
-                moves.extend(backtrack_moves_promotion(take_right_promotion, |bit| {
-                    bit >> 9
-                }));
+                backtrack_moves_promotion(take_right_promotion, |bit| bit >> 9, &mut moves);
             }
             Turn::Black => {
                 let single_advance = ((pawns & !SECOND_RANK) >> 8) & !occupied;
-                moves.extend(backtrack_moves(single_advance, |bit| bit << 8));
+                backtrack_moves(single_advance, |bit| bit << 8, &mut moves);
 
                 let double_advance = ((single_advance & SIXTH_RANK) >> 8) & !occupied;
-                moves.extend(backtrack_moves(double_advance, |bit| bit << 16));
+                backtrack_moves(double_advance, |bit| bit << 16, &mut moves);
 
                 let take_left =
                     ((pawns & !A_FILE & !SECOND_RANK) >> 9) & (opponent_pieces | self.en_passant);
-                moves.extend(backtrack_moves(take_left, |bit| bit << 9));
+                backtrack_moves(take_left, |bit| bit << 9, &mut moves);
 
                 let take_right =
                     ((pawns & !H_FILE & !SECOND_RANK) >> 7) & (opponent_pieces | self.en_passant);
-                moves.extend(backtrack_moves(take_right, |bit| bit << 7));
+                backtrack_moves(take_right, |bit| bit << 7, &mut moves);
 
                 let single_advance_promotion = ((pawns & SECOND_RANK) >> 8) & !occupied;
-                moves.extend(backtrack_moves_promotion(single_advance_promotion, |bit| {
-                    bit << 8
-                }));
+                backtrack_moves_promotion(single_advance_promotion, |bit| bit << 8, &mut moves);
 
                 let take_left_promotion =
                     ((pawns & !A_FILE & SECOND_RANK) >> 9) & (opponent_pieces | self.en_passant);
-                moves.extend(backtrack_moves_promotion(take_left_promotion, |bit| {
-                    bit << 9
-                }));
+                backtrack_moves_promotion(take_left_promotion, |bit| bit << 9, &mut moves);
 
                 let take_right_promotion =
                     ((pawns & !H_FILE & SECOND_RANK) >> 7) & (opponent_pieces | self.en_passant);
-                moves.extend(backtrack_moves_promotion(take_right_promotion, |bit| {
-                    bit << 7
-                }));
+                backtrack_moves_promotion(take_right_promotion, |bit| bit << 7, &mut moves);
             }
         }
-
-        moves
     }
 }
 
 #[inline(always)]
-fn backtrack_moves<F>(dest_squares: u64, calculate_origin: F) -> Vec<SimpleMove>
-where
+fn backtrack_moves<F>(
+    dest_squares: u64,
+    calculate_origin: F,
+    moves: &mut SmallVec<[SimpleMove; 128]>,
+) where
     F: Fn(u64) -> u64,
 {
     let mut bb = dest_squares;
-    let mut moves = Vec::with_capacity(8);
 
     while bb != 0 {
         let lsb = bb & (!bb + 1);
@@ -120,17 +109,17 @@ where
         moves.push(lmove);
         bb &= bb - 1; // Clear the least significant bit
     }
-
-    moves
 }
 
 #[inline(always)]
-fn backtrack_moves_promotion<F>(dest_squares: u64, calculate_origin: F) -> Vec<SimpleMove>
-where
+fn backtrack_moves_promotion<F>(
+    dest_squares: u64,
+    calculate_origin: F,
+    moves: &mut SmallVec<[SimpleMove; 128]>,
+) where
     F: Fn(u64) -> u64,
 {
     let mut bb = dest_squares;
-    let mut moves = Vec::with_capacity(8);
 
     while bb != 0 {
         let lsb = bb & (!bb + 1);
@@ -138,8 +127,6 @@ where
         moves.extend(SimpleMove::new_promotion(origin, lsb));
         bb &= bb - 1;
     }
-
-    moves
 }
 
 #[cfg(test)]
@@ -150,7 +137,8 @@ mod test {
     fn calculates_white_pawn_moves() {
         let game = Game::from_fen("1qB2bkr/PPp2p1p/6p1/2r1b1RP/4pPP1/3B4/2PPP3/NQNR2K1 w - - 0 1")
             .unwrap();
-        let moves = game.generate_psuedolegal_pawn_moves();
+        let mut moves = SmallVec::new();
+        game.generate_psuedolegal_pawn_moves(&mut moves);
 
         assert_eq!(moves.len(), 15);
 
@@ -174,7 +162,8 @@ mod test {
     #[test]
     fn calculates_black_pawn_moves() {
         let game = Game::from_fen("8/1ppp4/1P2p3/2B2k2/2K5/8/5p2/6N1 b - - 0 1").unwrap();
-        let moves = game.generate_psuedolegal_pawn_moves();
+        let mut moves = SmallVec::new();
+        game.generate_psuedolegal_pawn_moves(&mut moves);
 
         assert_eq!(moves.len(), 13);
 
@@ -196,7 +185,8 @@ mod test {
     #[test]
     fn pawn_moves_cannot_wrap() {
         let game = Game::from_fen("3R1n1k/1B4pp/1p6/5p2/p7/4P1P1/PP3P1P/RN4K1 b - - 0 48").unwrap();
-        let moves = game.generate_psuedolegal_pawn_moves();
+        let mut moves = SmallVec::new();
+        game.generate_psuedolegal_pawn_moves(&mut moves);
 
         assert!(!moves.contains(&SimpleMove::from_algebraic("a4h2").unwrap()));
     }
@@ -204,7 +194,8 @@ mod test {
     #[test]
     fn calculates_black_pawn_moves_en_passant() {
         let game = Game::from_fen("8/8/8/5k2/2K1pP2/8/8/8 b - f3 0 1").unwrap();
-        let moves = game.generate_psuedolegal_pawn_moves();
+        let mut moves = SmallVec::new();
+        game.generate_psuedolegal_pawn_moves(&mut moves);
 
         assert_eq!(moves.len(), 2);
 

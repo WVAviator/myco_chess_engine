@@ -1,6 +1,7 @@
 use std::sync::OnceLock;
 
 use anyhow::anyhow;
+use smallvec::SmallVec;
 
 use crate::cgame::{
     castling_rights::CastlingRights,
@@ -22,7 +23,7 @@ const CASTLE_CHECK_BK_MASK: u64 = 0x7000000000000000;
 const CASTLE_CHECK_BQ_MASK: u64 = 0x1c00000000000000;
 
 pub trait KingMoveGen {
-    fn generate_pseudolegal_king_moves(&self) -> Vec<SimpleMove>;
+    fn generate_pseudolegal_king_moves(&self, moves: &mut SmallVec<[SimpleMove; 128]>);
     fn generate_king_vision(&self, turn: &Turn) -> u64;
 }
 
@@ -37,13 +38,11 @@ impl KingMoveGen for Game {
             .expect("could not find precomputed king move")
     }
 
-    fn generate_pseudolegal_king_moves(&self) -> Vec<SimpleMove> {
+    fn generate_pseudolegal_king_moves(&self, moves: &mut SmallVec<[SimpleMove; 128]>) {
         let king = self.board.king(&self.turn);
         let own_pieces = self.board.all_pieces(&self.turn);
         let occupied = self.board.occupied();
         let opponent_vision = self.generate_vision(&self.turn.other());
-
-        let mut moves = Vec::new();
 
         let destination_squares = KING_MOVES
             .get(king.trailing_zeros() as usize)
@@ -88,8 +87,6 @@ impl KingMoveGen for Game {
                 }
             }
         }
-
-        moves
     }
 }
 
@@ -125,7 +122,8 @@ mod test {
     #[test]
     fn calculate_simple_king_moves() {
         let game = Game::from_fen("8/6k1/8/8/8/1n6/KP6/8 w - - 0 1").unwrap();
-        let moves = game.generate_pseudolegal_king_moves();
+        let mut moves = SmallVec::new();
+        game.generate_pseudolegal_king_moves(&mut moves);
 
         assert_eq!(moves.len(), 3);
 
@@ -139,8 +137,8 @@ mod test {
         let game =
             Game::from_fen("rn1qk1r1/pbpp1ppp/1p6/2b1p3/4P3/1PNP3N/PBPQBnPP/R3K2R w KQq - 0 1")
                 .unwrap();
-        let moves = game.generate_pseudolegal_king_moves();
-        SimpleMove::print_list(&moves);
+        let mut moves = SmallVec::new();
+        game.generate_pseudolegal_king_moves(&mut moves);
 
         assert_eq!(moves.len(), 2);
 
@@ -153,7 +151,8 @@ mod test {
         let game =
             Game::from_fen("rn1qk1r1/pbpp1ppp/1p6/2b1p3/4P3/1PNP3N/PBPQBnPP/R3K2R b KQq - 0 1")
                 .unwrap();
-        let moves = game.generate_pseudolegal_king_moves();
+        let mut moves = SmallVec::new();
+        game.generate_pseudolegal_king_moves(&mut moves);
 
         assert_eq!(moves.len(), 2);
 
@@ -164,7 +163,8 @@ mod test {
     #[test]
     fn king_cannot_put_self_in_check() {
         let game = Game::from_fen("8/8/8/4k3/1pb2p2/1r3P2/6NK/1n1Q2R1 b - - 0 1").unwrap();
-        let moves = game.generate_pseudolegal_king_moves();
+        let mut moves = SmallVec::new();
+        game.generate_pseudolegal_king_moves(&mut moves);
 
         assert_eq!(moves.len(), 3);
 
@@ -176,7 +176,8 @@ mod test {
     #[test]
     fn king_cannot_castle_through_check() {
         let game = Game::from_fen("8/8/k7/6P1/2b5/8/8/4K2R w K - 0 1").unwrap();
-        let moves = game.generate_pseudolegal_king_moves();
+        let mut moves = SmallVec::new();
+        game.generate_pseudolegal_king_moves(&mut moves);
 
         assert!(!moves.contains(&SimpleMove::from_algebraic("e1g1").unwrap()));
     }
@@ -184,7 +185,8 @@ mod test {
     #[test]
     fn king_cannot_castle_into_check() {
         let game = Game::from_fen("8/8/k7/6P1/3b4/8/8/4K2R w K - 0 1").unwrap();
-        let moves = game.generate_pseudolegal_king_moves();
+        let mut moves = SmallVec::new();
+        game.generate_pseudolegal_king_moves(&mut moves);
 
         assert!(!moves.contains(&SimpleMove::from_algebraic("e1g1").unwrap()));
     }
@@ -192,7 +194,8 @@ mod test {
     #[test]
     fn king_cannot_castle_while_in_check() {
         let game = Game::from_fen("8/8/k7/6P1/1b6/8/8/4K2R w K - 0 1").unwrap();
-        let moves = game.generate_pseudolegal_king_moves();
+        let mut moves = SmallVec::new();
+        game.generate_pseudolegal_king_moves(&mut moves);
 
         assert!(!moves.contains(&SimpleMove::from_algebraic("e1g1").unwrap()));
     }

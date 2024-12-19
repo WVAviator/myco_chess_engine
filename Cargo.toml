@@ -9,6 +9,7 @@ edition = "2021"
 anyhow = "1.0.93"
 bitflags = "2.6.0"
 rand = "0.8.5"
+smallvec = "1.13.2"
 
 [profile.release]
 debug = true

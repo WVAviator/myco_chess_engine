@@ -1,6 +1,7 @@
 use std::sync::OnceLock;
 
 use anyhow::anyhow;
+use smallvec::SmallVec;
 
 use crate::cgame::{
     constants::{
@@ -12,7 +13,7 @@ use crate::cgame::{
 
 pub trait KnightMoveGen {
     fn generate_knight_vision(&self, turn: &Turn) -> u64;
-    fn generate_psuedolegal_knight_moves(&self) -> Vec<SimpleMove>;
+    fn generate_psuedolegal_knight_moves(&self, moves: &mut SmallVec<[SimpleMove; 128]>);
 }
 
 impl KnightMoveGen for Game {
@@ -36,9 +37,7 @@ impl KnightMoveGen for Game {
 
         vision
     }
-    fn generate_psuedolegal_knight_moves(&self) -> Vec<SimpleMove> {
-        let mut moves = Vec::with_capacity(16);
-
+    fn generate_psuedolegal_knight_moves(&self, moves: &mut SmallVec<[SimpleMove; 128]>) {
         let knights = self.board.knights(&self.turn);
         let own_pieces = self.board.all_pieces(&self.turn);
 
@@ -59,8 +58,6 @@ impl KnightMoveGen for Game {
             }
             remaining_knights &= remaining_knights - 1;
         }
-
-        moves
     }
 }
 
@@ -96,7 +93,8 @@ mod test {
     #[test]
     fn calculate_knight_moves() {
         let game = Game::from_fen("6k1/3b4/2P2n2/1P6/3NP3/1b3PN1/2R1P3/1K5R w - - 0 1").unwrap();
-        let moves = game.generate_psuedolegal_knight_moves();
+        let mut moves = SmallVec::new();
+        game.generate_psuedolegal_knight_moves(&mut moves);
 
         assert_eq!(moves.len(), 6);
 

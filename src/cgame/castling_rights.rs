@@ -5,7 +5,7 @@ use rand::random;
 
 use super::game::Turn;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct CastlingRights(u8);
 
 impl CastlingRights {

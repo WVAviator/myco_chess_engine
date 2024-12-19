@@ -1,4 +1,5 @@
 use anyhow::anyhow;
+use smallvec::SmallVec;
 
 use crate::{
     cgame::{
@@ -10,7 +11,7 @@ use crate::{
 
 pub trait RookMoveGen {
     fn generate_rook_vision(&self, turn: &Turn) -> u64;
-    fn generate_pseudolegal_rook_moves(&self) -> Vec<SimpleMove>;
+    fn generate_pseudolegal_rook_moves(&self, moves: &mut SmallVec<[SimpleMove; 128]>);
 }
 
 impl RookMoveGen for Game {
@@ -39,9 +40,7 @@ impl RookMoveGen for Game {
         vision
     }
 
-    fn generate_pseudolegal_rook_moves(&self) -> Vec<SimpleMove> {
-        let mut moves = Vec::with_capacity(36);
-
+    fn generate_pseudolegal_rook_moves(&self, moves: &mut SmallVec<[SimpleMove; 128]>) {
         let rook_pieces = self.board.rooks(&self.turn) | self.board.queens(&self.turn);
         let player_pieces = self.board.all_pieces(&self.turn);
         let opponent_pieces = self.board.all_pieces(&self.turn.other());
@@ -68,8 +67,6 @@ impl RookMoveGen for Game {
 
             remaining_rooks &= remaining_rooks - 1;
         }
-
-        moves
     }
 }
 
@@ -81,7 +78,8 @@ mod test {
     fn calculates_basic_rook_moves() {
         let game = Game::from_fen("k7/8/3p4/3r3p/8/B2N4/qb6/7K b - - 0 1").unwrap();
 
-        let moves = game.generate_pseudolegal_rook_moves();
+        let mut moves = SmallVec::new();
+        game.generate_pseudolegal_rook_moves(&mut moves);
 
         assert_eq!(moves.len(), 10);
 
@@ -105,7 +103,8 @@ mod test {
             Game::from_fen("r1bq1rk1/pppn1ppp/3bpn2/3p4/2PP4/5NP1/PP2PPBP/RNBQ1RK1 w - - 0 1")
                 .unwrap();
 
-        let moves = game.generate_pseudolegal_rook_moves();
+        let mut moves = SmallVec::new();
+        game.generate_pseudolegal_rook_moves(&mut moves);
 
         assert_eq!(moves.len(), 4);
 
