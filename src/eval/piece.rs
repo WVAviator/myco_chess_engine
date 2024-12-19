@@ -3,8 +3,8 @@ use crate::cgame::game::Game;
 const KING_VALUE: i32 = 10000000;
 const QUEEN_VALUE: i32 = 900;
 const ROOK_VALUE: i32 = 500;
-const BISHOP_VALUE: i32 = 350;
-const KNIGHT_VALUE: i32 = 325;
+const BISHOP_VALUE: i32 = 325;
+const KNIGHT_VALUE: i32 = 300;
 const PAWN_VALUE: i32 = 100;
 
 pub trait PieceEval {
