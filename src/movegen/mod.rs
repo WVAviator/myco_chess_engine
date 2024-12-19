@@ -11,12 +11,12 @@ use crate::cgame::{
     moves::SimpleMove,
 };
 
-mod bishop;
-mod king;
-mod knight;
-mod pawn;
-mod rook;
-mod simulate;
+pub mod bishop;
+pub mod king;
+pub mod knight;
+pub mod pawn;
+pub mod rook;
+pub mod simulate;
 
 pub trait MoveGen:
     PawnMoveGen + KingMoveGen + BishopMoveGen + RookMoveGen + KnightMoveGen + Simulate
