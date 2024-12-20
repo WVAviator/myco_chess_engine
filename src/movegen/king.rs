@@ -270,6 +270,16 @@ mod test {
     }
 
     #[test]
+    fn cannot_castle_while_in_check_black() {
+        let game =
+            Game::from_fen("1n2k2r/4bpp1/3ppn1p/pB6/4P1P1/1PN1BP2/1P5P/2KR3R b k - 1 40").unwrap();
+        let mut moves = SmallVec::new();
+        game.generate_pseudolegal_king_moves(&mut moves);
+
+        assert!(!moves.contains(&SimpleMove::from_algebraic("e8g8").unwrap()));
+    }
+
+    #[test]
     fn king_moves() {
         println!(
             "[{}]",

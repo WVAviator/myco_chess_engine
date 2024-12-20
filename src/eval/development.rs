@@ -30,7 +30,7 @@ impl DevelopmentEval for Game {
             return value;
         }
 
-        let turn_index: usize = (self.fullmove_number / 6) as usize;
+        let turn_index: usize = std::cmp::min((self.fullmove_number / 6) as usize, 9);
 
         value -= (self.board.white_rooks & WHITE_ROOK_STARTING_POSITIONS).count_ones() as i32
             * UNDEVELOPED_ROOK_PENALTY[turn_index];

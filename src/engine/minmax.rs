@@ -1,6 +1,8 @@
 use std::{
     cmp::{max, min},
+    collections::BinaryHeap,
     i32,
+    time::{Duration, Instant},
 };
 
 use rayon::prelude::*;
@@ -17,22 +19,46 @@ use crate::{
 pub struct MinmaxEngine<'a> {
     depth: u8,
     game: &'a Game,
+    deadline: Instant,
 }
 
 impl<'a> MinmaxEngine<'a> {
-    pub fn new(game: &'a Game, depth: u8) -> Self {
-        MinmaxEngine { depth, game }
+    pub fn new(game: &'a Game, depth: u8, max_seconds: u64) -> Self {
+        let deadline = Instant::now() + Duration::from_secs(max_seconds);
+        MinmaxEngine {
+            depth,
+            game,
+            deadline,
+        }
     }
 
     pub fn evaluate_best_move(&self) -> SimpleMove {
         let legal_moves = self.game.generate_legal_moves();
+        let mut legal_moves: Vec<MoveEvaluation<'_>> = legal_moves
+            .iter()
+            .map(|lmove| MoveEvaluation(lmove, self.game.evaluate_position()))
+            .collect();
+
+        match self.game.turn {
+            Turn::White => {
+                legal_moves.sort_unstable_by(|a, b| b.cmp(a));
+            }
+            Turn::Black => {
+                legal_moves.sort_unstable();
+            }
+        }
 
         let mut evaluations: Vec<MoveEvaluation<'_>> = legal_moves
             .into_par_iter()
-            .map(|lmove| {
+            .map(|move_eval| {
                 MoveEvaluation(
-                    lmove,
-                    Self::minmax(self.depth, self.game.apply_move(&lmove), i32::MIN, i32::MAX),
+                    move_eval.0,
+                    self.minmax(
+                        self.depth,
+                        self.game.apply_move(move_eval.0),
+                        i32::MIN,
+                        i32::MAX,
+                    ),
                 )
             })
             .collect();
@@ -53,8 +79,8 @@ impl<'a> MinmaxEngine<'a> {
         }
     }
 
-    fn minmax(depth: u8, game: Game, mut alpha: i32, mut beta: i32) -> i32 {
-        if depth == 0 {
+    fn minmax(&self, depth: u8, game: Game, mut alpha: i32, mut beta: i32) -> i32 {
+        if depth == 0 || Instant::now() > self.deadline {
             return game.evaluate_position();
         }
 
@@ -64,7 +90,7 @@ impl<'a> MinmaxEngine<'a> {
                 for lmove in game.generate_pseudolegal_moves() {
                     value = max(
                         value,
-                        Self::minmax(depth - 1, game.apply_move(&lmove), alpha, beta),
+                        self.minmax(depth - 1, game.apply_move(&lmove), alpha, beta),
                     );
                     alpha = max(alpha, value);
                     if alpha >= beta {
@@ -78,7 +104,7 @@ impl<'a> MinmaxEngine<'a> {
                 for lmove in game.generate_pseudolegal_moves() {
                     value = min(
                         value,
-                        Self::minmax(depth - 1, game.apply_move(&lmove), alpha, beta),
+                        self.minmax(depth - 1, game.apply_move(&lmove), alpha, beta),
                     );
                     beta = min(beta, value);
                     if beta <= alpha {

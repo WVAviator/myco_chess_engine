@@ -9,7 +9,7 @@ const LONG_DIAGONAL: u64 = 0x8040201008040201;
 const LONG_ANTIDIAGONAL: u64 = 0x102040810204080;
 
 const BISHOP_MOBILITY_FACTOR: i32 = 256;
-const LONG_DIAGONAL_BONUS: i32 = 32;
+const LONG_DIAGONAL_BONUS: i32 = 16;
 
 pub trait BishopEval {
     fn calculate_bishop_value(&self) -> i32;
