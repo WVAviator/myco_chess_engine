@@ -1,0 +1,48 @@
+# Virtual environment directory
+venv/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Log files
+*.log
+
+# Cache files and directories
+*.cache
+*.pytest_cache/
+.cache/
+
+# Configuration files
+*.ini
+*.cfg
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# IDE-specific files
+.idea/
+.vscode/
+*.swp
+
+# Package management files
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Pytest coverage reports
+htmlcov/
+coverage.xml
+*.cover
+*.py,cover
+.coverage
+
+# Python packaging files
+*.egg
+*.egg-info/
+dist/
+build/
