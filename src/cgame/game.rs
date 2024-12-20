@@ -1,4 +1,4 @@
-use std::{hash::Hash, pin};
+use std::hash::Hash;
 
 use anyhow::{anyhow, bail, Context};
 
@@ -155,6 +155,7 @@ impl Game {
     }
 
     fn initialize_cache(&mut self) {
+        self.game_cache.initialized = false;
         self.game_cache.white_vision = self.generate_vision(&Turn::White);
         self.game_cache.black_vision = self.generate_vision(&Turn::Black);
         self.game_cache.initialized = true;
@@ -288,6 +289,8 @@ impl Game {
         // Complete move
         new_game.board.apply_move(lmove);
 
+        new_game.initialize_cache();
+
         new_game
     }
 }
@@ -416,5 +419,17 @@ mod test {
 
         game = game.apply_move(&SimpleMove::from_algebraic("d6f8").unwrap());
         assert!(positions.contains(&game.position_hash()));
+    }
+
+    #[test]
+    fn correct_uci_startpos() {
+        let moves_list =
+            "g1f3 d7d5 b1c3 g8f6 d2d4 c7c5 c1g5 f6e4 e2e3 d8a5 f1b5 b8d7 d1b1 e4c3 b2c3 a5c3";
+        let fen_str = "r1b1kb1r/pp1npppp/8/1Bpp2B1/3P4/2q1PN2/P1P2PPP/RQ2K2R w KQkq - 0 17";
+
+        assert_eq!(
+            Game::from_uci_startpos(&moves_list).unwrap(),
+            Game::from_fen(&fen_str).unwrap()
+        )
     }
 }

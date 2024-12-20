@@ -33,6 +33,8 @@ impl<'a> MinmaxEngine<'a> {
     }
 
     pub fn evaluate_best_move(&self) -> SimpleMove {
+        let evaluation = self.game.evaluate_position();
+        println!("info string current evaluation {}", evaluation);
         let legal_moves = self.game.generate_legal_moves();
         let mut legal_moves: Vec<MoveEvaluation<'_>> = legal_moves
             .iter()
@@ -65,18 +67,32 @@ impl<'a> MinmaxEngine<'a> {
 
         evaluations.sort_unstable();
 
-        match self.game.turn {
-            Turn::White => evaluations
-                .last()
-                .expect("info string no legal moves available")
-                .0
-                .clone(),
-            Turn::Black => evaluations
-                .first()
-                .expect("info string no legal moves available")
-                .0
-                .clone(),
-        }
+        let evaluation = match self.game.turn {
+            Turn::White => {
+                println!(
+                    "info string selected move evaluation {}",
+                    evaluations.last().unwrap().1
+                );
+                evaluations
+                    .last()
+                    .expect("info string no legal moves available")
+                    .0
+                    .clone()
+            }
+            Turn::Black => {
+                println!(
+                    "info string selected move evaluation {}",
+                    evaluations.first().unwrap().1
+                );
+                evaluations
+                    .first()
+                    .expect("info string no legal moves available")
+                    .0
+                    .clone()
+            }
+        };
+
+        evaluation
     }
 
     fn minmax(&self, depth: u8, game: Game, mut alpha: i32, mut beta: i32) -> i32 {
