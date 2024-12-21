@@ -13,10 +13,10 @@ use rust_chess_engine::{
 };
 
 fn main() {
-    repl();
+    // repl();
 
-    // initialize();
-    // depth_test();
+    initialize();
+    depth_test();
 }
 
 fn initialize() {
@@ -42,7 +42,8 @@ fn perft(depth: u8, game: Game) -> usize {
     let moves = game.generate_legal_moves();
 
     moves
-        .into_par_iter() // Parallelize over legal moves
+        // .into_par_iter() // Parallelize over legal moves
+        .into_iter()
         .map(|lmove| {
             let new_game = game.apply_move(&lmove); // Apply the move
             perft(depth - 1, new_game) // Recursive call for child nodes
