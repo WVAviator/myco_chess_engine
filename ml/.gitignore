@@ -46,3 +46,7 @@ coverage.xml
 *.egg-info/
 dist/
 build/
+
+# Ingore the model and data (large files)
+chess_eval_model.pt
+*.csv

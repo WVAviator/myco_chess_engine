@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from sklearn.model_selection import train_test_split
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -72,10 +73,13 @@ def process_csv_to_training_data(csv_path):
              - X is a numpy array of input features for each FEN
              - y is a numpy array of evaluations
     """
-    df = pd.read_csv(csv_path)
+    df = pd.read_csv(csv_path, nrows=100000)
     
     inputs = []
     evaluations = []
+
+    df['Evaluation'] = df['Evaluation'].apply(lambda x: float(x.lstrip('\ufeff').lstrip('#').lstrip('+')) / 24000)
+    print(df['Evaluation'].abs().max())
     
     print("Converting FEN strings to sparse arrays for processing.")
     for index, row in df.iterrows():
@@ -111,10 +115,10 @@ class FenDataset(Dataset):
 class ChessEvaluationModel(nn.Module):
     def __init__(self, input_size):
         super(ChessEvaluationModel, self).__init__()
-        self.fc1 = nn.Linear(input_size, 128)  # Input layer
+        self.fc1 = nn.Linear(input_size, 128)
         self.relu = nn.ReLU()
-        self.fc2 = nn.Linear(128, 64)         # Hidden layer
-        self.fc3 = nn.Linear(64, 1)          # Output layer (evaluation)
+        self.fc2 = nn.Linear(128, 64)
+        self.fc3 = nn.Linear(64, 1)
 
     def forward(self, x):
         x = self.relu(self.fc1(x))
@@ -125,19 +129,24 @@ class ChessEvaluationModel(nn.Module):
 
 X, y = process_csv_to_training_data("./chessData.csv")
 
-dataset = FenDataset(X, y)
-dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
+X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
+
+train_dataset = FenDataset(X_train, y_train)
+val_dataset = FenDataset(X_val, y_val)
+
+train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
 
 input_size = X.shape[1]
 model = ChessEvaluationModel(input_size)
 criterion = nn.MSELoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-num_epochs = 10
+num_epochs = 24
 for epoch in range(num_epochs):
     model.train()
     epoch_loss = 0.0
-    for batch_features, batch_labels in dataloader:
+    for batch_features, batch_labels in train_loader:
         optimizer.zero_grad()
         predictions = model(batch_features)
         loss = criterion(predictions.squeeze(), batch_labels)
@@ -146,6 +155,17 @@ for epoch in range(num_epochs):
         epoch_loss += loss.item()
 
     print(f"Epoch {epoch+1}/{num_epochs}, Loss: {epoch_loss:.4f}")
+
+model.eval()
+val_loss = 0.0
+with torch.no_grad():
+    for val_features, val_labels in val_loader:
+        val_predictions = model(val_features)
+        loss = criterion(val_predictions.squeeze(), val_labels)
+        val_loss += loss.item()
+
+val_loss /= len(val_loader)
+print(f"Validation Loss: {val_loss:.4f}")
 
 torch.save(model.state_dict(), "chess_eval_model.pt")
 print("Model saved as chess_eval_model.pt")
