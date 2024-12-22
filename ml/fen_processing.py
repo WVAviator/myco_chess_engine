@@ -35,3 +35,5 @@ def fen_to_cnn_input_compact(fen):
         cnn_input[:6] *= -1
 
     return cnn_input
+
+print(fen_to_cnn_input_compact("8/8/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"))

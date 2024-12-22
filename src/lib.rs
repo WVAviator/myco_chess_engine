@@ -3,6 +3,7 @@ pub mod engine;
 pub mod eval;
 pub mod magic;
 pub mod movegen;
+pub mod ml;
 
 #[cfg(test)]
 mod integration_tests {
