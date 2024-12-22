@@ -44,7 +44,7 @@ impl GameCache {
 
 impl Game {
     pub fn new_default() -> Self {
-        let mut game =
+        let game =
             Game::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap();
 
         game

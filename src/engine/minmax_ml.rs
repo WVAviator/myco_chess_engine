@@ -22,16 +22,16 @@ pub struct MinmaxMLEngine<'a> {
     depth: u8,
     game: &'a Game,
     deadline: Instant,
-    model: Arc<Mutex<MycoCNNPredictor<'a>>>,
+    model: Arc<MycoCNNPredictor>,
 }
 
 impl<'a> MinmaxMLEngine<'a> {
     pub fn new(game: &'a Game, depth: u8, max_seconds: u64) -> Self {
         let deadline = Instant::now() + Duration::from_secs(max_seconds);
-        let model = Arc::new(Mutex::new(
-            MycoCNNPredictor::new("ml/chess_eval_model.pt", tch::Device::Cpu)
+        let model = Arc::new(
+            MycoCNNPredictor::new("./ml/chess_eval_model.pt", tch::Device::Cpu)
                 .expect("failed to initialize cnn model"),
-        ));
+        );
         MinmaxMLEngine {
             depth,
             game,
@@ -44,7 +44,12 @@ impl<'a> MinmaxMLEngine<'a> {
         let legal_moves = self.game.generate_legal_moves();
         let mut legal_moves: Vec<MoveEvaluation<'_>> = legal_moves
             .iter()
-            .map(|lmove| MoveEvaluation(lmove, self.game.evaluate_position()))
+            .map(|lmove| {
+                MoveEvaluation(
+                    lmove,
+                    self.obtain_ml_prediction(&self.game.apply_move(&lmove)),
+                )
+            })
             .collect();
 
         match self.game.turn {
@@ -103,11 +108,7 @@ impl<'a> MinmaxMLEngine<'a> {
 
     fn minmax(&self, depth: u8, game: Game, mut alpha: i32, mut beta: i32) -> i32 {
         if depth == 0 || Instant::now() > self.deadline {
-            return self
-                .model
-                .lock()
-                .expect("failed to obtain lock on ml model")
-                .predict(&game);
+            return self.obtain_ml_prediction(&game);
         }
 
         match game.turn {
@@ -140,6 +141,15 @@ impl<'a> MinmaxMLEngine<'a> {
                 value
             }
         }
+    }
+
+    fn obtain_ml_prediction(&self, game: &Game) -> i32 {
+        Arc::clone(&self.model)
+            .predict(&game)
+            .unwrap_or_else(|err| {
+                println!("info string error reading from cnn model: {}", err);
+                game.evaluate_position()
+            })
     }
 }
 

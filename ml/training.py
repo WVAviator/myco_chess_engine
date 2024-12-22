@@ -98,9 +98,9 @@ print(f"Validation Loss: {val_loss:.4f}")
 
 # w = {k: v for k, v in model.state_dict().items()}
 # torch.save(w, "chess_eval_model.ptsd")
-torch.save(model.state_dict(), "chess_eval_model.pt")
+# torch.save(model.state_dict(), "chess_eval_model.pt")
 
-# output_model = torch.jit.trace(model)
-# output_model.save("chess_eval_model.pt")
+output_model = torch.jit.script(model)
+output_model.save("chess_eval_model.pt")
 
 print("Model saved as chess_eval_model.pt")

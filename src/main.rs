@@ -151,7 +151,7 @@ fn extract_moves(command: &str) -> Result<Game, anyhow::Error> {
 fn get_best_move(game: &Game) -> Result<SimpleMove, anyhow::Error> {
     // let engine = SimpleEngine::new(&game);
     // let best_move = engine.get_best_move(8, Duration::from_secs(10))?;
-    let engine = MinmaxMLEngine::new(game, 10, 14);
+    let engine = MinmaxMLEngine::new(game, 5, 14);
     let best_move = engine.evaluate_best_move();
     Ok(best_move)
 }
