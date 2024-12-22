@@ -18,7 +18,7 @@ def process_csv_to_training_data(csv_path):
              - X is a numpy array of input features for each FEN
              - y is a numpy array of evaluations
     """
-    df = pd.read_csv(csv_path, nrows=100000)
+    df = pd.read_csv(csv_path, nrows=10000)
     
     inputs = []
     evaluations = []
@@ -96,5 +96,11 @@ with torch.no_grad():
 val_loss /= len(val_loader)
 print(f"Validation Loss: {val_loss:.4f}")
 
+# w = {k: v for k, v in model.state_dict().items()}
+# torch.save(w, "chess_eval_model.ptsd")
 torch.save(model.state_dict(), "chess_eval_model.pt")
+
+# output_model = torch.jit.trace(model)
+# output_model.save("chess_eval_model.pt")
+
 print("Model saved as chess_eval_model.pt")

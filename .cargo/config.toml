@@ -1,0 +1,3 @@
+[env]
+LIBTORCH = "~/libtorch"
+DYLD_LIBRARY_PATH = "$LIBTORCH/lib:$DYLD_LIBRARY_PATH"
