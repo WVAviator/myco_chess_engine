@@ -4,19 +4,36 @@ use std::{
 };
 
 use anyhow::{anyhow, bail, Context};
+use clap::Parser;
 use rust_chess_engine::{
     cgame::{game::Game, moves::SimpleMove},
     engine::minmax_ml::MinmaxMLEngine,
+    hash::zobrist::generate_hashes,
     magic::{get_bishop_magic_map, get_rook_magic_map},
     movegen::MoveGen,
 };
 
-fn main() {
-    println!("starting Myco 0.1");
-    repl();
+mod args;
 
-    // initialize();
-    // depth_test();
+fn main() {
+    let args = Args::parse();
+
+    generate_hashes();
+
+    if let Some(depth) = args.perft {
+        initialize();
+        depth_test(depth);
+    }
+
+    repl();
+}
+
+#[derive(Parser, Debug)]
+#[command(version, about, long_about = None)]
+struct Args {
+    /// Perform a Perft move generation test to the specified depth
+    #[arg(short, long, name = "depth")]
+    perft: Option<u8>,
 }
 
 fn initialize() {
@@ -24,10 +41,10 @@ fn initialize() {
     get_bishop_magic_map();
 }
 
-fn depth_test() {
+fn depth_test(depth: u8) {
     let start = Instant::now();
 
-    let count = perft(6, Game::new_default());
+    let count = perft(depth, Game::new_default());
 
     let elapsed = start.elapsed();
     println!("Total moves generated: {}", count);
