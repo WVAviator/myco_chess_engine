@@ -1,18 +1,18 @@
 use std::{
     io::{BufRead, BufReader},
-    time::{Duration, Instant},
+    time::Instant,
 };
 
 use anyhow::{anyhow, bail, Context};
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use rust_chess_engine::{
-    cgame::{engine::SimpleEngine, game::Game, moves::SimpleMove},
-    engine::{minmax::MinmaxEngine, minmax_ml::MinmaxMLEngine},
+    cgame::{game::Game, moves::SimpleMove},
+    engine::minmax_ml::MinmaxMLEngine,
     magic::{get_bishop_magic_map, get_rook_magic_map},
     movegen::MoveGen,
 };
 
 fn main() {
+    println!("starting Myco 0.1");
     repl();
 
     // initialize();
@@ -99,7 +99,10 @@ pub fn repl() {
             }
             "stop" => {}
             "ponderhit" => {}
-            "quit" => break,
+            "quit" => {
+                println!("quitting...");
+                break;
+            }
 
             _other => panic!("info string \"unknown command: {}\"", _other),
         }
