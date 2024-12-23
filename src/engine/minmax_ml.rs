@@ -1,8 +1,7 @@
 use std::{
     cmp::{max, min},
-    collections::BinaryHeap,
     i32,
-    sync::{Arc, Mutex},
+    sync::Arc,
     time::{Duration, Instant},
 };
 
@@ -22,16 +21,13 @@ pub struct MinmaxMLEngine<'a> {
     depth: u8,
     game: &'a Game,
     deadline: Instant,
-    model: Arc<MycoCNNPredictor>,
+    model: Arc<&'a MycoCNNPredictor>,
 }
 
 impl<'a> MinmaxMLEngine<'a> {
     pub fn new(game: &'a Game, depth: u8, max_seconds: u64) -> Self {
         let deadline = Instant::now() + Duration::from_secs(max_seconds);
-        let model = Arc::new(
-            MycoCNNPredictor::new("./ml/chess_eval_model.pt", tch::Device::Cpu)
-                .expect("failed to initialize cnn model"),
-        );
+        let model = Arc::new(MycoCNNPredictor::get());
         MinmaxMLEngine {
             depth,
             game,
