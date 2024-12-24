@@ -57,6 +57,36 @@ pub const ANTIDIAGONAL_MASKS: [u64; 15] = [
     0x8000000000000000,
 ];
 
+pub const fn get_file(file: &char) -> u64 {
+    let file_index = match file {
+        'a'..='h' => *file as usize - 'a' as usize,
+        _ => 8,
+    };
+
+    [
+        A_FILE, B_FILE, C_FILE, D_FILE, E_FILE, F_FILE, G_FILE, H_FILE, 0,
+    ][file_index]
+}
+
+pub const fn get_rank(rank: &char) -> u64 {
+    let rank_index = match rank {
+        '1'..='8' => *rank as usize - '1' as usize,
+        _ => 8,
+    };
+
+    [
+        FIRST_RANK,
+        SECOND_RANK,
+        THIRD_RANK,
+        FOURTH_RANK,
+        FIFTH_RANK,
+        SIXTH_RANK,
+        SEVENTH_RANK,
+        EIGHTH_RANK,
+        0,
+    ][rank_index]
+}
+
 pub const FILEOF: [u64; 64] = [
     A_FILE, B_FILE, C_FILE, D_FILE, E_FILE, F_FILE, G_FILE, H_FILE, A_FILE, B_FILE, C_FILE, D_FILE,
     E_FILE, F_FILE, G_FILE, H_FILE, A_FILE, B_FILE, C_FILE, D_FILE, E_FILE, F_FILE, G_FILE, H_FILE,

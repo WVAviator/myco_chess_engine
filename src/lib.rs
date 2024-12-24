@@ -1,10 +1,12 @@
 pub mod cgame;
+pub mod database;
 pub mod engine;
 pub mod eval;
 pub mod hash;
 pub mod magic;
 pub mod ml;
 pub mod movegen;
+pub mod pgn;
 
 #[cfg(test)]
 mod integration_tests {

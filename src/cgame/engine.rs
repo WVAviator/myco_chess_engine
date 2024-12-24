@@ -8,7 +8,7 @@ use crate::{eval::Eval, movegen::MoveGen};
 
 use super::{
     game::{Game, Turn},
-    moves::SimpleMove,
+    simple_move::SimpleMove,
 };
 
 #[derive(Debug, Clone, PartialEq)]

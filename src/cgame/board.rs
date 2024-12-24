@@ -6,7 +6,7 @@ use rand::random;
 use super::{
     constants::{EIGHTH_RANK, FIFTH_RANK, FIRST_RANK, FOURTH_RANK, SIXTH_RANK, THIRD_RANK},
     game::Turn,
-    moves::{Promotion, SimpleMove},
+    simple_move::{Promotion, SimpleMove},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

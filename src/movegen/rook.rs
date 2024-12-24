@@ -4,7 +4,7 @@ use smallvec::SmallVec;
 use crate::{
     cgame::{
         game::{Game, Turn},
-        moves::SimpleMove,
+        simple_move::SimpleMove,
     },
     magic::{get_rook_magic_map, masks::get_rook_mask},
 };

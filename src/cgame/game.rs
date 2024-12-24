@@ -2,7 +2,7 @@ use std::hash::Hash;
 
 use anyhow::{anyhow, bail, Context};
 
-use crate::{cgame::moves::u64_to_algebraic, movegen::MoveGen};
+use crate::{cgame::simple_move::u64_to_algebraic, movegen::MoveGen};
 
 use super::{
     board::Board,
@@ -11,7 +11,7 @@ use super::{
         FIFTH_RANK, FOURTH_RANK, KING_START_POSITIONS, ROOK_START_POSITIONS, SECOND_RANK,
         SEVENTH_RANK,
     },
-    moves::{algebraic_to_u64, SimpleMove},
+    simple_move::{algebraic_to_u64, SimpleMove},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]

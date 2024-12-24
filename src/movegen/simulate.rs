@@ -4,7 +4,7 @@ use crate::{
     cgame::{
         constants::{A_FILE, EIGHTH_RANK, FIRST_RANK, H_FILE},
         game::{Game, Turn},
-        moves::SimpleMove,
+        simple_move::SimpleMove,
     },
     magic::{
         get_bishop_magic_map, get_rook_magic_map,

@@ -6,9 +6,8 @@ use std::{
 use anyhow::{anyhow, bail, Context};
 use clap::Parser;
 use rust_chess_engine::{
-    cgame::{game::Game, moves::SimpleMove},
+    cgame::{game::Game, simple_move::SimpleMove},
     engine::minmax_ml::MinmaxMLEngine,
-    hash::zobrist::generate_hashes,
     magic::{get_bishop_magic_map, get_rook_magic_map},
     movegen::MoveGen,
 };
@@ -17,8 +16,6 @@ mod args;
 
 fn main() {
     let args = Args::parse();
-
-    generate_hashes();
 
     if let Some(depth) = args.perft {
         initialize();

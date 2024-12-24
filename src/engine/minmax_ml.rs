@@ -10,7 +10,7 @@ use rayon::prelude::*;
 use crate::{
     cgame::{
         game::{Game, Turn},
-        moves::SimpleMove,
+        simple_move::SimpleMove,
     },
     eval::Eval,
     ml::model::MycoCNNPredictor,

@@ -8,7 +8,7 @@ use smallvec::SmallVec;
 
 use crate::cgame::{
     game::{Game, Turn},
-    moves::SimpleMove,
+    simple_move::SimpleMove,
 };
 
 pub mod bishop;

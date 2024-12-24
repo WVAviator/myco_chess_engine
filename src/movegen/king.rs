@@ -7,7 +7,7 @@ use crate::cgame::{
     castling_rights::CastlingRights,
     constants::{A_FILE, EIGHTH_RANK, FIRST_RANK, H_FILE},
     game::{Game, Turn},
-    moves::{algebraic_to_u64, SimpleMove},
+    simple_move::{algebraic_to_u64, SimpleMove},
 };
 
 use super::MoveGen;

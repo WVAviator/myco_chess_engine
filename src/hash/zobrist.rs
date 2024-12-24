@@ -68,7 +68,7 @@ impl ZobristHash for Game {
 }
 
 #[allow(dead_code)]
-pub fn generate_hashes() {
+pub fn generate_hash_values() {
     let file_path = "./src/hash/random_hash_values.rs";
     match Path::new(file_path).exists() {
             true => panic!("Cannot overwrite existing hash values! Delete the old file first. Warning: Any existing database items that rely on zobrist hashes will become useless and will need to be rehashed."),

@@ -8,7 +8,7 @@ use crate::cgame::{
         A_FILE, B_FILE, EIGHTH_RANK, FIRST_RANK, G_FILE, H_FILE, SECOND_RANK, SEVENTH_RANK,
     },
     game::{Game, Turn},
-    moves::SimpleMove,
+    simple_move::SimpleMove,
 };
 
 pub trait KnightMoveGen {
