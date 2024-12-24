@@ -2,31 +2,28 @@ use anyhow::{anyhow, bail};
 
 use crate::{
     cgame::{
-        constants::{get_file, get_rank},
-        simple_move::algebraic_to_u64,
+        constants::{get_file, get_rank, A_FILE, FIFTH_RANK, FOURTH_RANK, H_FILE},
+        game::{Game, Turn},
     },
     magic::{
         get_bishop_magic_map, get_rook_magic_map,
         masks::{get_bishop_mask, get_rook_mask},
     },
     movegen::{king::KING_MOVES, knight::KNIGHT_MOVES},
+    moves::common::algebraic_to_u64,
 };
 
-use super::{
-    board::Board,
-    constants::{A_FILE, FIFTH_RANK, FOURTH_RANK, H_FILE, SIXTH_RANK, THIRD_RANK},
-    game::{Game, Turn},
-};
+use super::common::PieceType;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct ContextualMove {
     turn: Turn,
     castle: Option<CastleType>,
     piece: PieceType,
-    orig: u64,
-    dest: u64,
+    pub orig: u64,
+    pub dest: u64,
     capture: bool,
-    promotion: Option<PieceType>,
+    pub promotion: Option<PieceType>,
     check: bool,
     checkmate: bool,
     annotation: Option<Annotation>,
@@ -36,16 +33,6 @@ pub struct ContextualMove {
 pub enum CastleType {
     Short,
     Long,
-}
-
-#[derive(Debug, PartialEq, Clone)]
-pub enum PieceType {
-    Pawn,
-    Rook,
-    Knight,
-    Bishop,
-    Queen,
-    King,
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -71,8 +58,8 @@ impl ContextualMove {
         let mut checkmate = false;
         let mut capture = false;
         let mut piece = Pawn;
-        let mut orig: u64;
-        let mut dest: u64;
+        let orig: u64;
+        let dest: u64;
         let mut ambiguous_file: u64 = u64::MAX;
         let mut ambiguous_rank: u64 = u64::MAX;
 
@@ -283,7 +270,6 @@ impl OriginMask for Game {
 
 #[cfg(test)]
 mod test {
-    use crate::cgame::simple_move::algebraic_to_u64;
 
     use super::*;
 
@@ -372,5 +358,18 @@ mod test {
         assert_eq!(cmove.capture, false);
         assert_eq!(cmove.orig, algebraic_to_u64("f1"));
         assert_eq!(cmove.dest, algebraic_to_u64("d3"));
+    }
+
+    #[test]
+    fn pawn_capture_white() {
+        let game =
+            Game::from_fen("rnbqkbnr/ppp2ppp/4p3/3p4/2P1P3/8/PP1P1PPP/RNBQKBNR w KQkq - 0 1")
+                .unwrap();
+        let cmove = ContextualMove::from_algebraic("exd5", &game).unwrap();
+
+        assert_eq!(cmove.piece, PieceType::Pawn);
+        assert_eq!(cmove.capture, true);
+        assert_eq!(cmove.orig, algebraic_to_u64("e4"));
+        assert_eq!(cmove.dest, algebraic_to_u64("d5"));
     }
 }

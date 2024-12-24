@@ -1,4 +1,4 @@
-use anyhow::{anyhow, bail};
+use anyhow::bail;
 
 use crate::cgame::constants::{A_FILE, EIGHTH_RANK, FIRST_RANK, H_FILE};
 

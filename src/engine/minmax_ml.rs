@@ -8,13 +8,11 @@ use std::{
 use rayon::prelude::*;
 
 use crate::{
-    cgame::{
-        game::{Game, Turn},
-        simple_move::SimpleMove,
-    },
+    cgame::game::{Game, Turn},
     eval::Eval,
     ml::model::MycoCNNPredictor,
     movegen::MoveGen,
+    moves::simple_move::SimpleMove,
 };
 
 pub struct MinmaxMLEngine<'a> {

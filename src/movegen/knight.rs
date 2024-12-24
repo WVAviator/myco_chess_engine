@@ -1,14 +1,13 @@
-use std::sync::OnceLock;
-
-use anyhow::anyhow;
 use smallvec::SmallVec;
 
-use crate::cgame::{
-    constants::{
-        A_FILE, B_FILE, EIGHTH_RANK, FIRST_RANK, G_FILE, H_FILE, SECOND_RANK, SEVENTH_RANK,
+use crate::{
+    cgame::{
+        constants::{
+            A_FILE, B_FILE, EIGHTH_RANK, FIRST_RANK, G_FILE, H_FILE, SECOND_RANK, SEVENTH_RANK,
+        },
+        game::{Game, Turn},
     },
-    game::{Game, Turn},
-    simple_move::SimpleMove,
+    moves::simple_move::SimpleMove,
 };
 
 pub trait KnightMoveGen {

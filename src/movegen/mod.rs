@@ -6,9 +6,9 @@ use rook::RookMoveGen;
 use simulate::Simulate;
 use smallvec::SmallVec;
 
-use crate::cgame::{
-    game::{Game, Turn},
-    simple_move::SimpleMove,
+use crate::{
+    cgame::game::{Game, Turn},
+    moves::simple_move::SimpleMove,
 };
 
 pub mod bishop;
@@ -67,8 +67,6 @@ impl MoveGen for Game {
 
 #[cfg(test)]
 mod test {
-
-    use crate::magic::{get_bishop_magic_map, get_rook_magic_map};
 
     use super::*;
 

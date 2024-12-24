@@ -1,15 +1,13 @@
-use anyhow::anyhow;
-
 use crate::{
     cgame::{
         constants::{A_FILE, EIGHTH_RANK, FIRST_RANK, H_FILE},
         game::{Game, Turn},
-        simple_move::SimpleMove,
     },
     magic::{
         get_bishop_magic_map, get_rook_magic_map,
         masks::{get_bishop_mask, get_rook_mask},
     },
+    moves::simple_move::SimpleMove,
 };
 
 use super::{king::KING_MOVES, knight::KNIGHT_MOVES};

@@ -6,6 +6,7 @@ pub mod hash;
 pub mod magic;
 pub mod ml;
 pub mod movegen;
+pub mod moves;
 pub mod pgn;
 
 #[cfg(test)]

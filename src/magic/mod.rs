@@ -1,12 +1,9 @@
 use std::sync::OnceLock;
 
-use anyhow::bail;
 use hashmap::MagicHashMap;
 use masks::{get_bishop_mask, get_rook_mask};
 use raycast::{raycast_bishop, raycast_rook};
 use subsets::calculate_subsets;
-
-use crate::cgame::simple_move::u64_to_algebraic;
 
 pub mod masks;
 mod raycast;

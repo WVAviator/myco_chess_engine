@@ -1,12 +1,9 @@
-use anyhow::anyhow;
 use smallvec::SmallVec;
 
 use crate::{
-    cgame::{
-        game::{Game, Turn},
-        simple_move::SimpleMove,
-    },
+    cgame::game::{Game, Turn},
     magic::{get_rook_magic_map, masks::get_rook_mask},
+    moves::simple_move::SimpleMove,
 };
 
 pub trait RookMoveGen {

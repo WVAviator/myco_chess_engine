@@ -1,9 +1,11 @@
 use smallvec::SmallVec;
 
-use crate::cgame::{
-    constants::{A_FILE, H_FILE, SECOND_RANK, SEVENTH_RANK, SIXTH_RANK, THIRD_RANK},
-    game::{Game, Turn},
-    simple_move::SimpleMove,
+use crate::{
+    cgame::{
+        constants::{A_FILE, H_FILE, SECOND_RANK, SEVENTH_RANK, SIXTH_RANK, THIRD_RANK},
+        game::{Game, Turn},
+    },
+    moves::simple_move::SimpleMove,
 };
 
 pub trait PawnMoveGen {

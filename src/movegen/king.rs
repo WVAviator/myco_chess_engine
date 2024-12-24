@@ -1,13 +1,12 @@
-use std::sync::OnceLock;
-
-use anyhow::anyhow;
 use smallvec::SmallVec;
 
-use crate::cgame::{
-    castling_rights::CastlingRights,
-    constants::{A_FILE, EIGHTH_RANK, FIRST_RANK, H_FILE},
-    game::{Game, Turn},
-    simple_move::{algebraic_to_u64, SimpleMove},
+use crate::{
+    cgame::{
+        castling_rights::CastlingRights,
+        constants::{A_FILE, EIGHTH_RANK, FIRST_RANK, H_FILE},
+        game::{Game, Turn},
+    },
+    moves::{common::algebraic_to_u64, simple_move::SimpleMove},
 };
 
 use super::MoveGen;
@@ -184,7 +183,6 @@ const fn generate_all_king_moves() -> [u64; 64] {
 
 #[cfg(test)]
 mod test {
-    use smallvec::ToSmallVec;
 
     use super::*;
 

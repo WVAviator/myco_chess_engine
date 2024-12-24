@@ -2,7 +2,13 @@ use std::hash::Hash;
 
 use anyhow::{anyhow, bail, Context};
 
-use crate::{cgame::simple_move::u64_to_algebraic, movegen::MoveGen};
+use crate::{
+    movegen::MoveGen,
+    moves::{
+        common::{algebraic_to_u64, u64_to_algebraic},
+        simple_move::SimpleMove,
+    },
+};
 
 use super::{
     board::Board,
@@ -11,7 +17,6 @@ use super::{
         FIFTH_RANK, FOURTH_RANK, KING_START_POSITIONS, ROOK_START_POSITIONS, SECOND_RANK,
         SEVENTH_RANK,
     },
-    simple_move::{algebraic_to_u64, SimpleMove},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -120,7 +125,7 @@ impl Game {
         let castling_rights_str = self.castling_rights.to_fen();
         let en_passant_str = match self.en_passant {
             0 => String::from("-"),
-            value => u64_to_algebraic(value).unwrap_or(String::from("-")),
+            value => u64_to_algebraic(value),
         };
         let halfmove_clock_str = self.halfmove_clock.to_string();
         let fullmove_number_str = self.fullmove_number.to_string();

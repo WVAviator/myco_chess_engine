@@ -6,10 +6,11 @@ use std::{
 use anyhow::{anyhow, bail, Context};
 use clap::Parser;
 use rust_chess_engine::{
-    cgame::{game::Game, simple_move::SimpleMove},
+    cgame::game::Game,
     engine::minmax_ml::MinmaxMLEngine,
     magic::{get_bishop_magic_map, get_rook_magic_map},
     movegen::MoveGen,
+    moves::simple_move::SimpleMove,
 };
 
 mod args;

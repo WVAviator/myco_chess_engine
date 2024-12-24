@@ -1,1 +1,1 @@
-pub mod pgn_game;
+pub mod pgn;

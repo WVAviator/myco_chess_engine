@@ -44,14 +44,8 @@ impl From<&Game> for BoardTensor {
         populate_plane(&mut cnn_input, 5, game.board.black_king, -1.0);
 
         if game.en_passant != 0 {
-            for i in 0..64 {
-                if (game.en_passant & (1 << i)) != 0 {
-                    let rank = 7 - (i / 8);
-                    let file = i % 8;
-                    let index = 6 * 64 + rank * 8 + file;
-                    cnn_input[index] = -1.0;
-                }
-            }
+            let index = (64 * 6) + game.en_passant.trailing_zeros() as usize;
+            cnn_input[index] = -1.0;
         }
 
         if game.turn == Turn::Black {
@@ -266,10 +260,12 @@ mod test {
         let game = Game::from_fen("8/8/8/8/8/8/8/8 w - e3 0 1").unwrap();
         let tensor = BoardTensor::from(&game);
 
-        let mut cnn_input_1d = [0; 448];
-        cnn_input_1d[(6 * 64) + (2 * 8) + 6] = 1;
+        let mut cnn_input_1d = [0.0f32; 448];
+        cnn_input_1d[(6 * 64) + 20] = -1.0;
 
         let expected_tensor = Tensor::from_slice(&cnn_input_1d).view([1, 7, 8, 8]);
+
+        assert_eq!(expected_tensor, tensor.0);
     }
 
     #[test]
@@ -277,8 +273,10 @@ mod test {
         let game = Game::from_fen("8/8/8/8/8/8/8/8 w - - 0 1").unwrap();
         let tensor = BoardTensor::from(&game);
 
-        let mut cnn_input_1d = [0; 448];
+        let cnn_input_1d = [0; 448];
 
         let expected_tensor = Tensor::from_slice(&cnn_input_1d).view([1, 7, 8, 8]);
+
+        assert_eq!(expected_tensor, tensor.0);
     }
 }

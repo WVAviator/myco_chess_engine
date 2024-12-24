@@ -1,6 +1,5 @@
 use std::{
     cmp::{max, min},
-    collections::BinaryHeap,
     i32,
     time::{Duration, Instant},
 };
@@ -8,12 +7,10 @@ use std::{
 use rayon::prelude::*;
 
 use crate::{
-    cgame::{
-        game::{Game, Turn},
-        simple_move::SimpleMove,
-    },
+    cgame::game::{Game, Turn},
     eval::Eval,
     movegen::MoveGen,
+    moves::simple_move::SimpleMove,
 };
 
 pub struct MinmaxEngine<'a> {

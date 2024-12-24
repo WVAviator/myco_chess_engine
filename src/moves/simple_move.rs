@@ -2,20 +2,16 @@ use std::fmt;
 
 use anyhow::anyhow;
 
+use super::{
+    common::{algebraic_to_u64, u64_to_algebraic, PieceType},
+    contextual_move::ContextualMove,
+};
+
 #[derive(Debug, Clone, Eq)]
 pub struct SimpleMove {
     orig_square: u64,
     dest_square: u64,
-    promotion: Option<Promotion>,
-    pub evaluation: i32,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Promotion {
-    Rook,
-    Knight,
-    Bishop,
-    Queen,
+    promotion: Option<PieceType>,
 }
 
 impl SimpleMove {
@@ -24,16 +20,6 @@ impl SimpleMove {
             orig_square,
             dest_square,
             promotion: None,
-            evaluation: 0,
-        }
-    }
-
-    pub fn empty_evaluation(evaluation: i32) -> Self {
-        Self {
-            orig_square: 0,
-            dest_square: 0,
-            promotion: None,
-            evaluation,
         }
     }
 
@@ -49,7 +35,7 @@ impl SimpleMove {
         self.dest_square
     }
 
-    pub fn get_promotion(&self) -> &Option<Promotion> {
+    pub fn get_promotion(&self) -> &Option<PieceType> {
         &self.promotion
     }
 
@@ -58,26 +44,22 @@ impl SimpleMove {
             SimpleMove {
                 orig_square,
                 dest_square,
-                promotion: Some(Promotion::Rook),
-                evaluation: 0,
+                promotion: Some(PieceType::Rook),
             },
             SimpleMove {
                 orig_square,
                 dest_square,
-                promotion: Some(Promotion::Bishop),
-                evaluation: 0,
+                promotion: Some(PieceType::Bishop),
             },
             SimpleMove {
                 orig_square,
                 dest_square,
-                promotion: Some(Promotion::Knight),
-                evaluation: 0,
+                promotion: Some(PieceType::Knight),
             },
             SimpleMove {
                 orig_square,
                 dest_square,
-                promotion: Some(Promotion::Queen),
-                evaluation: 0,
+                promotion: Some(PieceType::Queen),
             },
         ]
     }
@@ -85,14 +67,14 @@ impl SimpleMove {
     pub fn to_algebraic(&self) -> Result<String, anyhow::Error> {
         Ok(format!(
             "{}{}{}",
-            u64_to_algebraic(self.orig_square)?,
-            u64_to_algebraic(self.dest_square)?,
+            u64_to_algebraic(self.orig_square),
+            u64_to_algebraic(self.dest_square),
             match self.promotion {
-                Some(Promotion::Rook) => "r",
-                Some(Promotion::Knight) => "n",
-                Some(Promotion::Bishop) => "b",
-                Some(Promotion::Queen) => "q",
-                None => "",
+                Some(PieceType::Rook) => "r",
+                Some(PieceType::Knight) => "n",
+                Some(PieceType::Bishop) => "b",
+                Some(PieceType::Queen) => "q",
+                _ => "",
             },
         ))
     }
@@ -108,10 +90,10 @@ impl SimpleMove {
 
         let promotion = if len == 5 {
             match &algebraic[4..5] {
-                "r" => Some(Promotion::Rook),
-                "n" => Some(Promotion::Knight),
-                "b" => Some(Promotion::Bishop),
-                "q" => Some(Promotion::Queen),
+                "r" => Some(PieceType::Rook),
+                "n" => Some(PieceType::Knight),
+                "b" => Some(PieceType::Bishop),
+                "q" => Some(PieceType::Queen),
                 _ => return Err(anyhow!("Invalid promotion piece: {}", &algebraic[4..5])),
             }
         } else {
@@ -122,48 +104,8 @@ impl SimpleMove {
             orig_square,
             dest_square,
             promotion,
-            evaluation: 0,
         })
     }
-}
-
-pub fn algebraic_to_u64(square: &str) -> u64 {
-    if square.len() != 2 {
-        panic!("Invalid square format: {}", square);
-    }
-
-    let chars: Vec<char> = square.chars().collect();
-    let file = chars[0];
-    let rank = chars[1];
-
-    if !('a'..='h').contains(&file) || !('1'..='8').contains(&rank) {
-        panic!("Invalid square coordinates: {}", square);
-    }
-
-    let file_index = (file as u8 - b'a') as u64;
-    let rank_index = (rank as u8 - b'1') as u64;
-
-    let square_bit = 1u64 << (rank_index * 8 + file_index);
-
-    square_bit
-}
-
-pub fn u64_to_algebraic(square: u64) -> Result<String, anyhow::Error> {
-    if square == 0 || square.count_ones() != 1 {
-        return Err(anyhow::anyhow!(
-            "Invalid square: {}. Must be a single bit set.",
-            square
-        ));
-    }
-
-    let position = square.trailing_zeros() as u64;
-    let rank = position / 8;
-    let file = position % 8;
-
-    let file_char = (b'a' + file as u8) as char;
-    let rank_char = (b'1' + rank as u8) as char;
-
-    Ok(format!("{}{}", file_char, rank_char))
 }
 
 impl fmt::Display for SimpleMove {
@@ -193,15 +135,13 @@ impl PartialEq for SimpleMove {
     }
 }
 
-impl PartialOrd for SimpleMove {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.evaluation.partial_cmp(&other.evaluation)
-    }
-}
-
-impl Ord for SimpleMove {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.evaluation.cmp(&other.evaluation)
+impl From<&ContextualMove> for SimpleMove {
+    fn from(value: &ContextualMove) -> Self {
+        SimpleMove {
+            orig_square: value.orig,
+            dest_square: value.dest,
+            promotion: value.promotion.clone(),
+        }
     }
 }
 
@@ -221,11 +161,11 @@ mod test {
 
     #[test]
     fn u64_to_algebraic_correct() {
-        let square_a1 = u64_to_algebraic(1).unwrap();
+        let square_a1 = u64_to_algebraic(1);
         assert_eq!(square_a1, "a1");
-        let square_h1 = u64_to_algebraic(1 << 7).unwrap();
+        let square_h1 = u64_to_algebraic(1 << 7);
         assert_eq!(square_h1, "h1");
-        let square_h8 = u64_to_algebraic(1 << 63).unwrap();
+        let square_h8 = u64_to_algebraic(1 << 63);
         assert_eq!(square_h8, "h8");
     }
 
@@ -234,8 +174,7 @@ mod test {
         let long_algebraic_move = SimpleMove {
             orig_square: 1 << 52,
             dest_square: 1 << 60,
-            promotion: Some(Promotion::Queen),
-            evaluation: 0,
+            promotion: Some(PieceType::Queen),
         };
         let long_algebraic_str = long_algebraic_move.to_algebraic().unwrap();
         assert_eq!(long_algebraic_str, "e7e8q");
@@ -246,8 +185,7 @@ mod test {
         let long_algebraic_move = SimpleMove {
             orig_square: 1 << 52,
             dest_square: 1 << 60,
-            promotion: Some(Promotion::Queen),
-            evaluation: 0,
+            promotion: Some(PieceType::Queen),
         };
         assert_eq!(
             SimpleMove::from_algebraic("e7e8q").unwrap(),

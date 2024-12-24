@@ -3,10 +3,11 @@ use std::{fmt, sync::OnceLock};
 use anyhow::{bail, Context};
 use rand::random;
 
+use crate::moves::{common::PieceType, simple_move::SimpleMove};
+
 use super::{
-    constants::{EIGHTH_RANK, FIFTH_RANK, FIRST_RANK, FOURTH_RANK, SIXTH_RANK, THIRD_RANK},
+    constants::{EIGHTH_RANK, FIFTH_RANK, FIRST_RANK, FOURTH_RANK},
     game::Turn,
-    simple_move::{Promotion, SimpleMove},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -362,23 +363,23 @@ impl Board {
         self.white_pawns ^= white_promotion;
 
         match lmove.get_promotion() {
-            Some(Promotion::Bishop) => {
+            Some(PieceType::Bishop) => {
                 self.black_bishops ^= black_promotion;
                 self.white_bishops ^= white_promotion;
             }
-            Some(Promotion::Rook) => {
+            Some(PieceType::Rook) => {
                 self.black_rooks ^= black_promotion;
                 self.white_rooks ^= white_promotion;
             }
-            Some(Promotion::Knight) => {
+            Some(PieceType::Knight) => {
                 self.black_knights ^= black_promotion;
                 self.white_knights ^= white_promotion;
             }
-            Some(Promotion::Queen) => {
+            Some(PieceType::Queen) => {
                 self.black_queens ^= black_promotion;
                 self.white_queens ^= white_promotion;
             }
-            None => {}
+            _ => {}
         }
     }
 
