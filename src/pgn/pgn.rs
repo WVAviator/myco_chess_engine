@@ -1,3 +1,4 @@
+use anyhow::{bail, Context};
 use regex::Regex;
 
 use crate::{
@@ -13,6 +14,7 @@ pub struct PGN {
     pub event: String,
     pub site: String,
     pub date: String,
+    pub round: String,
     pub white: String,
     pub black: String,
     pub result: GameResult,
@@ -29,7 +31,7 @@ pub enum GameResult {
 }
 
 impl PGN {
-    pub fn new(metadata: &str, movetext: &str) -> Self {
+    pub fn new(metadata: &str, movetext: &str) -> Result<Self, anyhow::Error> {
         let mut event = String::new();
         let mut site = String::new();
         let mut date = String::new();
@@ -40,89 +42,89 @@ impl PGN {
         let mut white_elo = None;
         let mut black_elo = None;
 
-        metadata
+        for entry in metadata
             .split('\n')
             .map(|entry| entry.trim().trim_start_matches('[').trim_end_matches(']'))
-            .for_each(|entry| {
-                let mut entry_iter = entry.splitn(2, ' ');
-                match entry_iter.next() {
-                    Some("Event") => {
-                        event = entry_iter
-                            .next()
-                            .unwrap_or("")
-                            .trim_start_matches("\"")
-                            .trim_end_matches("\"")
-                            .to_string()
-                    }
-                    Some("Site") => {
-                        site = entry_iter
-                            .next()
-                            .unwrap_or("")
-                            .trim_start_matches("\"")
-                            .trim_end_matches("\"")
-                            .to_string()
-                    }
-                    Some("Date") => {
-                        date = entry_iter
-                            .next()
-                            .unwrap_or("")
-                            .trim_start_matches("\"")
-                            .trim_end_matches("\"")
-                            .to_string()
-                    }
-                    Some("Round") => {
-                        round = entry_iter
-                            .next()
-                            .unwrap_or("")
-                            .trim_start_matches("\"")
-                            .trim_end_matches("\"")
-                            .to_string()
-                    }
-                    Some("White") => {
-                        white = entry_iter
-                            .next()
-                            .unwrap_or("")
-                            .trim_start_matches("\"")
-                            .trim_end_matches("\"")
-                            .to_string()
-                    }
-                    Some("Black") => {
-                        black = entry_iter
-                            .next()
-                            .unwrap_or("")
-                            .trim_start_matches("\"")
-                            .trim_end_matches("\"")
-                            .to_string()
-                    }
-                    Some("Result") => {
-                        result = match entry_iter.next() {
-                            Some("\"1-0\"") => GameResult::White,
-                            Some("\"0-1\"") => GameResult::Black,
-                            Some("\"1/2-1/2\"") => GameResult::Draw,
-                            Some(other) => panic!("Unknown game result: {}", other),
-                            _ => panic!("Missing game result."),
-                        }
-                    }
-                    Some("WhiteElo") => {
-                        white_elo = entry_iter
-                            .next()
-                            .map(|elo| elo.trim_start_matches("\"").trim_end_matches("\"").parse())
-                            .and_then(Result::ok);
-                    }
-                    Some("BlackElo") => {
-                        black_elo = entry_iter
-                            .next()
-                            .map(|elo| elo.parse())
-                            .and_then(Result::ok)
-                    }
-                    Some(other) => {
-                        println!("unsupported metadata item: {}", other)
-                    }
-                    None => {}
+        {
+            let mut entry_iter = entry.splitn(2, ' ');
+            match entry_iter.next() {
+                Some("Event") => {
+                    event = entry_iter
+                        .next()
+                        .unwrap_or("")
+                        .trim_start_matches("\"")
+                        .trim_end_matches("\"")
+                        .to_string()
                 }
-            });
+                Some("Site") => {
+                    site = entry_iter
+                        .next()
+                        .unwrap_or("")
+                        .trim_start_matches("\"")
+                        .trim_end_matches("\"")
+                        .to_string()
+                }
+                Some("Date") => {
+                    date = entry_iter
+                        .next()
+                        .unwrap_or("")
+                        .trim_start_matches("\"")
+                        .trim_end_matches("\"")
+                        .to_string()
+                }
+                Some("Round") => {
+                    round = entry_iter
+                        .next()
+                        .unwrap_or("")
+                        .trim_start_matches("\"")
+                        .trim_end_matches("\"")
+                        .to_string()
+                }
+                Some("White") => {
+                    white = entry_iter
+                        .next()
+                        .unwrap_or("")
+                        .trim_start_matches("\"")
+                        .trim_end_matches("\"")
+                        .to_string()
+                }
+                Some("Black") => {
+                    black = entry_iter
+                        .next()
+                        .unwrap_or("")
+                        .trim_start_matches("\"")
+                        .trim_end_matches("\"")
+                        .to_string()
+                }
+                Some("Result") => {
+                    result = match entry_iter.next() {
+                        Some("\"1-0\"") => GameResult::White,
+                        Some("\"0-1\"") => GameResult::Black,
+                        Some("\"1/2-1/2\"") => GameResult::Draw,
+                        Some(other) => bail!("Unknown game result: {}", other),
+                        _ => bail!("Missing game result."),
+                    }
+                }
+                Some("WhiteElo") => {
+                    white_elo = entry_iter
+                        .next()
+                        .map(|elo| elo.trim_start_matches("\"").trim_end_matches("\"").parse())
+                        .and_then(Result::ok);
+                }
+                Some("BlackElo") => {
+                    black_elo = entry_iter
+                        .next()
+                        .map(|elo| elo.parse())
+                        .and_then(Result::ok)
+                }
+                Some(other) => {
+                    println!("unsupported metadata item: {}", other)
+                }
+                None => {}
+            }
+        }
 
-        let re = Regex::new(r"[\d]+\.").unwrap();
+        let re = Regex::new(r"[\d]+\.")?;
 
         let algebraic_moves = re.replace_all(movetext, "");
         let mut algebraic_moves = algebraic_moves.split_whitespace();
@@ -137,22 +139,23 @@ impl PGN {
                 _ => {}
             }
             let current_move = ContextualMove::from_algebraic(next_move, &game)
-                .expect("could not read algebraic move");
+                .context("could not read algebraic move")?;
             game = game.apply_move(&SimpleMove::from(&current_move));
             moves.push(current_move);
         }
 
-        PGN {
+        Ok(PGN {
             event,
             site,
             date,
+            round,
             white,
             black,
             result,
             white_elo,
             black_elo,
             moves,
-        }
+        })
     }
 }
 
@@ -182,7 +185,7 @@ mod test {
             30.Rxe3 Na6 31.Qd2 Nc5  1/2-1/2
         "#;
 
-        let pgn = PGN::new(metadata, movetext);
+        let pgn = PGN::new(metadata, movetext).unwrap();
 
         assert_eq!(pgn.moves.len(), 62);
         assert_eq!(pgn.result, GameResult::Draw);
@@ -215,7 +218,7 @@ mod test {
             50.Kc2 Rc6 51.Kd3 Rd6+  1/2-1/2
         "#;
 
-        let pgn = PGN::new(metadata, movetext);
+        let pgn = PGN::new(metadata, movetext).unwrap();
 
         assert_eq!(pgn.moves.len(), 102);
         assert_eq!(pgn.result, GameResult::Draw);
