@@ -7,6 +7,7 @@ use anyhow::{anyhow, bail, Context};
 use clap::Parser;
 use rust_chess_engine::{
     cgame::game::Game,
+    database::build::DatabaseTrainingSession,
     engine::minmax_ml::MinmaxMLEngine,
     magic::{get_bishop_magic_map, get_rook_magic_map},
     movegen::MoveGen,
@@ -23,6 +24,10 @@ fn main() {
         depth_test(depth);
     }
 
+    if let Some(pgn_path) = args.train {
+        train_pgn(pgn_path);
+    }
+
     repl();
 }
 
@@ -32,6 +37,10 @@ struct Args {
     /// Perform a Perft move generation test to the specified depth
     #[arg(short, long, name = "depth")]
     perft: Option<u8>,
+
+    /// Train moves from the given PGN file to the engine's database
+    #[arg(short, long, name = "pgn file")]
+    train: Option<String>,
 }
 
 fn initialize() {
@@ -64,6 +73,12 @@ fn perft(depth: u8, game: Game) -> usize {
             perft(depth - 1, new_game) // Recursive call for child nodes
         })
         .sum()
+}
+
+fn train_pgn(pgn_path: String) {
+    let mut session =
+        DatabaseTrainingSession::new(&pgn_path).expect("failed to load provided pgn file");
+    session.start().expect("failed to complete training pgn");
 }
 
 pub fn repl() {
@@ -101,15 +116,7 @@ pub fn repl() {
                 let best_move = get_best_move(&current_game).unwrap_or_else(|error| {
                     panic!("info string could not calculate\n{}", error);
                 });
-                println!(
-                    "bestmove {}",
-                    best_move.to_algebraic().unwrap_or_else(|error| {
-                        panic!(
-                            "info string could not convert to algebraic notation\n{}",
-                            error
-                        );
-                    })
-                );
+                println!("bestmove {}", best_move.to_algebraic());
                 current_game = current_game.apply_move(&best_move);
             }
             "stop" => {}

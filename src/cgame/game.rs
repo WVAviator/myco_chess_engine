@@ -82,7 +82,7 @@ impl Game {
             .ok_or(anyhow!("Invalid FEN string: {}", fen_str))?
         {
             "-" => 0,
-            an => algebraic_to_u64(an),
+            an => algebraic_to_u64(an)?,
         };
         let halfmove_clock = fen_iter
             .next()
@@ -125,7 +125,7 @@ impl Game {
         let castling_rights_str = self.castling_rights.to_fen();
         let en_passant_str = match self.en_passant {
             0 => String::from("-"),
-            value => u64_to_algebraic(value),
+            value => u64_to_algebraic(value).unwrap(),
         };
         let halfmove_clock_str = self.halfmove_clock.to_string();
         let fullmove_number_str = self.fullmove_number.to_string();

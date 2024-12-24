@@ -46,7 +46,7 @@ pub enum Annotation {
 }
 
 impl ContextualMove {
-    pub fn from_algebraic(algebraic: &str, game: &Game) -> Result<Self, anyhow::Error> {
+    pub fn from_algebraic(move_str: &str, game: &Game) -> Result<Self, anyhow::Error> {
         use Annotation::*;
         use CastleType::*;
         use PieceType::*;
@@ -63,12 +63,12 @@ impl ContextualMove {
         let mut ambiguous_file: u64 = u64::MAX;
         let mut ambiguous_rank: u64 = u64::MAX;
 
-        if algebraic.ends_with('#') {
+        if move_str.ends_with('#') {
             checkmate = true;
-        } else if algebraic.ends_with('+') {
+        } else if move_str.ends_with('+') {
             check = true;
         }
-        let algebraic = algebraic.trim_end_matches(['+', '#']);
+        let algebraic = move_str.trim_end_matches(['+', '#']);
 
         if algebraic.contains("!!") {
             annotation = Some(Brilliant);
@@ -127,9 +127,13 @@ impl ContextualMove {
                     _ => {}
                 }
 
-                let rank = chars.next().ok_or(anyhow!("expected destination rank"))?;
-                let file = chars.next().ok_or(anyhow!("epected destination file"))?;
-                dest = algebraic_to_u64(&format!("{}{}", file, rank));
+                let rank = chars
+                    .next()
+                    .ok_or(anyhow!("expected destination rank in {}", move_str))?;
+                let file = chars
+                    .next()
+                    .ok_or(anyhow!("expected destination file in {}", move_str))?;
+                dest = algebraic_to_u64(&format!("{}{}", file, rank))?;
 
                 if let Some('x') = chars.peek() {
                     capture = true;
@@ -171,7 +175,7 @@ impl ContextualMove {
                         }
                     }
                     Some(rank) if rank.is_digit(10) => ambiguous_rank = get_rank(&rank),
-                    Some(c) => bail!("unexpected character {}", c),
+                    Some(c) => bail!("unexpected character {} in move {}", c, move_str),
                     None => {}
                 }
 
@@ -186,6 +190,10 @@ impl ContextualMove {
                         Queen => game.board.queens(&game.turn),
                         King => game.board.king(&game.turn),
                     };
+
+                if orig.count_ones() != 1 {
+                    bail!("invalid or ambiguous origin square for move {}", move_str);
+                }
             }
         }
 
@@ -249,7 +257,8 @@ mod test {
     #[test]
     fn origin_mask_white_pawn() {
         let game = Game::new_default();
-        let mask = game.calculate_origin_mask(&PieceType::Pawn, algebraic_to_u64("e4"), false);
+        let mask =
+            game.calculate_origin_mask(&PieceType::Pawn, algebraic_to_u64("e4").unwrap(), false);
 
         assert_eq!(mask, 0x101000);
     }
@@ -260,8 +269,8 @@ mod test {
         let cmove = ContextualMove::from_algebraic("e4", &game).unwrap();
         assert_eq!(cmove.piece, PieceType::Pawn);
         assert_eq!(cmove.capture, false);
-        assert_eq!(cmove.orig, algebraic_to_u64("e2"));
-        assert_eq!(cmove.dest, algebraic_to_u64("e4"));
+        assert_eq!(cmove.orig, algebraic_to_u64("e2").unwrap());
+        assert_eq!(cmove.dest, algebraic_to_u64("e4").unwrap());
     }
 
     #[test]
@@ -271,8 +280,8 @@ mod test {
 
         assert_eq!(cmove.piece, PieceType::Pawn);
         assert_eq!(cmove.capture, false);
-        assert_eq!(cmove.orig, algebraic_to_u64("g2"));
-        assert_eq!(cmove.dest, algebraic_to_u64("g1"));
+        assert_eq!(cmove.orig, algebraic_to_u64("g2").unwrap());
+        assert_eq!(cmove.dest, algebraic_to_u64("g1").unwrap());
         assert_eq!(cmove.promotion, Some(PieceType::Queen));
     }
 
@@ -283,8 +292,8 @@ mod test {
 
         assert_eq!(cmove.piece, PieceType::Knight);
         assert_eq!(cmove.capture, false);
-        assert_eq!(cmove.orig, algebraic_to_u64("b6"));
-        assert_eq!(cmove.dest, algebraic_to_u64("d5"));
+        assert_eq!(cmove.orig, algebraic_to_u64("b6").unwrap());
+        assert_eq!(cmove.dest, algebraic_to_u64("d5").unwrap());
     }
 
     #[test]
@@ -294,8 +303,8 @@ mod test {
 
         assert_eq!(cmove.piece, PieceType::Knight);
         assert_eq!(cmove.capture, true);
-        assert_eq!(cmove.orig, algebraic_to_u64("b6"));
-        assert_eq!(cmove.dest, algebraic_to_u64("c4"));
+        assert_eq!(cmove.orig, algebraic_to_u64("b6").unwrap());
+        assert_eq!(cmove.dest, algebraic_to_u64("c4").unwrap());
     }
 
     #[test]
@@ -305,8 +314,8 @@ mod test {
 
         assert_eq!(cmove.piece, PieceType::Knight);
         assert_eq!(cmove.capture, true);
-        assert_eq!(cmove.orig, algebraic_to_u64("b6"));
-        assert_eq!(cmove.dest, algebraic_to_u64("d5"));
+        assert_eq!(cmove.orig, algebraic_to_u64("b6").unwrap());
+        assert_eq!(cmove.dest, algebraic_to_u64("d5").unwrap());
         assert_eq!(cmove.check, true);
     }
 
@@ -317,8 +326,8 @@ mod test {
 
         assert_eq!(cmove.piece, PieceType::Queen);
         assert_eq!(cmove.capture, false);
-        assert_eq!(cmove.orig, algebraic_to_u64("f4"));
-        assert_eq!(cmove.dest, algebraic_to_u64("f2"));
+        assert_eq!(cmove.orig, algebraic_to_u64("f4").unwrap());
+        assert_eq!(cmove.dest, algebraic_to_u64("f2").unwrap());
     }
 
     #[test]
@@ -329,8 +338,8 @@ mod test {
 
         assert_eq!(cmove.piece, PieceType::Bishop);
         assert_eq!(cmove.capture, false);
-        assert_eq!(cmove.orig, algebraic_to_u64("f1"));
-        assert_eq!(cmove.dest, algebraic_to_u64("d3"));
+        assert_eq!(cmove.orig, algebraic_to_u64("f1").unwrap());
+        assert_eq!(cmove.dest, algebraic_to_u64("d3").unwrap());
     }
 
     #[test]
@@ -342,7 +351,7 @@ mod test {
 
         assert_eq!(cmove.piece, PieceType::Pawn);
         assert_eq!(cmove.capture, true);
-        assert_eq!(cmove.orig, algebraic_to_u64("e4"));
-        assert_eq!(cmove.dest, algebraic_to_u64("d5"));
+        assert_eq!(cmove.orig, algebraic_to_u64("e4").unwrap());
+        assert_eq!(cmove.dest, algebraic_to_u64("d5").unwrap());
     }
 }

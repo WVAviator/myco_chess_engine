@@ -64,11 +64,11 @@ impl SimpleMove {
         ]
     }
 
-    pub fn to_algebraic(&self) -> Result<String, anyhow::Error> {
-        Ok(format!(
+    pub fn to_algebraic(&self) -> String {
+        format!(
             "{}{}{}",
-            u64_to_algebraic(self.orig_square),
-            u64_to_algebraic(self.dest_square),
+            u64_to_algebraic(self.orig_square).unwrap(),
+            u64_to_algebraic(self.dest_square).unwrap(),
             match self.promotion {
                 Some(PieceType::Rook) => "r",
                 Some(PieceType::Knight) => "n",
@@ -76,7 +76,7 @@ impl SimpleMove {
                 Some(PieceType::Queen) => "q",
                 _ => "",
             },
-        ))
+        )
     }
 
     pub fn from_algebraic(algebraic: &str) -> Result<Self, anyhow::Error> {
@@ -85,8 +85,8 @@ impl SimpleMove {
             return Err(anyhow!("Invalid algebraic move: {}", algebraic));
         }
 
-        let orig_square = algebraic_to_u64(&algebraic[0..2]);
-        let dest_square = algebraic_to_u64(&algebraic[2..4]);
+        let orig_square = algebraic_to_u64(&algebraic[0..2]).unwrap();
+        let dest_square = algebraic_to_u64(&algebraic[2..4]).unwrap();
 
         let promotion = if len == 5 {
             match &algebraic[4..5] {
@@ -110,7 +110,7 @@ impl SimpleMove {
 
 impl fmt::Display for SimpleMove {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{} ", self.to_algebraic().unwrap())
+        write!(f, "{} ", self.to_algebraic())
     }
 }
 
@@ -120,7 +120,7 @@ impl SimpleMove {
             "Moves: {}",
             moves
                 .iter()
-                .map(|m| m.to_algebraic().unwrap())
+                .map(|m| m.to_algebraic())
                 .collect::<Vec<_>>()
                 .join(", ")
         );
@@ -151,21 +151,21 @@ mod test {
 
     #[test]
     fn algebraic_to_u64_correct() {
-        let square_a1 = algebraic_to_u64("a1");
+        let square_a1 = algebraic_to_u64("a1").unwrap();
         assert_eq!(square_a1, 1);
-        let square_h1 = algebraic_to_u64("h1");
+        let square_h1 = algebraic_to_u64("h1").unwrap();
         assert_eq!(square_h1, 1 << 7);
-        let square_h8 = algebraic_to_u64("h8");
+        let square_h8 = algebraic_to_u64("h8").unwrap();
         assert_eq!(square_h8, 1 << 63);
     }
 
     #[test]
     fn u64_to_algebraic_correct() {
-        let square_a1 = u64_to_algebraic(1);
+        let square_a1 = u64_to_algebraic(1).unwrap();
         assert_eq!(square_a1, "a1");
-        let square_h1 = u64_to_algebraic(1 << 7);
+        let square_h1 = u64_to_algebraic(1 << 7).unwrap();
         assert_eq!(square_h1, "h1");
-        let square_h8 = u64_to_algebraic(1 << 63);
+        let square_h8 = u64_to_algebraic(1 << 63).unwrap();
         assert_eq!(square_h8, "h8");
     }
 
@@ -176,7 +176,7 @@ mod test {
             dest_square: 1 << 60,
             promotion: Some(PieceType::Queen),
         };
-        let long_algebraic_str = long_algebraic_move.to_algebraic().unwrap();
+        let long_algebraic_str = long_algebraic_move.to_algebraic();
         assert_eq!(long_algebraic_str, "e7e8q");
     }
 

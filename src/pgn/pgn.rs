@@ -3,10 +3,7 @@ use regex::Regex;
 
 use crate::{
     cgame::game::Game,
-    moves::{
-        contextual_move::{self, ContextualMove},
-        simple_move::SimpleMove,
-    },
+    moves::{contextual_move::ContextualMove, simple_move::SimpleMove},
 };
 
 #[derive(Debug, PartialEq, Clone)]
@@ -28,6 +25,7 @@ pub enum GameResult {
     White,
     Black,
     Draw,
+    Abandonment,
 }
 
 impl PGN {
@@ -101,6 +99,7 @@ impl PGN {
                         Some("\"1-0\"") => GameResult::White,
                         Some("\"0-1\"") => GameResult::Black,
                         Some("\"1/2-1/2\"") => GameResult::Draw,
+                        Some("\"*\"") => GameResult::Abandonment,
                         Some(other) => bail!("Unknown game result: {}", other),
                         _ => bail!("Missing game result."),
                     }
@@ -117,9 +116,7 @@ impl PGN {
                         .map(|elo| elo.parse())
                         .and_then(Result::ok)
                 }
-                Some(other) => {
-                    println!("unsupported metadata item: {}", other)
-                }
+                Some(_) => {}
                 None => {}
             }
         }
@@ -136,6 +133,7 @@ impl PGN {
                 "1/2-1/2" => continue,
                 "1-0" => continue,
                 "0-1" => continue,
+                "*" => continue,
                 _ => {}
             }
             let current_move = ContextualMove::from_algebraic(next_move, &game)

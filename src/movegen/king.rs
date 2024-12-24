@@ -6,7 +6,7 @@ use crate::{
         constants::{A_FILE, EIGHTH_RANK, FIRST_RANK, H_FILE},
         game::{Game, Turn},
     },
-    moves::{common::algebraic_to_u64, simple_move::SimpleMove},
+    moves::simple_move::SimpleMove,
 };
 
 use super::MoveGen;
@@ -62,13 +62,13 @@ impl KingMoveGen for Game {
                     && occupied & CASTLE_MOVE_WK_MASK == 0
                     && opponent_vision & CASTLE_CHECK_WK_MASK == 0
                 {
-                    moves.push(SimpleMove::new(king, algebraic_to_u64("g1")))
+                    moves.push(SimpleMove::new(king, 0x40))
                 }
                 if self.castling_rights.is_set(CastlingRights::WHITE_QUEENSIDE)
                     && occupied & CASTLE_MOVE_WQ_MASK == 0
                     && opponent_vision & CASTLE_CHECK_WQ_MASK == 0
                 {
-                    moves.push(SimpleMove::new(king, algebraic_to_u64("c1")))
+                    moves.push(SimpleMove::new(king, 0x4))
                 }
             }
             Turn::Black => {
@@ -76,13 +76,13 @@ impl KingMoveGen for Game {
                     && occupied & CASTLE_MOVE_BK_MASK == 0
                     && opponent_vision & CASTLE_CHECK_BK_MASK == 0
                 {
-                    moves.push(SimpleMove::new(king, algebraic_to_u64("g8")))
+                    moves.push(SimpleMove::new(king, 0x4000000000000000))
                 }
                 if self.castling_rights.is_set(CastlingRights::BLACK_QUEENSIDE)
                     && occupied & CASTLE_MOVE_BQ_MASK == 0
                     && opponent_vision & CASTLE_CHECK_BQ_MASK == 0
                 {
-                    moves.push(SimpleMove::new(king, algebraic_to_u64("c8")))
+                    moves.push(SimpleMove::new(king, 0x400000000000000))
                 }
             }
         }
