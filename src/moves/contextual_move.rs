@@ -64,10 +64,8 @@ impl ContextualMove {
         let mut ambiguous_rank: u64 = u64::MAX;
 
         if algebraic.ends_with('#') {
-            println!("identified checkmate");
             checkmate = true;
         } else if algebraic.ends_with('+') {
-            println!("identified check");
             check = true;
         }
         let algebraic = algebraic.trim_end_matches(['+', '#']);
@@ -87,12 +85,9 @@ impl ContextualMove {
         }
         let algebraic = algebraic.trim_end_matches(['!', '?']);
 
-        println!("removed annotations, checking remaining: {}", algebraic);
-
         match algebraic {
             "O-O-O" => {
                 castle = Some(Long);
-                println!("identified long castle");
                 (orig, dest) = match game.turn {
                     Turn::White => (game.board.white_king, 1 << 2),
                     Turn::Black => (game.board.black_king, 1 << 58),
@@ -100,7 +95,6 @@ impl ContextualMove {
             }
             "O-O" => {
                 castle = Some(Short);
-                println!("identified short castle");
                 (orig, dest) = match game.turn {
                     Turn::White => (game.board.white_king, 1 << 6),
                     Turn::Black => (game.board.black_king, 1 << 62),
@@ -109,28 +103,23 @@ impl ContextualMove {
             algebraic => {
                 let mut chars = algebraic.chars().rev().peekable();
 
-                println!("checking for promotions");
                 match chars.peek() {
                     Some('Q') => {
-                        println!("found queen promotion");
                         promotion = Some(PieceType::Queen);
                         chars.next();
                         chars.next();
                     }
                     Some('B') => {
-                        println!("found bishop promotion");
                         promotion = Some(PieceType::Bishop);
                         chars.next();
                         chars.next();
                     }
                     Some('R') => {
-                        println!("found rook promotion");
                         promotion = Some(PieceType::Rook);
                         chars.next();
                         chars.next();
                     }
                     Some('N') => {
-                        println!("found knight promotion");
                         promotion = Some(PieceType::Knight);
                         chars.next();
                         chars.next();
@@ -140,43 +129,34 @@ impl ContextualMove {
 
                 let rank = chars.next().ok_or(anyhow!("expected destination rank"))?;
                 let file = chars.next().ok_or(anyhow!("epected destination file"))?;
-                println!("identified rank {} and file {}", rank, file);
                 dest = algebraic_to_u64(&format!("{}{}", file, rank));
-                println!("converted to dest {}", dest);
 
                 if let Some('x') = chars.peek() {
-                    println!("identified capture");
                     capture = true;
                     chars.next();
                 }
 
                 let chars: String = chars.collect();
-                println!("remaining chars reversed: {}", chars);
                 let mut chars = chars.chars().rev().peekable();
 
                 match chars.peek() {
                     Some('B') => {
-                        println!("identified bishop move");
                         piece = PieceType::Bishop;
                         chars.next();
                     }
                     Some('R') => {
-                        println!("identified rook move");
                         piece = PieceType::Rook;
                         chars.next();
                     }
                     Some('N') => {
-                        println!("identified knight move");
                         piece = PieceType::Knight;
                         chars.next();
                     }
                     Some('Q') => {
-                        println!("identified queen move");
                         piece = PieceType::Queen;
                         chars.next();
                     }
                     Some('K') => {
-                        println!("identified king move");
                         piece = PieceType::King;
                         chars.next();
                     }
@@ -185,22 +165,15 @@ impl ContextualMove {
 
                 match chars.next() {
                     Some(file) if !file.is_digit(10) => {
-                        println!("identified ambiguous file {}", file);
                         ambiguous_file = get_file(&file);
                         if let Some(rank) = chars.next() {
-                            println!("identified double ambiguous {}{}", file, rank);
                             ambiguous_rank = get_rank(&rank);
                         }
                     }
-                    Some(rank) if rank.is_digit(10) => {
-                        println!("identified ambiguous rank {}", rank);
-                        ambiguous_rank = get_rank(&rank)
-                    }
+                    Some(rank) if rank.is_digit(10) => ambiguous_rank = get_rank(&rank),
                     Some(c) => bail!("unexpected character {}", c),
                     None => {}
                 }
-
-                println!("amb file: {}, amb rank: {}", ambiguous_file, ambiguous_rank);
 
                 orig = game.calculate_origin_mask(&piece, dest, capture)
                     & ambiguous_file
