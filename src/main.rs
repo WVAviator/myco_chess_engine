@@ -10,7 +10,6 @@ use rust_chess_engine::{
     cgame::game::Game,
     database::build::DatabaseTrainingSession,
     engine::minmax_ml::MinmaxMLEngine,
-    hash::zobrist::ZobristHash,
     magic::{get_bishop_magic_map, get_rook_magic_map},
     movegen::MoveGen,
     moves::simple_move::SimpleMove,
@@ -44,15 +43,15 @@ fn main() {
 #[command(version, about, long_about = None)]
 struct Args {
     /// Perform a Perft move generation test to the specified depth
-    #[arg(short, long, name = "depth")]
+    #[arg(long, name = "depth")]
     perft: Option<u8>,
 
     /// Train moves from the given PGN file to the engine's database
-    #[arg(short, long, name = "pgn file")]
+    #[arg(long, name = "pgn file")]
     train: Option<String>,
 
     /// Explictly set the number of threads the engine should use (default is the number of CPU cores on the host machine)
-    #[arg(short, long, name = "num threads")]
+    #[arg(long, name = "num threads")]
     threads: Option<usize>,
 }
 

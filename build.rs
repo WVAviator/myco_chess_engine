@@ -10,10 +10,15 @@ fn main() {
         .expect("Failed to find target directory");
 
     let source_db = Path::new("resources/myco.db3");
+    let source_model = Path::new("resources/myco_eval_model.pt");
+
     let dest_resources_dir = target_dir.join("resources");
 
     fs::create_dir_all(&dest_resources_dir).expect("Failed to create resources directory");
 
     fs::copy(&source_db, dest_resources_dir.join("myco.db3"))
         .expect("Failed to copy database file");
+
+    fs::copy(&source_model, dest_resources_dir.join("myco_eval_model.pt"))
+        .expect("Failed to copy pytorch model file");
 }

@@ -18,12 +18,12 @@ def process_csv_to_training_data(csv_path):
              - X is a numpy array of input features for each FEN
              - y is a numpy array of evaluations
     """
-    df = pd.read_csv(csv_path, nrows=10000)
+    df = pd.read_csv(csv_path, nrows=100000)
     
     inputs = []
     evaluations = []
 
-    df['Evaluation'] = df['Evaluation'].apply(lambda x: float(x.lstrip('\ufeff').lstrip('#').lstrip('+')) / 24000)
+    df['Evaluation'] = df['Evaluation'].apply(lambda x: float(x.lstrip('\ufeff').lstrip('#').lstrip('+')) / 10000)
     print(df['Evaluation'].abs().max())
     
     print("Converting FEN strings to sparse arrays for processing.")
@@ -101,6 +101,6 @@ print(f"Validation Loss: {val_loss:.4f}")
 # torch.save(model.state_dict(), "chess_eval_model.pt")
 
 output_model = torch.jit.script(model)
-output_model.save("chess_eval_model.pt")
+output_model.save("../resources/myco_eval_model.pt")
 
-print("Model saved as chess_eval_model.pt")
+print("Model saved as /resources/myco_eval_model.pt")
