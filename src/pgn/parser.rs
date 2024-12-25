@@ -24,7 +24,7 @@ pub fn parse_pgn_file(file_path: &str) -> Result<Vec<PGN>, anyhow::Error> {
 
         match PGN::new(metadata, movetext) {
             Ok(pgn) => pgn_list.push(pgn),
-            Err(e) => {}
+            Err(_) => {}
         }
     }
 

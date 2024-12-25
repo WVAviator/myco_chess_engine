@@ -5,6 +5,7 @@ use std::{
 
 use anyhow::{anyhow, bail, Context};
 use clap::Parser;
+use rayon::ThreadPoolBuilder;
 use rust_chess_engine::{
     cgame::game::Game,
     database::build::DatabaseTrainingSession,
@@ -19,6 +20,13 @@ mod args;
 
 fn main() {
     let args = Args::parse();
+
+    if let Some(threads) = args.threads {
+        ThreadPoolBuilder::new()
+            .num_threads(threads)
+            .build_global()
+            .expect("failed to build global thread pool");
+    }
 
     if let Some(depth) = args.perft {
         initialize();
@@ -42,6 +50,10 @@ struct Args {
     /// Train moves from the given PGN file to the engine's database
     #[arg(short, long, name = "pgn file")]
     train: Option<String>,
+
+    /// Explictly set the number of threads the engine should use (default is the number of CPU cores on the host machine)
+    #[arg(short, long, name = "num threads")]
+    threads: Option<usize>,
 }
 
 fn initialize() {
