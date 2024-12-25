@@ -9,6 +9,7 @@ use rayon::prelude::*;
 
 use crate::{
     cgame::game::{Game, Turn},
+    database::{connection::get_connection, retrieve::MoveRetrieval},
     eval::Eval,
     ml::model::MycoCNNPredictor,
     movegen::MoveGen,
@@ -35,6 +36,11 @@ impl<'a> MinmaxMLEngine<'a> {
     }
 
     pub fn evaluate_best_move(&self) -> SimpleMove {
+        if let Ok(Some(database_move)) = self.game.random_database_move(&get_connection()) {
+            println!("info string book move {}", database_move);
+            return database_move;
+        }
+
         let legal_moves = self.game.generate_legal_moves();
         let mut legal_moves: Vec<MoveEvaluation<'_>> = legal_moves
             .iter()

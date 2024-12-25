@@ -2,6 +2,7 @@ use rusqlite::Connection;
 
 use crate::{
     cgame::game::Game,
+    hash::zobrist::ZobristHash,
     moves::simple_move::SimpleMove,
     pgn::{
         parser::parse_pgn_file,
@@ -9,7 +10,7 @@ use crate::{
     },
 };
 
-use super::{get_connection, schema::MovesEntry};
+use super::{connection::get_connection, schema::MovesEntry};
 
 // Maximum number of moves in a game to train
 const TRAINING_LIMIT: usize = 16;
@@ -54,7 +55,7 @@ impl DatabaseTrainingSession {
                 GameResult::White => {
                     while let Some(m) = moves_iter.next() {
                         let sm = SimpleMove::from(m);
-                        let entry = MovesEntry::new(game.position_hash(), vec![sm.to_algebraic()]);
+                        let entry = MovesEntry::new(game.zobrist(), vec![sm.to_algebraic()]);
                         entry.insert(&mut self.connection)?;
                         game = game.apply_move(&sm);
 
@@ -67,7 +68,7 @@ impl DatabaseTrainingSession {
                     moves_iter.next();
                     while let Some(m) = moves_iter.next() {
                         let sm = SimpleMove::from(m);
-                        let entry = MovesEntry::new(game.position_hash(), vec![sm.to_algebraic()]);
+                        let entry = MovesEntry::new(game.zobrist(), vec![sm.to_algebraic()]);
                         entry.insert(&mut self.connection)?;
                         game = game.apply_move(&sm);
 
@@ -77,7 +78,7 @@ impl DatabaseTrainingSession {
                 GameResult::Draw => {
                     while let Some(m) = moves_iter.next() {
                         let sm = SimpleMove::from(m);
-                        let entry = MovesEntry::new(game.position_hash(), vec![sm.to_algebraic()]);
+                        let entry = MovesEntry::new(game.zobrist(), vec![sm.to_algebraic()]);
                         entry.insert(&mut self.connection)?;
                         game = game.apply_move(&sm);
                     }

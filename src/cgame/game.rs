@@ -165,16 +165,6 @@ impl Game {
         self.game_cache.black_vision = self.generate_vision(&Turn::Black);
         self.game_cache.initialized = true;
     }
-
-    pub fn position_hash(&self) -> u64 {
-        let mut hash = self.board.position_hash();
-        hash ^= self.castling_rights.position_hash();
-        hash ^= match self.turn {
-            Turn::White => 0x1b0373878da5bbdf, // Arbitrary random constants
-            Turn::Black => 0xe35a73c3791ab06d,
-        };
-        hash
-    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -310,7 +300,6 @@ impl Hash for Game {
 
 #[cfg(test)]
 mod test {
-    use std::collections::HashSet;
 
     use super::*;
 
@@ -400,30 +389,6 @@ mod test {
         println!("moves_game: {}", moves_game.to_fen());
 
         assert_eq!(fen_game, moves_game);
-    }
-
-    #[test]
-    fn position_hash_identifies_repeat_position() {
-        let mut game =
-            Game::from_fen("rnbqkb1r/ppp2ppp/4pn2/3p4/2PP4/5N2/PP2PPPP/RNBQKB1R w KQkq - 2 7")
-                .unwrap();
-        let mut positions = HashSet::new();
-        positions.insert(game.position_hash());
-
-        game = game.apply_move(&SimpleMove::from_algebraic("b1d2").unwrap());
-        assert!(!positions.contains(&game.position_hash()));
-        positions.insert(game.position_hash());
-
-        game = game.apply_move(&SimpleMove::from_algebraic("f8d6").unwrap());
-        assert!(!positions.contains(&game.position_hash()));
-        positions.insert(game.position_hash());
-
-        game = game.apply_move(&SimpleMove::from_algebraic("d2b1").unwrap());
-        assert!(!positions.contains(&game.position_hash()));
-        positions.insert(game.position_hash());
-
-        game = game.apply_move(&SimpleMove::from_algebraic("d6f8").unwrap());
-        assert!(positions.contains(&game.position_hash()));
     }
 
     #[test]
