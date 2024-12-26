@@ -3,8 +3,8 @@ use crate::{
     movegen::MoveGen,
 };
 
-const BOARD_EDGE_PENALTY: i32 = 48;
-const OUTPOST_BONUS: i32 = 64;
+const BOARD_EDGE_PENALTY: i32 = 0;
+const OUTPOST_BONUS: i32 = 32;
 
 const BOARD_EDGE: u64 = 0xff818181818181ff;
 const OUTPOST_SQUARES_NORTH: u64 = 0x7e7e7e00000000;

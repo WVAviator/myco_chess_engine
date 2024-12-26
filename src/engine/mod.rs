@@ -1,2 +1,2 @@
-pub mod minmax;
+pub mod minimax;
 pub mod minmax_ml;

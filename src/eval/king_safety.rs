@@ -9,12 +9,12 @@ const CASTLED_BLACK_KING_SQUARES: u64 = 0xc700000000000000;
 
 const ENDGAME_PIECE_COUNT: u32 = 18;
 
-const ENDGAME_CENTRAL_KING_BONUS: i32 = 32;
+const ENDGAME_CENTRAL_KING_BONUS: i32 = 0;
 const ENDGAME_PAWN_DEFENSE_BONUS: i32 = 16;
 const CASTLED_BONUS: i32 = 64;
 
 // Applied for each pawn surrounding a castled king
-const CASTLE_DEFENSE_BONUS: i32 = 24;
+const CASTLE_DEFENSE_BONUS: i32 = 16;
 
 // Applied up to twice for each side castle
 const CASTLE_FORFEIT_PENALTY: i32 = 32;

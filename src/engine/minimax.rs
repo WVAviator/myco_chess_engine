@@ -40,26 +40,60 @@ impl<'a> MinmaxEngine<'a> {
         let evaluation = self.game.evaluate_position();
         println!("info string current evaluation {}", evaluation);
         let legal_moves = self.game.generate_legal_moves();
-        let mut legal_moves: Vec<MoveEvaluation<'_>> = legal_moves
-            .iter()
-            .map(|lmove| MoveEvaluation(lmove, self.game.apply_move(lmove).minimax_eval(4)))
-            .collect();
+
+        let mut first_pass_evaluations = legal_moves
+            .par_iter()
+            .map(|lmove| {
+                MoveEvaluation(
+                    lmove,
+                    self.game
+                        .apply_move(lmove)
+                        .minimax_eval(3, i32::MIN, i32::MAX),
+                )
+            })
+            .collect::<Vec<MoveEvaluation>>();
 
         match self.game.turn {
-            Turn::White => {
-                legal_moves.sort_unstable_by(|a, b| b.cmp(a));
-            }
-            Turn::Black => {
-                legal_moves.sort_unstable();
-            }
+            Turn::White => first_pass_evaluations.sort_unstable_by(|a, b| b.cmp(a)),
+            Turn::Black => first_pass_evaluations.sort_unstable(),
         }
 
-        return legal_moves
-            .get(0)
-            .ok_or(anyhow!("no moves available"))
-            .expect("failed ot evaluate position with no moves")
-            .0
-            .clone();
+        let best_move: MoveEvaluation<'_> = match self.game.turn {
+            Turn::White => first_pass_evaluations
+                .par_iter()
+                .take(8)
+                .map(|eval| {
+                    println!("info currmove {}", eval.0.to_algebraic());
+                    MoveEvaluation(
+                        eval.0,
+                        self.game.apply_move(eval.0).minimax_eval(
+                            self.depth - 1,
+                            i32::MIN,
+                            i32::MAX,
+                        ),
+                    )
+                })
+                .max()
+                .expect("no moves to evaluate"),
+            Turn::Black => first_pass_evaluations
+                .par_iter()
+                .take(8)
+                .map(|eval| {
+                    println!("info currmove {}", eval.0.to_algebraic());
+                    MoveEvaluation(
+                        eval.0,
+                        self.game.apply_move(eval.0).minimax_eval(
+                            self.depth - 1,
+                            i32::MIN,
+                            i32::MAX,
+                        ),
+                    )
+                })
+                .min()
+                .expect("no moves to evaluate"),
+        };
+
+        return best_move.0.clone();
 
         // let mut evaluations: Vec<MoveEvaluation<'_>> = legal_moves
         //     .into_par_iter()

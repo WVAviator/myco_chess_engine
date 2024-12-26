@@ -32,7 +32,7 @@ impl Eval for Game {
         // value += self.calculate_bishop_value();
         // value += self.calculate_rook_value();
         // value += self.calculate_development_value();
-        // value += self.calculate_king_safety_value();
+        value += self.calculate_king_safety_value();
         // value += self.calculate_center_value();
         // value += self.calculate_knights_value();
 

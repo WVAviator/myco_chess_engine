@@ -6,9 +6,9 @@ use crate::{
     movegen::rook::RookMoveGen,
 };
 
-const OPEN_FILE_ROOK_BONUS: i32 = 32;
-const CONNECTED_ROOKS_BONUS: i32 = 32;
-const SEVENTH_RANK_ROOK_BONUS: i32 = 48;
+const OPEN_FILE_ROOK_BONUS: i32 = 16;
+const CONNECTED_ROOKS_BONUS: i32 = 16;
+const SEVENTH_RANK_ROOK_BONUS: i32 = 32;
 
 pub trait RookEval {
     fn calculate_rook_value(&self) -> i32;
