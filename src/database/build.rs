@@ -60,19 +60,25 @@ impl DatabaseTrainingSession {
                         game = game.apply_move(&sm);
 
                         // Skip the next move and only add moves for white
-                        moves_iter.next();
+                        if let Some(m) = moves_iter.next() {
+                            game = game.apply_move(&SimpleMove::from(m));
+                        }
                     }
                 }
                 GameResult::Black => {
                     // Skip the first move and only add moves for black
-                    moves_iter.next();
+                    if let Some(m) = moves_iter.next() {
+                        game = game.apply_move(&SimpleMove::from(m));
+                    }
                     while let Some(m) = moves_iter.next() {
                         let sm = SimpleMove::from(m);
                         let entry = MovesEntry::new(game.zobrist(), vec![sm.to_algebraic()]);
                         entry.insert(&mut self.connection)?;
                         game = game.apply_move(&sm);
 
-                        moves_iter.next();
+                        if let Some(m) = moves_iter.next() {
+                            game = game.apply_move(&SimpleMove::from(m));
+                        }
                     }
                 }
                 GameResult::Draw => {

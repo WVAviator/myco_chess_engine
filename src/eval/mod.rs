@@ -16,6 +16,8 @@ mod knights;
 mod piece;
 mod rooks;
 
+pub mod minimax;
+
 pub trait Eval:
     BishopEval + RookEval + DevelopmentEval + KingSafetyEval + PieceEval + CenterEval + KnightEval
 {
@@ -27,17 +29,12 @@ impl Eval for Game {
         let mut value = 0;
 
         value += self.calculate_piece_value();
-        value += self.calculate_bishop_value();
-        value += self.calculate_rook_value();
-        value += self.calculate_development_value();
-        value += self.calculate_king_safety_value();
-        value += self.calculate_center_value();
-        value += self.calculate_knights_value();
-
-        value += match self.turn {
-            Turn::White => 24,
-            Turn::Black => -24,
-        };
+        // value += self.calculate_bishop_value();
+        // value += self.calculate_rook_value();
+        // value += self.calculate_development_value();
+        // value += self.calculate_king_safety_value();
+        // value += self.calculate_center_value();
+        // value += self.calculate_knights_value();
 
         value
     }

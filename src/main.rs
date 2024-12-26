@@ -9,7 +9,7 @@ use rayon::ThreadPoolBuilder;
 use rust_chess_engine::{
     cgame::game::Game,
     database::build::DatabaseTrainingSession,
-    engine::minmax_ml::MinmaxMLEngine,
+    engine::{minmax::MinmaxEngine, minmax_ml::MinmaxMLEngine},
     magic::{get_bishop_magic_map, get_rook_magic_map},
     movegen::MoveGen,
     moves::simple_move::SimpleMove,
@@ -188,7 +188,7 @@ fn extract_moves(command: &str) -> Result<Game, anyhow::Error> {
 fn get_best_move(game: &Game) -> Result<SimpleMove, anyhow::Error> {
     // let engine = SimpleEngine::new(&game);
     // let best_move = engine.get_best_move(8, Duration::from_secs(10))?;
-    let engine = MinmaxMLEngine::new(game, 5, 14);
+    let engine = MinmaxEngine::new(game, 8, 14);
     let best_move = engine.evaluate_best_move();
     Ok(best_move)
 }
