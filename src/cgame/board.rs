@@ -301,19 +301,25 @@ impl Board {
         self.handle_castling(&lmove);
         self.handle_enpassant_takes(&lmove);
 
-        let orig = lmove.get_orig();
-        let dest = lmove.get_dest();
-        let move_bits = lmove.get_bits();
-
         let bitboards = self.iter_mut();
 
         for bitboard in bitboards {
-            if orig & *bitboard != 0 {
+
+            // dest & bb will be 0 unless there is a piece at dest to be captured
+            // *bitboard ^= lmove.dest & *bitboard;
+
+            // let relevant_bits = *bitboard & (lmove.orig | lmove.dest);
+            // let reversed = !relevant_bits & (lmove.orig | lmove.dest);
+
+            // TODO: Find a way to complete the below loop without conditionals
+
+
+            if lmove.orig & *bitboard != 0 {
                 // Moves the piece from orig to dest
-                *bitboard ^= move_bits;
-            } else if dest & *bitboard != 0 {
+                *bitboard ^= lmove.orig | lmove.dest;
+            } else if lmove.dest & *bitboard != 0 {
                 // Captures pieces located at dest
-                *bitboard &= !dest
+                *bitboard &= !lmove.dest
             }
         }
 
@@ -321,38 +327,28 @@ impl Board {
     }
 
     pub fn handle_castling(&mut self, lmove: &SimpleMove) {
-        let move_bits = lmove.get_bits();
-        let orig = lmove.get_orig();
-        if self.black_king & orig != 0 {
-            match move_bits {
+        // Matches the orig king and dest squares to castle patterns (i.e. e1g1)
+        // Moves the rook if so, king will be moved later
+        match (lmove.orig & (self.black_king | self.white_king)) | lmove.dest {
                 0x5000000000000000 => self.black_rooks ^= 0xa000000000000000, // Castle kingside
                 0x1400000000000000 => self.black_rooks ^= 0x900000000000000,  // Castle queenside
-                _ => {}
-            };
-        }
-        if self.white_king & orig != 0 {
-            match move_bits {
                 0x50 => self.white_rooks ^= 0xa0, // Castle kingside
                 0x14 => self.white_rooks ^= 0x9,  // Castle queenside
                 _ => {}
-            };
         }
     }
 
     pub fn handle_enpassant_takes(&mut self, lmove: &SimpleMove) {
-        let orig = lmove.get_orig();
-        let dest = lmove.get_dest();
-
-        if orig & self.white_pawns & FIFTH_RANK != 0
-            && dest != orig << 8
-            && dest & self.empty() != 0
+        if lmove.orig & self.white_pawns & FIFTH_RANK != 0
+            && lmove.dest != lmove.orig << 8
+            && lmove.dest & self.empty() != 0
         {
-            self.black_pawns &= !(dest >> 8);
-        } else if orig & self.black_pawns & FOURTH_RANK != 0
-            && dest != orig >> 8
-            && dest & self.empty() != 0
+            self.black_pawns &= !(lmove.dest >> 8);
+        } else if lmove.orig & self.black_pawns & FOURTH_RANK != 0
+            && lmove.dest != lmove.orig >> 8
+            && lmove.dest & self.empty() != 0
         {
-            self.white_pawns &= !(dest << 8);
+            self.white_pawns &= !(lmove.dest << 8);
         }
     }
 
@@ -382,35 +378,6 @@ impl Board {
             _ => {}
         }
     }
-
-    pub fn position_hash(&self) -> u64 {
-        let mut hash = 0;
-        let hashes = get_multiplicative_hashes();
-        hash ^= self.white_king.wrapping_mul(hashes[0]);
-        hash ^= self.white_pawns.wrapping_mul(hashes[1]);
-        hash ^= self.white_rooks.wrapping_mul(hashes[2]);
-        hash ^= self.white_knights.wrapping_mul(hashes[3]);
-        hash ^= self.white_bishops.wrapping_mul(hashes[4]);
-        hash ^= self.white_queens.wrapping_mul(hashes[5]);
-        hash ^= self.black_king.wrapping_mul(hashes[6]);
-        hash ^= self.black_pawns.wrapping_mul(hashes[7]);
-        hash ^= self.black_rooks.wrapping_mul(hashes[8]);
-        hash ^= self.black_knights.wrapping_mul(hashes[9]);
-        hash ^= self.black_bishops.wrapping_mul(hashes[10]);
-        hash ^= self.black_queens.wrapping_mul(hashes[11]);
-
-        hash
-    }
-}
-
-static MULTIPLICATIVE_HASHES: OnceLock<Vec<u64>> = OnceLock::new();
-
-fn generate_multiplicative_hashes() -> Vec<u64> {
-    (0..12).into_iter().map(|_| random::<u64>()).collect()
-}
-
-fn get_multiplicative_hashes() -> &'static Vec<u64> {
-    MULTIPLICATIVE_HASHES.get_or_init(|| generate_multiplicative_hashes())
 }
 
 impl fmt::Display for Board {

@@ -25,68 +25,64 @@ impl Simulate for Game {
         let superking_index = superking.trailing_zeros() as usize;
         let occupied = simulated_board.occupied();
 
+        let mut attacks = 0;
+
         // Pawns
         match self.turn {
             Turn::White => {
-                if ((superking & !A_FILE & !EIGHTH_RANK) << 7) & simulated_board.black_pawns != 0
-                    || ((superking & !H_FILE & !EIGHTH_RANK) << 9) & simulated_board.black_pawns
-                        != 0
-                {
-                    return false;
-                }
+                // Pawns
+                attacks |= ((superking & !A_FILE & !EIGHTH_RANK) << 7) & simulated_board.black_pawns;
+                attacks |= ((superking & !H_FILE & !EIGHTH_RANK) << 9) & simulated_board.black_pawns;
+                // Knights
+                attacks |= KNIGHT_MOVES[superking_index] & simulated_board.black_knights;
+                // King
+                attacks |= KING_MOVES[superking_index] & simulated_board.black_king;
+                // Bishops
+                let bishop_moves = get_bishop_magic_map()
+                    .get(superking_index)
+                    .expect("could not retrieve magic bitboards for bishop moves")
+                    .get(get_bishop_mask(superking) & occupied);
+                attacks |= bishop_moves
+                    & (simulated_board.black_bishops
+                        | simulated_board.black_queens);
+                // Rooks
+                let rook_moves = get_rook_magic_map()
+                    .get(superking_index)
+                    .expect("could not retrieve magic bitboards for rook moves")
+                    .get(get_rook_mask(superking) & occupied);
+                attacks |= rook_moves
+                    & (simulated_board.black_rooks
+                        | simulated_board.black_queens);
+
             }
             Turn::Black => {
-                if ((superking & !A_FILE & !FIRST_RANK) >> 9) & simulated_board.white_pawns != 0
-                    || ((superking & !H_FILE & !FIRST_RANK) >> 7) & simulated_board.white_pawns != 0
-                {
-                    return false;
-                }
+                // Pawns
+                attacks |= ((superking & !A_FILE & !FIRST_RANK) >> 9) & simulated_board.white_pawns;
+                attacks |= ((superking & !H_FILE & !FIRST_RANK) >> 7) & simulated_board.white_pawns;
+                // Knights
+                attacks |= KNIGHT_MOVES[superking_index] & simulated_board.white_knights;
+                // King
+                attacks |= KING_MOVES[superking_index] & simulated_board.white_king;
+                // Bishops
+                let bishop_moves = get_bishop_magic_map()
+                    .get(superking_index)
+                    .expect("could not retrieve magic bitboards for bishop moves")
+                    .get(get_bishop_mask(superking) & occupied);
+                attacks |= bishop_moves
+                    & (simulated_board.white_bishops
+                        | simulated_board.white_queens);
+                // Rooks
+                let rook_moves = get_rook_magic_map()
+                    .get(superking_index)
+                    .expect("could not retrieve magic bitboards for rook moves")
+                    .get(get_rook_mask(superking) & occupied);
+                attacks |= rook_moves
+                    & (simulated_board.white_rooks
+                        | simulated_board.white_queens);
             }
         }
 
-        // Knights
-        let knight_moves = KNIGHT_MOVES
-            .get(superking_index)
-            .expect("coulf not retrieve precomputed knight move");
-        if knight_moves & simulated_board.knights(&self.turn.other()) != 0 {
-            return false;
-        }
-
-        // King
-        let king_moves = KING_MOVES
-            .get(superking_index)
-            .expect("coulf not retrieve precomputed king move");
-        if king_moves & simulated_board.king(&self.turn.other()) != 0 {
-            return false;
-        }
-
-        // Bishops
-        let bishop_moves = get_bishop_magic_map()
-            .get(superking_index)
-            .expect("could not retrieve magic bitboards for bishop moves")
-            .get(get_bishop_mask(superking) & occupied);
-        if bishop_moves
-            & (simulated_board.bishops(&self.turn.other())
-                | simulated_board.queens(&self.turn.other()))
-            != 0
-        {
-            return false;
-        }
-
-        // Rooks
-        let rook_moves = get_rook_magic_map()
-            .get(superking_index)
-            .expect("could not retrieve magic bitboards for rook moves")
-            .get(get_rook_mask(superking) & occupied);
-        if rook_moves
-            & (simulated_board.rooks(&self.turn.other())
-                | simulated_board.queens(&self.turn.other()))
-            != 0
-        {
-            return false;
-        }
-
-        true
+        attacks == 0
     }
 }
 

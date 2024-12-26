@@ -28,13 +28,6 @@ pub trait MoveGen:
 
 impl MoveGen for Game {
     fn generate_vision(&self, turn: &Turn) -> u64 {
-        if self.game_cache.initialized {
-            match turn {
-                Turn::White => return self.game_cache.white_vision,
-                Turn::Black => return self.game_cache.black_vision,
-            }
-        }
-
         let mut vision = 0;
         vision |= self.generate_king_vision(turn);
         vision |= self.generate_pawn_vision(turn);
@@ -56,8 +49,6 @@ impl MoveGen for Game {
         moves
     }
     fn generate_legal_moves(&self) -> SmallVec<[SimpleMove; 256]> {
-        // This runs faster than .clone() so moves are not useful to cache
-
         let mut moves = self.generate_pseudolegal_moves();
         moves.retain(|lmove| self.check_move_legality(lmove));
 

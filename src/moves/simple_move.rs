@@ -9,56 +9,56 @@ use super::{
 
 #[derive(Debug, Clone, Eq)]
 pub struct SimpleMove {
-    orig_square: u64,
-    dest_square: u64,
-    promotion: Option<PieceType>,
+    pub orig: u64,
+    pub dest: u64,
+    pub promotion: Option<PieceType>,
 }
 
 impl SimpleMove {
-    pub fn new(orig_square: u64, dest_square: u64) -> Self {
+    pub fn new(orig: u64, dest: u64) -> Self {
         SimpleMove {
-            orig_square,
-            dest_square,
+            orig,
+            dest,
             promotion: None,
         }
     }
 
     pub fn get_bits(&self) -> u64 {
-        self.orig_square | self.dest_square
+        self.orig | self.dest
     }
 
     pub fn get_orig(&self) -> u64 {
-        self.orig_square
+        self.orig
     }
 
     pub fn get_dest(&self) -> u64 {
-        self.dest_square
+        self.dest
     }
 
     pub fn get_promotion(&self) -> &Option<PieceType> {
         &self.promotion
     }
 
-    pub fn new_promotion(orig_square: u64, dest_square: u64) -> Vec<Self> {
+    pub fn new_promotion(orig: u64, dest: u64) -> Vec<Self> {
         vec![
             SimpleMove {
-                orig_square,
-                dest_square,
+                orig,
+                dest,
                 promotion: Some(PieceType::Rook),
             },
             SimpleMove {
-                orig_square,
-                dest_square,
+                orig,
+                dest,
                 promotion: Some(PieceType::Bishop),
             },
             SimpleMove {
-                orig_square,
-                dest_square,
+                orig,
+                dest,
                 promotion: Some(PieceType::Knight),
             },
             SimpleMove {
-                orig_square,
-                dest_square,
+                orig,
+                dest,
                 promotion: Some(PieceType::Queen),
             },
         ]
@@ -67,8 +67,8 @@ impl SimpleMove {
     pub fn to_algebraic(&self) -> String {
         format!(
             "{}{}{}",
-            u64_to_algebraic(self.orig_square).unwrap(),
-            u64_to_algebraic(self.dest_square).unwrap(),
+            u64_to_algebraic(self.orig).unwrap(),
+            u64_to_algebraic(self.dest).unwrap(),
             match self.promotion {
                 Some(PieceType::Rook) => "r",
                 Some(PieceType::Knight) => "n",
@@ -85,8 +85,8 @@ impl SimpleMove {
             return Err(anyhow!("Invalid algebraic move: {}", algebraic));
         }
 
-        let orig_square = algebraic_to_u64(&algebraic[0..2]).unwrap();
-        let dest_square = algebraic_to_u64(&algebraic[2..4]).unwrap();
+        let orig = algebraic_to_u64(&algebraic[0..2]).unwrap();
+        let dest = algebraic_to_u64(&algebraic[2..4]).unwrap();
 
         let promotion = if len == 5 {
             match &algebraic[4..5] {
@@ -101,8 +101,8 @@ impl SimpleMove {
         };
 
         Ok(SimpleMove {
-            orig_square,
-            dest_square,
+            orig,
+            dest,
             promotion,
         })
     }
@@ -129,8 +129,8 @@ impl SimpleMove {
 
 impl PartialEq for SimpleMove {
     fn eq(&self, other: &Self) -> bool {
-        self.orig_square == other.orig_square
-            && self.dest_square == other.dest_square
+        self.orig == other.orig
+            && self.dest == other.dest
             && self.promotion == other.promotion
     }
 }
@@ -138,8 +138,8 @@ impl PartialEq for SimpleMove {
 impl From<&ContextualMove> for SimpleMove {
     fn from(value: &ContextualMove) -> Self {
         SimpleMove {
-            orig_square: value.orig,
-            dest_square: value.dest,
+            orig: value.orig,
+            dest: value.dest,
             promotion: value.promotion.clone(),
         }
     }
@@ -172,8 +172,8 @@ mod test {
     #[test]
     fn converts_to_algebraic() {
         let long_algebraic_move = SimpleMove {
-            orig_square: 1 << 52,
-            dest_square: 1 << 60,
+            orig: 1 << 52,
+            dest: 1 << 60,
             promotion: Some(PieceType::Queen),
         };
         let long_algebraic_str = long_algebraic_move.to_algebraic();
@@ -183,8 +183,8 @@ mod test {
     #[test]
     fn converts_from_algebraic() {
         let long_algebraic_move = SimpleMove {
-            orig_square: 1 << 52,
-            dest_square: 1 << 60,
+            orig: 1 << 52,
+            dest: 1 << 60,
             promotion: Some(PieceType::Queen),
         };
         assert_eq!(

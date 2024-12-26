@@ -4,7 +4,10 @@ pub mod engine;
 pub mod eval;
 pub mod hash;
 pub mod magic;
+
+#[cfg(feature = "pytorch")]
 pub mod ml;
+
 pub mod movegen;
 pub mod moves;
 pub mod pgn;

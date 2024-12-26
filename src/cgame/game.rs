@@ -27,24 +27,6 @@ pub struct Game {
     pub en_passant: u64,
     pub halfmove_clock: u32,
     pub fullmove_number: u32,
-    pub game_cache: GameCache,
-}
-
-#[derive(Debug, PartialEq, Clone, Eq)]
-pub struct GameCache {
-    pub white_vision: u64,
-    pub black_vision: u64,
-    pub initialized: bool,
-}
-
-impl GameCache {
-    fn new() -> Self {
-        Self {
-            white_vision: 0,
-            black_vision: 0,
-            initialized: false,
-        }
-    }
 }
 
 impl Game {
@@ -108,10 +90,7 @@ impl Game {
             en_passant,
             halfmove_clock,
             fullmove_number,
-            game_cache: GameCache::new(),
         };
-
-        game.initialize_cache();
 
         Ok(game)
     }
@@ -154,16 +133,7 @@ impl Game {
             game = game.apply_move(&lmove);
         }
 
-        game.initialize_cache();
-
         Ok(game)
-    }
-
-    fn initialize_cache(&mut self) {
-        self.game_cache.initialized = false;
-        self.game_cache.white_vision = self.generate_vision(&Turn::White);
-        self.game_cache.black_vision = self.generate_vision(&Turn::Black);
-        self.game_cache.initialized = true;
     }
 }
 
@@ -283,8 +253,6 @@ impl Game {
 
         // Complete move
         new_game.board.apply_move(lmove);
-
-        new_game.initialize_cache();
 
         new_game
     }

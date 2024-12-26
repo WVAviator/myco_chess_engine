@@ -15,25 +15,50 @@ impl BishopMoveGen for Game {
     fn generate_bishop_vision(&self, turn: &Turn) -> u64 {
         let mut vision = 0;
 
-        let bishop_pieces = self.board.bishops(turn) | self.board.queens(turn);
-        let player_pieces = self.board.all_pieces(turn);
-        let opponent_pieces = self.board.all_pieces(&turn.other());
+        match turn {
+            Turn::White => {
+                let bishop_pieces = self.board.white_bishops | self.board.white_queens;
+                let player_pieces = self.board.white_pieces();
+                let opponent_pieces = self.board.black_pieces();
 
-        let mut remaining_bishops = bishop_pieces;
-        while remaining_bishops != 0 {
-            let current_bishop = remaining_bishops & (!remaining_bishops + 1);
-            let blockers = (player_pieces | opponent_pieces) & get_bishop_mask(current_bishop);
-            let bishop_moves = get_bishop_magic_map()
-                .get(current_bishop.trailing_zeros() as usize)
-                .expect("could not find magic bitboard for requested bishop position")
-                .get(blockers);
+                let mut remaining_bishops = bishop_pieces;
+                while remaining_bishops != 0 {
+                    let current_bishop = remaining_bishops & (!remaining_bishops + 1);
+                    let blockers = (player_pieces | opponent_pieces) & get_bishop_mask(current_bishop);
+                    let bishop_moves = get_bishop_magic_map()
+                        .get(current_bishop.trailing_zeros() as usize)
+                        .expect("could not find magic bitboard for requested bishop position")
+                        .get(blockers);
 
-            vision |= bishop_moves;
+                    vision |= bishop_moves;
 
-            remaining_bishops &= remaining_bishops - 1;
+                    remaining_bishops &= remaining_bishops - 1;
+                }
+
+                vision
+            }
+            Turn::Black => {
+                let bishop_pieces = self.board.black_bishops | self.board.black_queens;
+                let player_pieces = self.board.black_pieces();
+                let opponent_pieces = self.board.white_pieces();
+
+                let mut remaining_bishops = bishop_pieces;
+                while remaining_bishops != 0 {
+                    let current_bishop = remaining_bishops & (!remaining_bishops + 1);
+                    let blockers = (player_pieces | opponent_pieces) & get_bishop_mask(current_bishop);
+                    let bishop_moves = get_bishop_magic_map()
+                        .get(current_bishop.trailing_zeros() as usize)
+                        .expect("could not find magic bitboard for requested bishop position")
+                        .get(blockers);
+
+                    vision |= bishop_moves;
+
+                    remaining_bishops &= remaining_bishops - 1;
+                }
+
+                vision
+            }
         }
-
-        vision
     }
     fn generate_pseudolegal_bishop_moves(&self, moves: &mut SmallVec<[SimpleMove; 256]>) {
         let bishop_pieces = self.board.bishops(&self.turn) | self.board.queens(&self.turn);
