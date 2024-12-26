@@ -6,7 +6,7 @@ use knights::KnightEval;
 use piece::PieceEval;
 use rooks::RookEval;
 
-use crate::cgame::game::{Game, Turn};
+use crate::cgame::game::Game;
 
 mod bishops;
 mod center;

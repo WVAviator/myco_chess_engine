@@ -84,7 +84,6 @@ impl MinimaxEval for Game {
                         first_pass_evaluations[first_pass_evaluations.len().saturating_sub(2)..]
                             .iter(),
                     )
-                    .take(6)
                 {
                     let value = self
                         .apply_move(&eval.0)
@@ -107,7 +106,6 @@ impl MinimaxEval for Game {
                         first_pass_evaluations[first_pass_evaluations.len().saturating_sub(2)..]
                             .iter(),
                     )
-                    .take(6)
                 {
                     let value = self
                         .apply_move(&eval.0)

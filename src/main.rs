@@ -9,7 +9,7 @@ use rayon::ThreadPoolBuilder;
 use rust_chess_engine::{
     cgame::game::Game,
     database::build::DatabaseTrainingSession,
-    engine::{minimax::MinmaxEngine, minmax_ml::MinmaxMLEngine},
+    engine::minimax::MinmaxEngine,
     magic::{get_bishop_magic_map, get_rook_magic_map},
     movegen::MoveGen,
     moves::simple_move::SimpleMove,

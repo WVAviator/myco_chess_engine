@@ -4,7 +4,6 @@ use std::{
     time::{Duration, Instant},
 };
 
-use anyhow::anyhow;
 use rayon::prelude::*;
 
 use crate::{
