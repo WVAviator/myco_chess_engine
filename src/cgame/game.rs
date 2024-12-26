@@ -83,16 +83,14 @@ impl Game {
                 fen_str
             ))?;
 
-        let mut game = Game {
+        Ok(Game {
             board,
             turn,
             castling_rights,
             en_passant,
             halfmove_clock,
             fullmove_number,
-        };
-
-        Ok(game)
+        })
     }
 
     pub fn to_fen(&self) -> String {

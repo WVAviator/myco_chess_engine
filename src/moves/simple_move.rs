@@ -129,9 +129,7 @@ impl SimpleMove {
 
 impl PartialEq for SimpleMove {
     fn eq(&self, other: &Self) -> bool {
-        self.orig == other.orig
-            && self.dest == other.dest
-            && self.promotion == other.promotion
+        self.orig == other.orig && self.dest == other.dest && self.promotion == other.promotion
     }
 }
 

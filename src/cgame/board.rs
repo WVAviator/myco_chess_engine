@@ -1,7 +1,6 @@
-use std::{fmt, sync::OnceLock};
+use std::fmt;
 
 use anyhow::{bail, Context};
-use rand::random;
 
 use crate::moves::{common::PieceType, simple_move::SimpleMove};
 
@@ -58,6 +57,28 @@ impl Board {
             &mut self.white_bishops,
             &mut self.white_queens,
             &mut self.white_king,
+            &mut self.black_pawns,
+            &mut self.black_rooks,
+            &mut self.black_knights,
+            &mut self.black_bishops,
+            &mut self.black_queens,
+            &mut self.black_king,
+        ]
+    }
+
+    pub fn iter_mut_white(&mut self) -> [&mut u64; 6] {
+        [
+            &mut self.white_pawns,
+            &mut self.white_rooks,
+            &mut self.white_knights,
+            &mut self.white_bishops,
+            &mut self.white_queens,
+            &mut self.white_king,
+        ]
+    }
+
+    pub fn iter_mut_black(&mut self) -> [&mut u64; 6] {
+        [
             &mut self.black_pawns,
             &mut self.black_rooks,
             &mut self.black_knights,
@@ -299,28 +320,26 @@ impl Board {
 
     pub fn apply_move(&mut self, lmove: &SimpleMove) {
         self.handle_castling(&lmove);
-        self.handle_enpassant_takes(&lmove);
+
+        self.black_pawns ^= ((((lmove.orig & self.white_pawns & FIFTH_RANK) << 7)
+            & (lmove.dest & self.empty()))
+            | ((lmove.orig & self.white_pawns & FIFTH_RANK) << 9) & (lmove.dest & self.empty()))
+            >> 8;
+        self.white_pawns ^= ((((lmove.orig & self.black_pawns & FOURTH_RANK) >> 9)
+            & (lmove.dest & self.empty()))
+            | (((lmove.orig & self.black_pawns & FOURTH_RANK) >> 7) & (lmove.dest & self.empty())))
+            << 8;
 
         let bitboards = self.iter_mut();
 
+        let move_shift: u32 =
+            (64 + (lmove.orig.trailing_zeros() as i32 - lmove.dest.trailing_zeros() as i32)) as u32;
         for bitboard in bitboards {
-
             // dest & bb will be 0 unless there is a piece at dest to be captured
-            // *bitboard ^= lmove.dest & *bitboard;
-
-            // let relevant_bits = *bitboard & (lmove.orig | lmove.dest);
-            // let reversed = !relevant_bits & (lmove.orig | lmove.dest);
-
-            // TODO: Find a way to complete the below loop without conditionals
-
-
-            if lmove.orig & *bitboard != 0 {
-                // Moves the piece from orig to dest
-                *bitboard ^= lmove.orig | lmove.dest;
-            } else if lmove.dest & *bitboard != 0 {
-                // Captures pieces located at dest
-                *bitboard &= !lmove.dest
-            }
+            *bitboard &= !lmove.dest;
+            // does nothing if orig & bb is 0, otherwise xors with both bits
+            *bitboard ^=
+                (lmove.orig & *bitboard) | (lmove.orig & *bitboard).rotate_right(move_shift);
         }
 
         self.handle_promotions(&lmove);
@@ -330,25 +349,11 @@ impl Board {
         // Matches the orig king and dest squares to castle patterns (i.e. e1g1)
         // Moves the rook if so, king will be moved later
         match (lmove.orig & (self.black_king | self.white_king)) | lmove.dest {
-                0x5000000000000000 => self.black_rooks ^= 0xa000000000000000, // Castle kingside
-                0x1400000000000000 => self.black_rooks ^= 0x900000000000000,  // Castle queenside
-                0x50 => self.white_rooks ^= 0xa0, // Castle kingside
-                0x14 => self.white_rooks ^= 0x9,  // Castle queenside
-                _ => {}
-        }
-    }
-
-    pub fn handle_enpassant_takes(&mut self, lmove: &SimpleMove) {
-        if lmove.orig & self.white_pawns & FIFTH_RANK != 0
-            && lmove.dest != lmove.orig << 8
-            && lmove.dest & self.empty() != 0
-        {
-            self.black_pawns &= !(lmove.dest >> 8);
-        } else if lmove.orig & self.black_pawns & FOURTH_RANK != 0
-            && lmove.dest != lmove.orig >> 8
-            && lmove.dest & self.empty() != 0
-        {
-            self.white_pawns &= !(lmove.dest << 8);
+            0x5000000000000000 => self.black_rooks ^= 0xa000000000000000, // Castle kingside
+            0x1400000000000000 => self.black_rooks ^= 0x900000000000000,  // Castle queenside
+            0x50 => self.white_rooks ^= 0xa0,                             // Castle kingside
+            0x14 => self.white_rooks ^= 0x9,                              // Castle queenside
+            _ => {}
         }
     }
 

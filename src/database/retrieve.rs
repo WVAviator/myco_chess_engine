@@ -2,9 +2,7 @@ use anyhow::bail;
 use rand::random;
 use rusqlite::Connection;
 
-use crate::{
-    cgame::game::Game, hash::zobrist::ZobristHash, movegen::MoveGen, moves::simple_move::SimpleMove,
-};
+use crate::{cgame::game::Game, hash::zobrist::ZobristHash, moves::simple_move::SimpleMove};
 
 use super::schema::MovesEntry;
 
