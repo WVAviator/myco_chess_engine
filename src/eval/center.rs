@@ -1,5 +1,5 @@
 use crate::{
-    cgame::game::{Game, Turn},
+    game::game::{Game, Turn},
     movegen::MoveGen,
 };
 

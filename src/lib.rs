@@ -1,7 +1,7 @@
-pub mod cgame;
 pub mod database;
 pub mod engine;
 pub mod eval;
+pub mod game;
 pub mod hash;
 pub mod magic;
 
@@ -14,7 +14,7 @@ pub mod pgn;
 
 #[cfg(test)]
 mod integration_tests {
-    use cgame::game::Game;
+    use game::game::Game;
     use movegen::MoveGen;
     use rayon::prelude::*;
 

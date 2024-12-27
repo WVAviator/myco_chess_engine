@@ -1,7 +1,7 @@
 use smallvec::SmallVec;
 
 use crate::{
-    cgame::{
+    game::{
         constants::{
             A_FILE, B_FILE, EIGHTH_RANK, FIRST_RANK, G_FILE, H_FILE, SECOND_RANK, SEVENTH_RANK,
         },

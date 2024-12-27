@@ -2,7 +2,7 @@ use std::{fs, io::Write, path::Path};
 
 use rand::random;
 
-use crate::cgame::{
+use crate::game::{
     castling_rights::CastlingRights,
     game::{Game, Turn},
 };

@@ -1,5 +1,5 @@
 use crate::{
-    cgame::{
+    game::{
         constants::{FILEOF, SECOND_RANK, SEVENTH_RANK},
         game::{Game, Turn},
     },

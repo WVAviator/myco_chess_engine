@@ -1,4 +1,4 @@
-use crate::cgame::{
+use crate::game::{
     constants::{A_FILE, FILEOF, H_FILE},
     game::Game,
 };

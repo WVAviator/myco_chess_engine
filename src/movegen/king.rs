@@ -1,7 +1,7 @@
 use smallvec::SmallVec;
 
 use crate::{
-    cgame::{
+    game::{
         castling_rights::CastlingRights,
         constants::{A_FILE, EIGHTH_RANK, FIRST_RANK, H_FILE},
         game::{Game, Turn},

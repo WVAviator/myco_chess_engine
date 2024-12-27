@@ -1,7 +1,7 @@
 use anyhow::{anyhow, bail};
 
 use crate::{
-    cgame::{
+    game::{
         constants::{get_file, get_rank, A_FILE, FIFTH_RANK, FOURTH_RANK, H_FILE},
         game::{Game, Turn},
     },
@@ -192,7 +192,12 @@ impl ContextualMove {
                     };
 
                 if orig.count_ones() != 1 {
-                    bail!("invalid or ambiguous origin square for move {}", move_str);
+                    bail!(
+                        "invalid or ambiguous origin square for move {}. Got {}. Game: {}",
+                        move_str,
+                        orig,
+                        game.to_fen(),
+                    );
                 }
             }
         }
@@ -240,9 +245,13 @@ impl OriginMask for Game {
                         .get(self.board.all() & get_rook_mask(dest))
             }
             PieceType::Pawn => match (&self.turn, capture) {
-                (Turn::White, false) => (dest >> 8) | ((dest & FOURTH_RANK) >> 16),
+                (Turn::White, false) => {
+                    (dest >> 8) | ((((dest & FOURTH_RANK) >> 8) & !self.board.all()) >> 8)
+                }
                 (Turn::White, true) => ((dest & !A_FILE) >> 9) | ((dest & !H_FILE) >> 7),
-                (Turn::Black, false) => (dest << 8) | ((dest & FIFTH_RANK) << 16),
+                (Turn::Black, false) => {
+                    (dest << 8) | ((((dest & FIFTH_RANK) << 8) & !self.board.all()) << 8)
+                }
                 (Turn::Black, true) => ((dest & !A_FILE) << 7) | ((dest & !H_FILE) << 9),
             },
         }

@@ -7,7 +7,7 @@ use pawn_structure::PawnStructureEval;
 use piece::PieceEval;
 use rooks::RookEval;
 
-use crate::cgame::game::Game;
+use crate::game::game::Game;
 
 mod bishops;
 mod center;

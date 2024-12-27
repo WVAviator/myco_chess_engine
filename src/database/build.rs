@@ -1,7 +1,7 @@
 use rusqlite::Connection;
 
 use crate::{
-    cgame::game::Game,
+    game::game::Game,
     hash::zobrist::ZobristHash,
     moves::simple_move::SimpleMove,
     pgn::{

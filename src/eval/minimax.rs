@@ -7,7 +7,7 @@ use std::{
 use rayon::prelude::*;
 
 use crate::{
-    cgame::game::{Game, Turn},
+    game::game::{Game, Turn},
     hash::zobrist::ZobristHash,
     movegen::MoveGen,
     moves::simple_move::SimpleMove,

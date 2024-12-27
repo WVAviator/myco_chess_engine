@@ -1,5 +1,5 @@
 use crate::{
-    cgame::{castling_rights::CastlingRights, game::Game},
+    game::{castling_rights::CastlingRights, game::Game},
     movegen::king::KING_MOVES,
 };
 

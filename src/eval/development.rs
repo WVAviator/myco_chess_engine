@@ -1,4 +1,4 @@
-use crate::cgame::game::Game;
+use crate::game::game::Game;
 
 const WHITE_ROOK_STARTING_POSITIONS: u64 = 0x81;
 const WHITE_KNIGHT_STARTING_POSITIONS: u64 = 0x42;

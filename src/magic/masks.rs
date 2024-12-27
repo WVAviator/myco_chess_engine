@@ -1,6 +1,6 @@
 use anyhow::bail;
 
-use crate::cgame::constants::{A_FILE, EIGHTH_RANK, FIRST_RANK, H_FILE};
+use crate::game::constants::{A_FILE, EIGHTH_RANK, FIRST_RANK, H_FILE};
 
 pub fn get_rook_mask(rook: u64) -> u64 {
     ROOK_MASKS[rook.trailing_zeros() as usize]

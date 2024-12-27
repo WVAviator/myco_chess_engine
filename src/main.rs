@@ -6,16 +6,15 @@ use std::{
 use anyhow::{anyhow, bail, Context};
 use clap::Parser;
 use myco_chess_engine::{
-    cgame::game::Game,
     database::build::DatabaseTrainingSession,
     engine::minimax::MinmaxEngine,
+    game::game::Game,
     magic::{get_bishop_magic_map, get_rook_magic_map},
     movegen::MoveGen,
     moves::simple_move::SimpleMove,
 };
+use rayon::prelude::*;
 use rayon::ThreadPoolBuilder;
-
-mod args;
 
 fn main() {
     let args = Args::parse();
@@ -79,11 +78,11 @@ fn perft(depth: u8, game: Game) -> usize {
     let moves = game.generate_legal_moves();
 
     moves
-        // .into_par_iter() // Parallelize over legal moves
+        // .into_par_iter()
         .into_iter()
         .map(|lmove| {
-            let new_game = game.apply_move(&lmove); // Apply the move
-            perft(depth - 1, new_game) // Recursive call for child nodes
+            let new_game = game.apply_move(&lmove);
+            perft(depth - 1, new_game)
         })
         .sum()
 }

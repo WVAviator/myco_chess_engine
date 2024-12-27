@@ -2,7 +2,7 @@ use anyhow::{bail, Context};
 use regex::Regex;
 
 use crate::{
-    cgame::game::Game,
+    game::game::Game,
     moves::{contextual_move::ContextualMove, simple_move::SimpleMove},
 };
 

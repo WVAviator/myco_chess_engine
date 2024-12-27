@@ -7,7 +7,7 @@ use simulate::Simulate;
 use smallvec::SmallVec;
 
 use crate::{
-    cgame::game::{Game, Turn},
+    game::game::{Game, Turn},
     moves::simple_move::SimpleMove,
 };
 

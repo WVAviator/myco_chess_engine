@@ -1,4 +1,4 @@
-use crate::cgame::{
+use crate::game::{
     constants::{EIGHTH_RANK, FIRST_RANK},
     game::Game,
 };

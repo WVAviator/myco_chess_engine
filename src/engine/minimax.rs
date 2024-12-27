@@ -7,7 +7,7 @@ use std::{
 use rayon::prelude::*;
 
 use crate::{
-    cgame::game::{Game, Turn},
+    game::game::{Game, Turn},
     database::{connection::get_connection, retrieve::MoveRetrieval},
     eval::{minimax::MinimaxEval, Eval},
     movegen::MoveGen,
