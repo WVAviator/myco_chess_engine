@@ -21,7 +21,7 @@ impl Simulate for Game {
         let mut simulated_board = self.board.clone();
         simulated_board.apply_move(lmove);
 
-        let occupied = simulated_board.all;
+        let occupied = simulated_board.all();
 
         let mut attacks = 0;
 

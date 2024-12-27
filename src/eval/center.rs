@@ -20,12 +20,12 @@ impl CenterEval for Game {
     fn calculate_center_value(&self) -> i32 {
         let mut value = 0;
 
-        if self.board.all.count_ones() < ENDGAME_PIECE_COUNT {
+        if self.board.all().count_ones() < ENDGAME_PIECE_COUNT {
             return value;
         }
 
-        let white_pieces = self.board.white_pieces;
-        let black_pieces = self.board.black_pieces;
+        let white_pieces = self.board.white_pieces();
+        let black_pieces = self.board.black_pieces();
 
         let white_vision = self.generate_vision(&Turn::White);
         let black_vision = self.generate_vision(&Turn::Black);

@@ -478,6 +478,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "myco_chess_engine"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bitflags",
+ "clap",
+ "rand",
+ "rayon",
+ "regex",
+ "rusqlite",
+ "smallvec",
+ "tch",
+]
+
+[[package]]
 name = "ndarray"
 version = "0.15.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -688,21 +703,6 @@ dependencies = [
  "hashlink",
  "libsqlite3-sys",
  "smallvec",
-]
-
-[[package]]
-name = "rust_chess_engine"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "bitflags",
- "clap",
- "rand",
- "rayon",
- "regex",
- "rusqlite",
- "smallvec",
- "tch",
 ]
 
 [[package]]

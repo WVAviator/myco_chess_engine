@@ -11,21 +11,15 @@ use super::{
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Board {
-    pub white: [u64; 6], // pawns, rooks, knights, bishops, queens, king
-    pub black: [u64; 6],
-    pub all: u64,
-    pub white_pieces: u64,
-    pub black_pieces: u64,
+    pub white: [u64; 8], // pawns, rooks, knights, bishops, queens, king, all, unused
+    pub black: [u64; 8],
 }
 
 impl Board {
     pub fn new_empty() -> Self {
         Board {
-            white: [0; 6],
-            black: [0; 6],
-            all: 0,
-            white_pieces: 0,
-            black_pieces: 0,
+            white: [0; 8],
+            black: [0; 8],
         }
     }
 
@@ -127,9 +121,18 @@ impl Board {
             }
         }
 
-        board.all = board.get_all();
-        board.white_pieces = board.get_white_pieces();
-        board.black_pieces = board.get_black_pieces();
+        board.white[6] = board.white[0]
+            | board.white[1]
+            | board.white[2]
+            | board.white[3]
+            | board.white[4]
+            | board.white[5];
+        board.black[6] = board.black[0]
+            | board.black[1]
+            | board.black[2]
+            | board.black[3]
+            | board.black[4]
+            | board.black[5];
 
         Ok(board)
     }
@@ -192,30 +195,24 @@ impl Board {
         fen
     }
 
-    fn get_white_pieces(&self) -> u64 {
-        self.white[0]
-            | self.white[1]
-            | self.white[2]
-            | self.white[3]
-            | self.white[4]
-            | self.white[5]
+    #[inline(always)]
+    pub fn white_pieces(&self) -> u64 {
+        self.white[6]
     }
 
-    fn get_black_pieces(&self) -> u64 {
-        self.black[0]
-            | self.black[1]
-            | self.black[2]
-            | self.black[3]
-            | self.black[4]
-            | self.black[5]
+    #[inline(always)]
+    pub fn black_pieces(&self) -> u64 {
+        self.black[6]
     }
 
-    fn get_all(&self) -> u64 {
-        self.get_white_pieces() | self.get_black_pieces()
+    #[inline(always)]
+    pub fn all(&self) -> u64 {
+        self.white[6] | self.black[6]
     }
 
+    #[inline(always)]
     pub fn empty(&self) -> u64 {
-        !self.all
+        !(self.white[6] | self.black[6])
     }
 
     pub fn pawns(&self, turn: &Turn) -> u64 {
@@ -262,32 +259,19 @@ impl Board {
 
     pub fn all_pieces(&self, turn: &Turn) -> u64 {
         match turn {
-            Turn::White => self.get_white_pieces(),
-            Turn::Black => self.get_black_pieces(),
+            Turn::White => self.white_pieces(),
+            Turn::Black => self.black_pieces(),
         }
     }
 
     pub fn apply_move(&mut self, lmove: &SimpleMove) {
         self.handle_castling(&lmove);
-
-        if (lmove.orig & self.white[0] & FIFTH_RANK) | (lmove.orig & self.black[0] & FOURTH_RANK)
-            != 0
-        {
-            self.black[0] ^= ((((lmove.orig & self.white[0] & FIFTH_RANK) << 7)
-                & (lmove.dest & self.empty()))
-                | ((lmove.orig & self.white[0] & FIFTH_RANK) << 9) & (lmove.dest & self.empty()))
-                >> 8;
-            self.white[0] ^= ((((lmove.orig & self.black[0] & FOURTH_RANK) >> 9)
-                & (lmove.dest & self.empty()))
-                | (((lmove.orig & self.black[0] & FOURTH_RANK) >> 7)
-                    & (lmove.dest & self.empty())))
-                << 8;
-        }
+        self.handle_enpassant(&lmove);
 
         let move_shift: u32 =
             (64 + (lmove.orig.trailing_zeros() as i32 - lmove.dest.trailing_zeros() as i32)) as u32;
 
-        if (lmove.orig & self.white_pieces) | (lmove.dest & self.white_pieces) != 0 {
+        if (lmove.orig & self.white[6]) | (lmove.dest & self.white[6]) != 0 {
             for bitboard in self.white.iter_mut() {
                 // dest & bb will be 0 unless there is a piece at dest to be captured
                 *bitboard &= !lmove.dest;
@@ -297,7 +281,7 @@ impl Board {
             }
         }
 
-        if (lmove.orig & self.black_pieces) | (lmove.dest & self.black_pieces) != 0 {
+        if (lmove.orig & self.black[6]) | (lmove.dest & self.black[6]) != 0 {
             for bitboard in self.black.iter_mut() {
                 // dest & bb will be 0 unless there is a piece at dest to be captured
                 *bitboard &= !lmove.dest;
@@ -308,24 +292,79 @@ impl Board {
         }
 
         self.handle_promotions(&lmove);
-
-        self.all = self.get_all();
-        self.white_pieces = self.get_white_pieces();
-        self.black_pieces = self.get_black_pieces();
     }
 
+    #[inline(always)]
     pub fn handle_castling(&mut self, lmove: &SimpleMove) {
         // Matches the orig king and dest squares to castle patterns (i.e. e1g1)
         // Moves the rook if so, king will be moved later
         match (lmove.orig & (self.black[5] | self.white[5])) | lmove.dest {
-            0x5000000000000000 => self.black[1] ^= 0xa000000000000000, // Castle kingside
-            0x1400000000000000 => self.black[1] ^= 0x900000000000000,  // Castle queenside
-            0x50 => self.white[1] ^= 0xa0,                             // Castle kingside
-            0x14 => self.white[1] ^= 0x9,                              // Castle queenside
+            0x5000000000000000 => {
+                self.black[1] ^= 0xa000000000000000;
+                self.black[6] ^= 0xa000000000000000;
+            } // Castle kingside
+            0x1400000000000000 => {
+                self.black[1] ^= 0x900000000000000;
+                self.black[6] ^= 0x900000000000000;
+            } // Castle queenside
+            0x50 => {
+                self.white[1] ^= 0xa0;
+                self.white[6] ^= 0xa0;
+            } // Castle kingside
+            0x14 => {
+                self.white[1] ^= 0x9;
+                self.white[6] ^= 0x9;
+            } // Castle queenside
             _ => {}
         }
     }
 
+    #[inline(always)]
+    fn handle_enpassant(&mut self, lmove: &SimpleMove) {
+        let capture =
+            match (lmove.orig & (self.white[0] | self.black[0])) | (lmove.dest & self.empty()) {
+                0x20100000000 => 0x200000000,
+                0x40200000000 => 0x400000000,
+                0x80400000000 => 0x800000000,
+                0x100800000000 => 0x1000000000,
+                0x201000000000 => 0x2000000000,
+                0x402000000000 => 0x4000000000,
+                0x804000000000 => 0x8000000000,
+
+                0x10200000000 => 0x100000000,
+                0x20400000000 => 0x200000000,
+                0x40800000000 => 0x400000000,
+                0x81000000000 => 0x800000000,
+                0x102000000000 => 0x1000000000,
+                0x204000000000 => 0x2000000000,
+                0x408000000000 => 0x4000000000,
+
+                0x10200 => 0x20000,
+                0x20400 => 0x40000,
+                0x40800 => 0x80000,
+                0x81000 => 0x100000,
+                0x102000 => 0x200000,
+                0x204000 => 0x400000,
+                0x408000 => 0x800000,
+
+                0x20100 => 0x10000,
+                0x40200 => 0x20000,
+                0x80400 => 0x40000,
+                0x100800 => 0x80000,
+                0x201000 => 0x100000,
+                0x402000 => 0x200000,
+                0x804000 => 0x400000,
+
+                _ => 0,
+            };
+
+        self.white[0] &= !capture;
+        self.white[6] &= !capture;
+        self.black[0] &= !capture;
+        self.black[6] &= !capture;
+    }
+
+    #[inline(always)]
     pub fn handle_promotions(&mut self, lmove: &SimpleMove) {
         let black_promotion = self.black[0] & FIRST_RANK;
         let white_promotion = self.white[0] & EIGHTH_RANK;

@@ -5,8 +5,7 @@ use std::{
 
 use anyhow::{anyhow, bail, Context};
 use clap::Parser;
-use rayon::ThreadPoolBuilder;
-use rust_chess_engine::{
+use myco_chess_engine::{
     cgame::game::Game,
     database::build::DatabaseTrainingSession,
     engine::minimax::MinmaxEngine,
@@ -14,6 +13,7 @@ use rust_chess_engine::{
     movegen::MoveGen,
     moves::simple_move::SimpleMove,
 };
+use rayon::ThreadPoolBuilder;
 
 mod args;
 
@@ -195,7 +195,7 @@ fn get_best_move(game: &Game) -> Result<SimpleMove, anyhow::Error> {
 
 #[cfg(feature = "pytorch")]
 fn get_best_move(game: &Game) -> Result<SimpleMove, anyhow::Error> {
-    use rust_chess_engine::engine::minmax_ml::MinmaxMLEngine;
+    use myco_chess_engine::engine::minmax_ml::MinmaxMLEngine;
 
     let engine = MinmaxMLEngine::new(game, 10, 13);
     let best_move = engine.evaluate_best_move();

@@ -26,7 +26,7 @@ impl DevelopmentEval for Game {
     fn calculate_development_value(&self) -> i32 {
         let mut value = 0;
 
-        if self.board.all.count_ones() < ENDGAME_PIECE_COUNT {
+        if self.board.all().count_ones() < ENDGAME_PIECE_COUNT {
             return value;
         }
 
