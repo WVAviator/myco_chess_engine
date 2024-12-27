@@ -3,6 +3,7 @@ use center::CenterEval;
 use development::DevelopmentEval;
 use king_safety::KingSafetyEval;
 use knights::KnightEval;
+use pawn_structure::PawnStructureEval;
 use piece::PieceEval;
 use rooks::RookEval;
 
@@ -13,13 +14,21 @@ mod center;
 mod development;
 mod king_safety;
 mod knights;
+mod pawn_structure;
 mod piece;
 mod rooks;
 
 pub mod minimax;
 
 pub trait Eval:
-    BishopEval + RookEval + DevelopmentEval + KingSafetyEval + PieceEval + CenterEval + KnightEval
+    BishopEval
+    + RookEval
+    + DevelopmentEval
+    + KingSafetyEval
+    + PieceEval
+    + CenterEval
+    + KnightEval
+    + PawnStructureEval
 {
     fn evaluate_position(&self) -> i32;
 }
@@ -35,6 +44,7 @@ impl Eval for Game {
         value += self.calculate_king_safety_value();
         // value += self.calculate_center_value();
         // value += self.calculate_knights_value();
+        value += self.calculate_pawn_structure_value();
 
         value
     }
