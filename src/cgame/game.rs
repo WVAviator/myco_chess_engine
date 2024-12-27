@@ -167,20 +167,9 @@ impl Game {
         let mut new_game = self.clone();
 
         // Handling enpassant and halfmove clock
-        let is_pawn_move = lmove.orig
-            & match new_game.turn {
-                Turn::White => new_game.board.white[0],
-                Turn::Black => new_game.board.black[0],
-            }
-            != 0;
+        let is_pawn_move = lmove.orig & (new_game.board.white[0] | new_game.board.black[0]) != 0;
         let is_enpassant = lmove.dest & new_game.en_passant != 0 && is_pawn_move;
-        let is_capture = lmove.dest
-            & match new_game.turn {
-                Turn::White => new_game.board.black_pieces(),
-                Turn::Black => new_game.board.white_pieces(),
-            }
-            != 0
-            || is_enpassant;
+        let is_capture = lmove.dest & new_game.board.get_all() != 0 || is_enpassant;
 
         if is_pawn_move || is_capture {
             new_game.halfmove_clock = 0;
@@ -193,47 +182,35 @@ impl Game {
             && lmove.dest & (FOURTH_RANK | FIFTH_RANK) != 0;
 
         if is_pawn_double_advance {
-            match new_game.turn {
-                Turn::White => new_game.en_passant = lmove.orig << 8,
-                Turn::Black => new_game.en_passant = lmove.orig >> 8,
-            }
+            new_game.en_passant =
+                ((SECOND_RANK & lmove.orig) << 8) | (SEVENTH_RANK & lmove.orig) >> 8;
         } else {
             new_game.en_passant = 0;
         }
 
         // Handling castling
-        let is_rook_move = lmove.orig & ROOK_START_POSITIONS != 0;
-        let is_king_move = lmove.orig & KING_START_POSITIONS != 0;
-
-        if is_rook_move {
-            if lmove.orig == 0x1 {
-                new_game
-                    .castling_rights
-                    .unset(CastlingRights::WHITE_QUEENSIDE);
-            } else if lmove.orig == 0x80 {
+        match lmove.orig {
+            0x1 => new_game
+                .castling_rights
+                .unset(CastlingRights::WHITE_QUEENSIDE),
+            0x80 => new_game
+                .castling_rights
+                .unset(CastlingRights::WHITE_KINGSIDE),
+            0x100000000000000 => new_game
+                .castling_rights
+                .unset(CastlingRights::BLACK_QUEENSIDE),
+            0x8000000000000000 => new_game
+                .castling_rights
+                .unset(CastlingRights::BLACK_KINGSIDE),
+            0x10 => {
                 new_game
                     .castling_rights
                     .unset(CastlingRights::WHITE_KINGSIDE);
-            } else if lmove.orig == 0x100000000000000 {
                 new_game
                     .castling_rights
-                    .unset(CastlingRights::BLACK_QUEENSIDE);
-            } else if lmove.orig == 0x8000000000000000 {
-                new_game
-                    .castling_rights
-                    .unset(CastlingRights::BLACK_KINGSIDE);
+                    .unset(CastlingRights::WHITE_QUEENSIDE);
             }
-        }
-
-        if is_king_move {
-            if lmove.orig == 0x10 {
-                new_game
-                    .castling_rights
-                    .unset(CastlingRights::WHITE_KINGSIDE);
-                new_game
-                    .castling_rights
-                    .unset(CastlingRights::WHITE_QUEENSIDE);
-            } else if lmove.orig == 0x1000000000000000 {
+            0x1000000000000000 => {
                 new_game
                     .castling_rights
                     .unset(CastlingRights::BLACK_KINGSIDE);
@@ -241,6 +218,7 @@ impl Game {
                     .castling_rights
                     .unset(CastlingRights::BLACK_QUEENSIDE);
             }
+            _ => {}
         }
 
         // Note: promotions handled by the board apply_move function

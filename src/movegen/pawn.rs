@@ -34,7 +34,7 @@ impl PawnMoveGen for Game {
     }
     fn generate_psuedolegal_pawn_moves(&self, mut moves: &mut SmallVec<[SimpleMove; 256]>) {
         let pawns = self.board.pawns(&self.turn);
-        let occupied = self.board.occupied();
+        let occupied = self.board.get_all();
         let opponent_pieces = self.board.all_pieces(&self.turn.other());
 
         match self.turn {

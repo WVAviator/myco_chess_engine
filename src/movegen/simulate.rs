@@ -23,7 +23,7 @@ impl Simulate for Game {
 
         let superking = simulated_board.king(&self.turn);
         let superking_index = superking.trailing_zeros() as usize;
-        let occupied = simulated_board.occupied();
+        let occupied = simulated_board.get_all();
 
         let mut attacks = 0;
 

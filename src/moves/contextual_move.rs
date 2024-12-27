@@ -224,20 +224,20 @@ impl OriginMask for Game {
             PieceType::Bishop => get_bishop_magic_map()
                 .get(dest.trailing_zeros() as usize)
                 .expect("failed to load bishop magic bitboard")
-                .get(self.board.occupied() & get_bishop_mask(dest)),
+                .get(self.board.get_all() & get_bishop_mask(dest)),
             PieceType::Rook => get_rook_magic_map()
                 .get(dest.trailing_zeros() as usize)
                 .expect("failed to load rook magic bitboard")
-                .get(self.board.occupied() & get_rook_mask(dest)),
+                .get(self.board.get_all() & get_rook_mask(dest)),
             PieceType::Queen => {
                 get_bishop_magic_map()
                     .get(dest.trailing_zeros() as usize)
                     .expect("failed to load bishop magic bitboard")
-                    .get(self.board.occupied() & get_bishop_mask(dest))
+                    .get(self.board.get_all() & get_bishop_mask(dest))
                     | get_rook_magic_map()
                         .get(dest.trailing_zeros() as usize)
                         .expect("failed to load rook magic bitboard")
-                        .get(self.board.occupied() & get_rook_mask(dest))
+                        .get(self.board.get_all() & get_rook_mask(dest))
             }
             PieceType::Pawn => match (&self.turn, capture) {
                 (Turn::White, false) => (dest >> 8) | ((dest & FOURTH_RANK) >> 16),

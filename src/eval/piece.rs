@@ -33,8 +33,8 @@ impl PieceEval for Game {
         value -= self.board.black[2].count_ones() as i32 * KNIGHT_VALUE;
         value -= self.board.black[0].count_ones() as i32 * PAWN_VALUE;
 
-        let is_endgame = self.board.occupied().count_ones() < 14
-            || (self.board.occupied().count_ones() < 20
+        let is_endgame = self.board.get_all().count_ones() < 14
+            || (self.board.get_all().count_ones() < 20
                 && (self.board.white[4] | self.board.black[4]).count_ones() == 0);
 
         value += calculate_ps_value(

@@ -40,7 +40,7 @@ impl KingMoveGen for Game {
     fn generate_pseudolegal_king_moves(&self, moves: &mut SmallVec<[SimpleMove; 256]>) {
         let king = self.board.king(&self.turn);
         let own_pieces = self.board.all_pieces(&self.turn);
-        let occupied = self.board.occupied();
+        let occupied = self.board.get_all();
         let opponent_vision = self.generate_vision(&self.turn.other());
 
         let destination_squares = KING_MOVES

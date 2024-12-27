@@ -29,7 +29,7 @@ impl KingSafetyEval for Game {
 
         // Endgame
 
-        if self.board.occupied().count_ones() < ENDGAME_PIECE_COUNT {
+        if self.board.get_all().count_ones() < ENDGAME_PIECE_COUNT {
             value += (self.board.white[5] & CENTRAL_KING_SQUARES).count_ones() as i32
                 * ENDGAME_CENTRAL_KING_BONUS;
             value -= (self.board.black[5] & CENTRAL_KING_SQUARES).count_ones() as i32

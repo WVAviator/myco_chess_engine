@@ -13,6 +13,7 @@ use super::{
 pub struct Board {
     pub white: [u64; 6], // pawns, rooks, knights, bishops, queens, king
     pub black: [u64; 6],
+    pub all: u64,
 }
 
 impl Board {
@@ -20,6 +21,7 @@ impl Board {
         Board {
             white: [0; 6],
             black: [0; 6],
+            all: 0,
         }
     }
 
@@ -121,6 +123,8 @@ impl Board {
             }
         }
 
+        board.all = board.get_all();
+
         Ok(board)
     }
 
@@ -200,12 +204,12 @@ impl Board {
             | self.black[5]
     }
 
-    pub fn occupied(&self) -> u64 {
+    pub fn get_all(&self) -> u64 {
         self.white_pieces() | self.black_pieces()
     }
 
     pub fn empty(&self) -> u64 {
-        !self.occupied()
+        !self.all
     }
 
     pub fn pawns(&self, turn: &Turn) -> u64 {
@@ -290,6 +294,7 @@ impl Board {
         }
 
         self.handle_promotions(&lmove);
+        self.all = self.get_all();
     }
 
     pub fn handle_castling(&mut self, lmove: &SimpleMove) {

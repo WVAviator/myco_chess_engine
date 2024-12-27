@@ -20,7 +20,7 @@ impl CenterEval for Game {
     fn calculate_center_value(&self) -> i32 {
         let mut value = 0;
 
-        if self.board.occupied().count_ones() < ENDGAME_PIECE_COUNT {
+        if self.board.get_all().count_ones() < ENDGAME_PIECE_COUNT {
             return value;
         }
 
