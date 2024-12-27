@@ -13,10 +13,7 @@ use crate::{
 use super::{
     board::Board,
     castling_rights::CastlingRights,
-    constants::{
-        FIFTH_RANK, FOURTH_RANK, KING_START_POSITIONS, ROOK_START_POSITIONS, SECOND_RANK,
-        SEVENTH_RANK,
-    },
+    constants::{FIFTH_RANK, FOURTH_RANK, SECOND_RANK, SEVENTH_RANK},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]

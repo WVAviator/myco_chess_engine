@@ -21,8 +21,6 @@ impl Simulate for Game {
         let mut simulated_board = self.board.clone();
         simulated_board.apply_move(lmove);
 
-        let superking = simulated_board.king(&self.turn);
-        let superking_index = superking.trailing_zeros() as usize;
         let occupied = simulated_board.all;
 
         let mut attacks = 0;
@@ -30,6 +28,8 @@ impl Simulate for Game {
         // Pawns
         match self.turn {
             Turn::White => {
+                let superking = simulated_board.white[5];
+                let superking_index = superking.trailing_zeros() as usize;
                 // Pawns
                 attacks |= ((superking & !A_FILE & !EIGHTH_RANK) << 7) & simulated_board.black[0];
                 attacks |= ((superking & !H_FILE & !EIGHTH_RANK) << 9) & simulated_board.black[0];
@@ -51,6 +51,8 @@ impl Simulate for Game {
                 attacks |= rook_moves & (simulated_board.black[1] | simulated_board.black[4]);
             }
             Turn::Black => {
+                let superking = simulated_board.black[5];
+                let superking_index = superking.trailing_zeros() as usize;
                 // Pawns
                 attacks |= ((superking & !A_FILE & !FIRST_RANK) >> 9) & simulated_board.white[0];
                 attacks |= ((superking & !H_FILE & !FIRST_RANK) >> 7) & simulated_board.white[0];

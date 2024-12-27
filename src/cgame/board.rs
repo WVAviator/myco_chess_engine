@@ -2,7 +2,7 @@ use std::fmt;
 
 use anyhow::{bail, Context};
 
-use crate::moves::{common::PieceType, simple_move::SimpleMove};
+use crate::moves::simple_move::SimpleMove;
 
 use super::{
     constants::{EIGHTH_RANK, FIFTH_RANK, FIRST_RANK, FOURTH_RANK},
@@ -284,10 +284,10 @@ impl Board {
                 << 8;
         }
 
+        let move_shift: u32 =
+            (64 + (lmove.orig.trailing_zeros() as i32 - lmove.dest.trailing_zeros() as i32)) as u32;
+
         if (lmove.orig & self.white_pieces) | (lmove.dest & self.white_pieces) != 0 {
-            let move_shift: u32 = (64
-                + (lmove.orig.trailing_zeros() as i32 - lmove.dest.trailing_zeros() as i32))
-                as u32;
             for bitboard in self.white.iter_mut() {
                 // dest & bb will be 0 unless there is a piece at dest to be captured
                 *bitboard &= !lmove.dest;
@@ -298,9 +298,6 @@ impl Board {
         }
 
         if (lmove.orig & self.black_pieces) | (lmove.dest & self.black_pieces) != 0 {
-            let move_shift: u32 = (64
-                + (lmove.orig.trailing_zeros() as i32 - lmove.dest.trailing_zeros() as i32))
-                as u32;
             for bitboard in self.black.iter_mut() {
                 // dest & bb will be 0 unless there is a piece at dest to be captured
                 *bitboard &= !lmove.dest;
