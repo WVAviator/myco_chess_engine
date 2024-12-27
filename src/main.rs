@@ -13,7 +13,6 @@ use myco_chess_engine::{
     movegen::MoveGen,
     moves::simple_move::SimpleMove,
 };
-use rayon::prelude::*;
 use rayon::ThreadPoolBuilder;
 
 fn main() {
@@ -78,7 +77,6 @@ fn perft(depth: u8, game: Game) -> usize {
     let moves = game.generate_legal_moves();
 
     moves
-        // .into_par_iter()
         .into_iter()
         .map(|lmove| {
             let new_game = game.apply_move(&lmove);
