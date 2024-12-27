@@ -19,12 +19,12 @@ impl RookEval for Game {
         let mut value = 0;
 
         // Excluding queens from this evaluation
-        let white_rooks = self.board.white_rooks;
-        let black_rooks = self.board.black_rooks;
+        let white_rooks = self.board.white[1];
+        let black_rooks = self.board.black[1];
 
         // Open file rooks
 
-        let all_pawns = self.board.white_pawns | self.board.black_pawns;
+        let all_pawns = self.board.white[0] | self.board.black[0];
 
         let mut remaining_white_rooks = white_rooks;
         while remaining_white_rooks != 0 {

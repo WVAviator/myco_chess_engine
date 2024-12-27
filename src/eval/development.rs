@@ -32,22 +32,22 @@ impl DevelopmentEval for Game {
 
         let turn_index: usize = std::cmp::min((self.fullmove_number / 6) as usize, 9);
 
-        value -= (self.board.white_rooks & WHITE_ROOK_STARTING_POSITIONS).count_ones() as i32
+        value -= (self.board.white[1] & WHITE_ROOK_STARTING_POSITIONS).count_ones() as i32
             * UNDEVELOPED_ROOK_PENALTY[turn_index];
-        value -= (self.board.white_knights & WHITE_KNIGHT_STARTING_POSITIONS).count_ones() as i32
+        value -= (self.board.white[2] & WHITE_KNIGHT_STARTING_POSITIONS).count_ones() as i32
             * UNDEVELOPED_KNIGHT_PENALTY[turn_index];
-        value -= (self.board.white_bishops & WHITE_BISHOP_STARTING_POSITIONS).count_ones() as i32
+        value -= (self.board.white[3] & WHITE_BISHOP_STARTING_POSITIONS).count_ones() as i32
             * UNDEVELOPED_BISHOP_PENALTY[turn_index];
-        value -= (self.board.white_queens & WHITE_QUEEN_STARTING_POSITION).count_ones() as i32
+        value -= (self.board.white[4] & WHITE_QUEEN_STARTING_POSITION).count_ones() as i32
             * UNDEVELOPED_QUEEN_PENALTY[turn_index];
 
-        value += (self.board.black_rooks & BLACK_ROOK_STARTING_POSITIONS).count_ones() as i32
+        value += (self.board.black[1] & BLACK_ROOK_STARTING_POSITIONS).count_ones() as i32
             * UNDEVELOPED_ROOK_PENALTY[turn_index];
-        value += (self.board.black_knights & BLACK_KNIGHT_STARTING_POSITIONS).count_ones() as i32
+        value += (self.board.black[2] & BLACK_KNIGHT_STARTING_POSITIONS).count_ones() as i32
             * UNDEVELOPED_KNIGHT_PENALTY[turn_index];
-        value += (self.board.black_bishops & BLACK_BISHOP_STARTING_POSITIONS).count_ones() as i32
+        value += (self.board.black[3] & BLACK_BISHOP_STARTING_POSITIONS).count_ones() as i32
             * UNDEVELOPED_BISHOP_PENALTY[turn_index];
-        value += (self.board.black_queens & BLACK_QUEEN_STARTING_POSITION).count_ones() as i32
+        value += (self.board.black[4] & BLACK_QUEEN_STARTING_POSITION).count_ones() as i32
             * UNDEVELOPED_QUEEN_PENALTY[turn_index];
 
         value

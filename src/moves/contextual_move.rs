@@ -89,15 +89,15 @@ impl ContextualMove {
             "O-O-O" => {
                 castle = Some(Long);
                 (orig, dest) = match game.turn {
-                    Turn::White => (game.board.white_king, 1 << 2),
-                    Turn::Black => (game.board.black_king, 1 << 58),
+                    Turn::White => (game.board.white[5], 1 << 2),
+                    Turn::Black => (game.board.black[5], 1 << 58),
                 };
             }
             "O-O" => {
                 castle = Some(Short);
                 (orig, dest) = match game.turn {
-                    Turn::White => (game.board.white_king, 1 << 6),
-                    Turn::Black => (game.board.black_king, 1 << 62),
+                    Turn::White => (game.board.white[5], 1 << 6),
+                    Turn::Black => (game.board.black[5], 1 << 62),
                 };
             }
             algebraic => {

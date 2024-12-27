@@ -18,18 +18,18 @@ impl ZobristHash for Game {
         let mut hash: u64 = 0;
 
         let piece_bitboards = [
-            (self.board.white_pawns, 0),
-            (self.board.white_rooks, 1),
-            (self.board.white_knights, 2),
-            (self.board.white_bishops, 3),
-            (self.board.white_queens, 4),
-            (self.board.white_king, 5),
-            (self.board.black_pawns, 6),
-            (self.board.black_rooks, 7),
-            (self.board.black_knights, 8),
-            (self.board.black_bishops, 9),
-            (self.board.black_queens, 10),
-            (self.board.black_king, 11),
+            (self.board.white[0], 0),
+            (self.board.white[1], 1),
+            (self.board.white[2], 2),
+            (self.board.white[3], 3),
+            (self.board.white[4], 4),
+            (self.board.white[5], 5),
+            (self.board.black[0], 6),
+            (self.board.black[1], 7),
+            (self.board.black[2], 8),
+            (self.board.black[3], 9),
+            (self.board.black[4], 10),
+            (self.board.black[5], 11),
         ];
 
         for (bitboard, piece_index) in piece_bitboards.iter() {

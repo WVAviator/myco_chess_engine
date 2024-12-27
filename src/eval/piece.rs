@@ -19,92 +19,92 @@ pub trait PieceEval {
 impl PieceEval for Game {
     fn calculate_piece_value(&self) -> i32 {
         let mut value = 0;
-        value += self.board.white_king.count_ones() as i32 * KING_VALUE;
-        value += self.board.white_queens.count_ones() as i32 * QUEEN_VALUE;
-        value += self.board.white_rooks.count_ones() as i32 * ROOK_VALUE;
-        value += self.board.white_bishops.count_ones() as i32 * BISHOP_VALUE;
-        value += self.board.white_knights.count_ones() as i32 * KNIGHT_VALUE;
-        value += self.board.white_pawns.count_ones() as i32 * PAWN_VALUE;
+        value += self.board.white[5].count_ones() as i32 * KING_VALUE;
+        value += self.board.white[4].count_ones() as i32 * QUEEN_VALUE;
+        value += self.board.white[1].count_ones() as i32 * ROOK_VALUE;
+        value += self.board.white[3].count_ones() as i32 * BISHOP_VALUE;
+        value += self.board.white[2].count_ones() as i32 * KNIGHT_VALUE;
+        value += self.board.white[0].count_ones() as i32 * PAWN_VALUE;
 
-        value -= self.board.black_king.count_ones() as i32 * KING_VALUE;
-        value -= self.board.black_queens.count_ones() as i32 * QUEEN_VALUE;
-        value -= self.board.black_rooks.count_ones() as i32 * ROOK_VALUE;
-        value -= self.board.black_bishops.count_ones() as i32 * BISHOP_VALUE;
-        value -= self.board.black_knights.count_ones() as i32 * KNIGHT_VALUE;
-        value -= self.board.black_pawns.count_ones() as i32 * PAWN_VALUE;
+        value -= self.board.black[5].count_ones() as i32 * KING_VALUE;
+        value -= self.board.black[4].count_ones() as i32 * QUEEN_VALUE;
+        value -= self.board.black[1].count_ones() as i32 * ROOK_VALUE;
+        value -= self.board.black[3].count_ones() as i32 * BISHOP_VALUE;
+        value -= self.board.black[2].count_ones() as i32 * KNIGHT_VALUE;
+        value -= self.board.black[0].count_ones() as i32 * PAWN_VALUE;
 
         let is_endgame = self.board.occupied().count_ones() < 14
             || (self.board.occupied().count_ones() < 20
-                && (self.board.white_queens | self.board.black_queens).count_ones() == 0);
+                && (self.board.white[4] | self.board.black[4]).count_ones() == 0);
 
         value += calculate_ps_value(
-            self.board.white_pawns,
+            self.board.white[0],
             &PieceType::Pawn,
             &Turn::White,
             is_endgame,
         );
         value -= calculate_ps_value(
-            self.board.black_pawns,
+            self.board.black[0],
             &PieceType::Pawn,
             &Turn::Black,
             is_endgame,
         );
         value += calculate_ps_value(
-            self.board.white_knights,
+            self.board.white[2],
             &PieceType::Knight,
             &Turn::White,
             is_endgame,
         );
         value -= calculate_ps_value(
-            self.board.black_knights,
+            self.board.black[2],
             &PieceType::Knight,
             &Turn::Black,
             is_endgame,
         );
         value += calculate_ps_value(
-            self.board.white_bishops,
+            self.board.white[3],
             &PieceType::Bishop,
             &Turn::White,
             is_endgame,
         );
         value -= calculate_ps_value(
-            self.board.black_bishops,
+            self.board.black[3],
             &PieceType::Bishop,
             &Turn::Black,
             is_endgame,
         );
         value += calculate_ps_value(
-            self.board.white_rooks,
+            self.board.white[1],
             &PieceType::Rook,
             &Turn::White,
             is_endgame,
         );
         value -= calculate_ps_value(
-            self.board.black_rooks,
+            self.board.black[1],
             &PieceType::Rook,
             &Turn::Black,
             is_endgame,
         );
         value += calculate_ps_value(
-            self.board.white_queens,
+            self.board.white[4],
             &PieceType::Queen,
             &Turn::White,
             is_endgame,
         );
         value -= calculate_ps_value(
-            self.board.black_queens,
+            self.board.black[4],
             &PieceType::Queen,
             &Turn::Black,
             is_endgame,
         );
         value += calculate_ps_value(
-            self.board.white_king,
+            self.board.white[5],
             &PieceType::King,
             &Turn::White,
             is_endgame,
         );
         value -= calculate_ps_value(
-            self.board.black_king,
+            self.board.black[5],
             &PieceType::King,
             &Turn::Black,
             is_endgame,

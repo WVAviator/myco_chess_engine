@@ -11,81 +11,20 @@ use super::{
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Board {
-    pub white_pawns: u64,
-    pub white_rooks: u64,
-    pub white_knights: u64,
-    pub white_bishops: u64,
-    pub white_queens: u64,
-    pub white_king: u64,
-
-    pub black_pawns: u64,
-    pub black_rooks: u64,
-    pub black_knights: u64,
-    pub black_bishops: u64,
-    pub black_queens: u64,
-    pub black_king: u64,
+    pub white: [u64; 6], // pawns, rooks, knights, bishops, queens, king
+    pub black: [u64; 6],
 }
 
 impl Board {
     pub fn new_empty() -> Self {
         Board {
-            white_pawns: 0,
-            white_rooks: 0,
-            white_knights: 0,
-            white_bishops: 0,
-            white_queens: 0,
-            white_king: 0,
-
-            black_pawns: 0,
-            black_rooks: 0,
-            black_knights: 0,
-            black_bishops: 0,
-            black_queens: 0,
-            black_king: 0,
+            white: [0; 6],
+            black: [0; 6],
         }
     }
 
     pub fn new_default() -> Self {
         Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR").unwrap()
-    }
-
-    pub fn iter_mut(&mut self) -> [&mut u64; 12] {
-        [
-            &mut self.white_pawns,
-            &mut self.white_rooks,
-            &mut self.white_knights,
-            &mut self.white_bishops,
-            &mut self.white_queens,
-            &mut self.white_king,
-            &mut self.black_pawns,
-            &mut self.black_rooks,
-            &mut self.black_knights,
-            &mut self.black_bishops,
-            &mut self.black_queens,
-            &mut self.black_king,
-        ]
-    }
-
-    pub fn iter_mut_white(&mut self) -> [&mut u64; 6] {
-        [
-            &mut self.white_pawns,
-            &mut self.white_rooks,
-            &mut self.white_knights,
-            &mut self.white_bishops,
-            &mut self.white_queens,
-            &mut self.white_king,
-        ]
-    }
-
-    pub fn iter_mut_black(&mut self) -> [&mut u64; 6] {
-        [
-            &mut self.black_pawns,
-            &mut self.black_rooks,
-            &mut self.black_knights,
-            &mut self.black_bishops,
-            &mut self.black_queens,
-            &mut self.black_king,
-        ]
     }
 
     pub fn from_fen(fen_board_str: &str) -> Result<Self, anyhow::Error> {
@@ -105,63 +44,63 @@ impl Board {
             match c {
                 'P' => {
                     let square_bit = 1 << (rank * 8 + file);
-                    board.white_pawns |= square_bit;
+                    board.white[0] |= square_bit;
                     file += 1;
                 }
                 'R' => {
                     let square_bit = 1 << (rank * 8 + file);
-                    board.white_rooks |= square_bit;
+                    board.white[1] |= square_bit;
                     file += 1;
                 }
                 'N' => {
                     let square_bit = 1 << (rank * 8 + file);
-                    board.white_knights |= square_bit;
+                    board.white[2] |= square_bit;
                     file += 1;
                 }
                 'B' => {
                     let square_bit = 1 << (rank * 8 + file);
-                    board.white_bishops |= square_bit;
+                    board.white[3] |= square_bit;
                     file += 1;
                 }
                 'Q' => {
                     let square_bit = 1 << (rank * 8 + file);
-                    board.white_queens |= square_bit;
+                    board.white[4] |= square_bit;
                     file += 1;
                 }
                 'K' => {
                     let square_bit = 1 << (rank * 8 + file);
-                    board.white_king |= square_bit;
+                    board.white[5] |= square_bit;
                     file += 1;
                 }
 
                 'p' => {
                     let square_bit = 1 << (rank * 8 + file);
-                    board.black_pawns |= square_bit;
+                    board.black[0] |= square_bit;
                     file += 1;
                 }
                 'r' => {
                     let square_bit = 1 << (rank * 8 + file);
-                    board.black_rooks |= square_bit;
+                    board.black[1] |= square_bit;
                     file += 1;
                 }
                 'n' => {
                     let square_bit = 1 << (rank * 8 + file);
-                    board.black_knights |= square_bit;
+                    board.black[2] |= square_bit;
                     file += 1;
                 }
                 'b' => {
                     let square_bit = 1 << (rank * 8 + file);
-                    board.black_bishops |= square_bit;
+                    board.black[3] |= square_bit;
                     file += 1;
                 }
                 'q' => {
                     let square_bit = 1 << (rank * 8 + file);
-                    board.black_queens |= square_bit;
+                    board.black[4] |= square_bit;
                     file += 1;
                 }
                 'k' => {
                     let square_bit = 1 << (rank * 8 + file);
-                    board.black_king |= square_bit;
+                    board.black[5] |= square_bit;
                     file += 1;
                 }
 
@@ -194,29 +133,29 @@ impl Board {
                 let square_index = rank * 8 + file;
                 let square_bit = 1 << square_index;
 
-                let piece_char = if self.white_pawns & square_bit != 0 {
+                let piece_char = if self.white[0] & square_bit != 0 {
                     'P'
-                } else if self.white_rooks & square_bit != 0 {
+                } else if self.white[1] & square_bit != 0 {
                     'R'
-                } else if self.white_knights & square_bit != 0 {
+                } else if self.white[2] & square_bit != 0 {
                     'N'
-                } else if self.white_bishops & square_bit != 0 {
+                } else if self.white[3] & square_bit != 0 {
                     'B'
-                } else if self.white_queens & square_bit != 0 {
+                } else if self.white[4] & square_bit != 0 {
                     'Q'
-                } else if self.white_king & square_bit != 0 {
+                } else if self.white[5] & square_bit != 0 {
                     'K'
-                } else if self.black_pawns & square_bit != 0 {
+                } else if self.black[0] & square_bit != 0 {
                     'p'
-                } else if self.black_rooks & square_bit != 0 {
+                } else if self.black[1] & square_bit != 0 {
                     'r'
-                } else if self.black_knights & square_bit != 0 {
+                } else if self.black[2] & square_bit != 0 {
                     'n'
-                } else if self.black_bishops & square_bit != 0 {
+                } else if self.black[3] & square_bit != 0 {
                     'b'
-                } else if self.black_queens & square_bit != 0 {
+                } else if self.black[4] & square_bit != 0 {
                     'q'
-                } else if self.black_king & square_bit != 0 {
+                } else if self.black[5] & square_bit != 0 {
                     'k'
                 } else {
                     empty_count += 1;
@@ -244,21 +183,21 @@ impl Board {
     }
 
     pub fn white_pieces(&self) -> u64 {
-        self.white_pawns
-            | self.white_rooks
-            | self.white_knights
-            | self.white_bishops
-            | self.white_queens
-            | self.white_king
+        self.white[0]
+            | self.white[1]
+            | self.white[2]
+            | self.white[3]
+            | self.white[4]
+            | self.white[5]
     }
 
     pub fn black_pieces(&self) -> u64 {
-        self.black_pawns
-            | self.black_rooks
-            | self.black_knights
-            | self.black_bishops
-            | self.black_queens
-            | self.black_king
+        self.black[0]
+            | self.black[1]
+            | self.black[2]
+            | self.black[3]
+            | self.black[4]
+            | self.black[5]
     }
 
     pub fn occupied(&self) -> u64 {
@@ -271,43 +210,43 @@ impl Board {
 
     pub fn pawns(&self, turn: &Turn) -> u64 {
         match turn {
-            Turn::White => self.white_pawns,
-            Turn::Black => self.black_pawns,
+            Turn::White => self.white[0],
+            Turn::Black => self.black[0],
         }
     }
 
     pub fn rooks(&self, turn: &Turn) -> u64 {
         match turn {
-            Turn::White => self.white_rooks,
-            Turn::Black => self.black_rooks,
+            Turn::White => self.white[1],
+            Turn::Black => self.black[1],
         }
     }
 
     pub fn bishops(&self, turn: &Turn) -> u64 {
         match turn {
-            Turn::White => self.white_bishops,
-            Turn::Black => self.black_bishops,
+            Turn::White => self.white[3],
+            Turn::Black => self.black[3],
         }
     }
 
     pub fn knights(&self, turn: &Turn) -> u64 {
         match turn {
-            Turn::White => self.white_knights,
-            Turn::Black => self.black_knights,
+            Turn::White => self.white[2],
+            Turn::Black => self.black[2],
         }
     }
 
     pub fn queens(&self, turn: &Turn) -> u64 {
         match turn {
-            Turn::White => self.white_queens,
-            Turn::Black => self.black_queens,
+            Turn::White => self.white[4],
+            Turn::Black => self.black[4],
         }
     }
 
     pub fn king(&self, turn: &Turn) -> u64 {
         match turn {
-            Turn::White => self.white_king,
-            Turn::Black => self.black_king,
+            Turn::White => self.white[5],
+            Turn::Black => self.black[5],
         }
     }
 
@@ -321,20 +260,28 @@ impl Board {
     pub fn apply_move(&mut self, lmove: &SimpleMove) {
         self.handle_castling(&lmove);
 
-        self.black_pawns ^= ((((lmove.orig & self.white_pawns & FIFTH_RANK) << 7)
+        self.black[0] ^= ((((lmove.orig & self.white[0] & FIFTH_RANK) << 7)
             & (lmove.dest & self.empty()))
-            | ((lmove.orig & self.white_pawns & FIFTH_RANK) << 9) & (lmove.dest & self.empty()))
+            | ((lmove.orig & self.white[0] & FIFTH_RANK) << 9) & (lmove.dest & self.empty()))
             >> 8;
-        self.white_pawns ^= ((((lmove.orig & self.black_pawns & FOURTH_RANK) >> 9)
+        self.white[0] ^= ((((lmove.orig & self.black[0] & FOURTH_RANK) >> 9)
             & (lmove.dest & self.empty()))
-            | (((lmove.orig & self.black_pawns & FOURTH_RANK) >> 7) & (lmove.dest & self.empty())))
+            | (((lmove.orig & self.black[0] & FOURTH_RANK) >> 7) & (lmove.dest & self.empty())))
             << 8;
-
-        let bitboards = self.iter_mut();
 
         let move_shift: u32 =
             (64 + (lmove.orig.trailing_zeros() as i32 - lmove.dest.trailing_zeros() as i32)) as u32;
-        for bitboard in bitboards {
+        for bitboard in self.white.iter_mut() {
+            // dest & bb will be 0 unless there is a piece at dest to be captured
+            *bitboard &= !lmove.dest;
+            // does nothing if orig & bb is 0, otherwise xors with both bits
+            *bitboard ^=
+                (lmove.orig & *bitboard) | (lmove.orig & *bitboard).rotate_right(move_shift);
+        }
+
+        let move_shift: u32 =
+            (64 + (lmove.orig.trailing_zeros() as i32 - lmove.dest.trailing_zeros() as i32)) as u32;
+        for bitboard in self.black.iter_mut() {
             // dest & bb will be 0 unless there is a piece at dest to be captured
             *bitboard &= !lmove.dest;
             // does nothing if orig & bb is 0, otherwise xors with both bits
@@ -348,40 +295,22 @@ impl Board {
     pub fn handle_castling(&mut self, lmove: &SimpleMove) {
         // Matches the orig king and dest squares to castle patterns (i.e. e1g1)
         // Moves the rook if so, king will be moved later
-        match (lmove.orig & (self.black_king | self.white_king)) | lmove.dest {
-            0x5000000000000000 => self.black_rooks ^= 0xa000000000000000, // Castle kingside
-            0x1400000000000000 => self.black_rooks ^= 0x900000000000000,  // Castle queenside
-            0x50 => self.white_rooks ^= 0xa0,                             // Castle kingside
-            0x14 => self.white_rooks ^= 0x9,                              // Castle queenside
+        match (lmove.orig & (self.black[5] | self.white[5])) | lmove.dest {
+            0x5000000000000000 => self.black[1] ^= 0xa000000000000000, // Castle kingside
+            0x1400000000000000 => self.black[1] ^= 0x900000000000000,  // Castle queenside
+            0x50 => self.white[1] ^= 0xa0,                             // Castle kingside
+            0x14 => self.white[1] ^= 0x9,                              // Castle queenside
             _ => {}
         }
     }
 
     pub fn handle_promotions(&mut self, lmove: &SimpleMove) {
-        let black_promotion = self.black_pawns & FIRST_RANK;
-        let white_promotion = self.white_pawns & EIGHTH_RANK;
-        self.black_pawns ^= black_promotion;
-        self.white_pawns ^= white_promotion;
-
-        match lmove.get_promotion() {
-            Some(PieceType::Bishop) => {
-                self.black_bishops ^= black_promotion;
-                self.white_bishops ^= white_promotion;
-            }
-            Some(PieceType::Rook) => {
-                self.black_rooks ^= black_promotion;
-                self.white_rooks ^= white_promotion;
-            }
-            Some(PieceType::Knight) => {
-                self.black_knights ^= black_promotion;
-                self.white_knights ^= white_promotion;
-            }
-            Some(PieceType::Queen) => {
-                self.black_queens ^= black_promotion;
-                self.white_queens ^= white_promotion;
-            }
-            _ => {}
-        }
+        let black_promotion = self.black[0] & FIRST_RANK;
+        let white_promotion = self.white[0] & EIGHTH_RANK;
+        self.black[0] ^= black_promotion;
+        self.white[0] ^= white_promotion;
+        self.black[lmove.promotion] ^= black_promotion;
+        self.white[lmove.promotion] ^= white_promotion;
     }
 }
 
@@ -392,29 +321,29 @@ impl fmt::Display for Board {
                 let square_index = rank * 8 + file;
                 let square_bit = 1 << square_index;
 
-                let piece_char = if self.white_pawns & square_bit != 0 {
+                let piece_char = if self.white[0] & square_bit != 0 {
                     '♙'
-                } else if self.white_rooks & square_bit != 0 {
+                } else if self.white[1] & square_bit != 0 {
                     '♖'
-                } else if self.white_knights & square_bit != 0 {
+                } else if self.white[2] & square_bit != 0 {
                     '♘'
-                } else if self.white_bishops & square_bit != 0 {
+                } else if self.white[3] & square_bit != 0 {
                     '♗'
-                } else if self.white_queens & square_bit != 0 {
+                } else if self.white[4] & square_bit != 0 {
                     '♕'
-                } else if self.white_king & square_bit != 0 {
+                } else if self.white[5] & square_bit != 0 {
                     '♔'
-                } else if self.black_pawns & square_bit != 0 {
+                } else if self.black[0] & square_bit != 0 {
                     '♟'
-                } else if self.black_rooks & square_bit != 0 {
+                } else if self.black[1] & square_bit != 0 {
                     '♜'
-                } else if self.black_knights & square_bit != 0 {
+                } else if self.black[2] & square_bit != 0 {
                     '♞'
-                } else if self.black_bishops & square_bit != 0 {
+                } else if self.black[3] & square_bit != 0 {
                     '♝'
-                } else if self.black_queens & square_bit != 0 {
+                } else if self.black[4] & square_bit != 0 {
                     '♛'
-                } else if self.black_king & square_bit != 0 {
+                } else if self.black[5] & square_bit != 0 {
                     '♚'
                 } else {
                     '·'
@@ -437,12 +366,12 @@ mod test {
     fn reads_fen_starting_position() {
         let board = Board::new_default();
 
-        assert_eq!(board.white_pawns, 0xff00);
-        assert_eq!(board.black_pawns, 0xff000000000000);
-        assert_eq!(board.black_rooks, 0x8100000000000000);
-        assert_eq!(board.white_bishops, 0x24);
-        assert_eq!(board.black_queens, 0x800000000000000);
-        assert_eq!(board.white_king, 0x10);
+        assert_eq!(board.white[0], 0xff00);
+        assert_eq!(board.black[0], 0xff000000000000);
+        assert_eq!(board.black[1], 0x8100000000000000);
+        assert_eq!(board.white[3], 0x24);
+        assert_eq!(board.black[4], 0x800000000000000);
+        assert_eq!(board.white[5], 0x10);
     }
 
     #[test]

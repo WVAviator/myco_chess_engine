@@ -17,7 +17,7 @@ impl RookMoveGen for Game {
 
         match turn {
             Turn::White => {
-                let rook_pieces = self.board.white_rooks | self.board.white_queens;
+                let rook_pieces = self.board.white[1] | self.board.white[4];
                 let player_pieces = self.board.white_pieces();
                 let opponent_pieces = self.board.black_pieces();
 
@@ -39,7 +39,7 @@ impl RookMoveGen for Game {
                 vision
             }
             Turn::Black => {
-                let rook_pieces = self.board.black_rooks | self.board.black_queens;
+                let rook_pieces = self.board.black[1] | self.board.black[4];
                 let player_pieces = self.board.black_pieces();
                 let opponent_pieces = self.board.white_pieces();
 

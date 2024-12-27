@@ -165,22 +165,22 @@ impl Game {
 
     pub fn apply_move(&self, lmove: &SimpleMove) -> Game {
         let mut new_game = self.clone();
-        let orig = lmove.get_orig();
-        let dest = lmove.get_dest();
 
         // Handling enpassant and halfmove clock
-        let is_pawn_move =
-            orig & match new_game.turn {
-                Turn::White => new_game.board.white_pawns,
-                Turn::Black => new_game.board.black_pawns,
-            } != 0;
-        let is_enpassant = dest & new_game.en_passant != 0 && is_pawn_move;
-        let is_capture =
-            dest & match new_game.turn {
+        let is_pawn_move = lmove.orig
+            & match new_game.turn {
+                Turn::White => new_game.board.white[0],
+                Turn::Black => new_game.board.black[0],
+            }
+            != 0;
+        let is_enpassant = lmove.dest & new_game.en_passant != 0 && is_pawn_move;
+        let is_capture = lmove.dest
+            & match new_game.turn {
                 Turn::White => new_game.board.black_pieces(),
                 Turn::Black => new_game.board.white_pieces(),
-            } != 0
-                || is_enpassant;
+            }
+            != 0
+            || is_enpassant;
 
         if is_pawn_move || is_capture {
             new_game.halfmove_clock = 0;
@@ -189,36 +189,36 @@ impl Game {
         }
 
         let is_pawn_double_advance = is_pawn_move
-            && orig & (SECOND_RANK | SEVENTH_RANK) != 0
-            && dest & (FOURTH_RANK | FIFTH_RANK) != 0;
+            && lmove.orig & (SECOND_RANK | SEVENTH_RANK) != 0
+            && lmove.dest & (FOURTH_RANK | FIFTH_RANK) != 0;
 
         if is_pawn_double_advance {
             match new_game.turn {
-                Turn::White => new_game.en_passant = orig << 8,
-                Turn::Black => new_game.en_passant = orig >> 8,
+                Turn::White => new_game.en_passant = lmove.orig << 8,
+                Turn::Black => new_game.en_passant = lmove.orig >> 8,
             }
         } else {
             new_game.en_passant = 0;
         }
 
         // Handling castling
-        let is_rook_move = orig & ROOK_START_POSITIONS != 0;
-        let is_king_move = orig & KING_START_POSITIONS != 0;
+        let is_rook_move = lmove.orig & ROOK_START_POSITIONS != 0;
+        let is_king_move = lmove.orig & KING_START_POSITIONS != 0;
 
         if is_rook_move {
-            if orig == 0x1 {
+            if lmove.orig == 0x1 {
                 new_game
                     .castling_rights
                     .unset(CastlingRights::WHITE_QUEENSIDE);
-            } else if orig == 0x80 {
+            } else if lmove.orig == 0x80 {
                 new_game
                     .castling_rights
                     .unset(CastlingRights::WHITE_KINGSIDE);
-            } else if orig == 0x100000000000000 {
+            } else if lmove.orig == 0x100000000000000 {
                 new_game
                     .castling_rights
                     .unset(CastlingRights::BLACK_QUEENSIDE);
-            } else if orig == 0x8000000000000000 {
+            } else if lmove.orig == 0x8000000000000000 {
                 new_game
                     .castling_rights
                     .unset(CastlingRights::BLACK_KINGSIDE);
@@ -226,14 +226,14 @@ impl Game {
         }
 
         if is_king_move {
-            if orig == 0x10 {
+            if lmove.orig == 0x10 {
                 new_game
                     .castling_rights
                     .unset(CastlingRights::WHITE_KINGSIDE);
                 new_game
                     .castling_rights
                     .unset(CastlingRights::WHITE_QUEENSIDE);
-            } else if orig == 0x1000000000000000 {
+            } else if lmove.orig == 0x1000000000000000 {
                 new_game
                     .castling_rights
                     .unset(CastlingRights::BLACK_KINGSIDE);

@@ -17,14 +17,15 @@ impl BishopMoveGen for Game {
 
         match turn {
             Turn::White => {
-                let bishop_pieces = self.board.white_bishops | self.board.white_queens;
+                let bishop_pieces = self.board.white[3] | self.board.white[4];
                 let player_pieces = self.board.white_pieces();
                 let opponent_pieces = self.board.black_pieces();
 
                 let mut remaining_bishops = bishop_pieces;
                 while remaining_bishops != 0 {
                     let current_bishop = remaining_bishops & (!remaining_bishops + 1);
-                    let blockers = (player_pieces | opponent_pieces) & get_bishop_mask(current_bishop);
+                    let blockers =
+                        (player_pieces | opponent_pieces) & get_bishop_mask(current_bishop);
                     let bishop_moves = get_bishop_magic_map()
                         .get(current_bishop.trailing_zeros() as usize)
                         .expect("could not find magic bitboard for requested bishop position")
@@ -38,14 +39,15 @@ impl BishopMoveGen for Game {
                 vision
             }
             Turn::Black => {
-                let bishop_pieces = self.board.black_bishops | self.board.black_queens;
+                let bishop_pieces = self.board.black[3] | self.board.black[4];
                 let player_pieces = self.board.black_pieces();
                 let opponent_pieces = self.board.white_pieces();
 
                 let mut remaining_bishops = bishop_pieces;
                 while remaining_bishops != 0 {
                     let current_bishop = remaining_bishops & (!remaining_bishops + 1);
-                    let blockers = (player_pieces | opponent_pieces) & get_bishop_mask(current_bishop);
+                    let blockers =
+                        (player_pieces | opponent_pieces) & get_bishop_mask(current_bishop);
                     let bishop_moves = get_bishop_magic_map()
                         .get(current_bishop.trailing_zeros() as usize)
                         .expect("could not find magic bitboard for requested bishop position")

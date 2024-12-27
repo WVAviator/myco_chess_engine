@@ -21,14 +21,12 @@ impl KnightEval for Game {
         let white_vision = self.generate_vision(&Turn::White);
         let black_vision = self.generate_vision(&Turn::Black);
 
-        value -= (self.board.white_knights & BOARD_EDGE).count_ones() as i32 * BOARD_EDGE_PENALTY;
-        value += (self.board.black_knights & BOARD_EDGE).count_ones() as i32 * BOARD_EDGE_PENALTY;
+        value -= (self.board.white[2] & BOARD_EDGE).count_ones() as i32 * BOARD_EDGE_PENALTY;
+        value += (self.board.black[2] & BOARD_EDGE).count_ones() as i32 * BOARD_EDGE_PENALTY;
 
-        value += (self.board.white_knights & OUTPOST_SQUARES_NORTH & white_vision).count_ones()
-            as i32
+        value += (self.board.white[2] & OUTPOST_SQUARES_NORTH & white_vision).count_ones() as i32
             * OUTPOST_BONUS;
-        value -= (self.board.black_knights & OUTPOST_SQUARES_SOUTH & black_vision).count_ones()
-            as i32
+        value -= (self.board.black[2] & OUTPOST_SQUARES_SOUTH & black_vision).count_ones() as i32
             * OUTPOST_BONUS;
 
         value

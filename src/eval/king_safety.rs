@@ -30,17 +30,17 @@ impl KingSafetyEval for Game {
         // Endgame
 
         if self.board.occupied().count_ones() < ENDGAME_PIECE_COUNT {
-            value += (self.board.white_king & CENTRAL_KING_SQUARES).count_ones() as i32
+            value += (self.board.white[5] & CENTRAL_KING_SQUARES).count_ones() as i32
                 * ENDGAME_CENTRAL_KING_BONUS;
-            value -= (self.board.black_king & CENTRAL_KING_SQUARES).count_ones() as i32
+            value -= (self.board.black[5] & CENTRAL_KING_SQUARES).count_ones() as i32
                 * ENDGAME_CENTRAL_KING_BONUS;
 
-            value += (KING_MOVES[self.board.white_king.trailing_zeros() as usize]
-                & self.board.white_pawns)
+            value += (KING_MOVES[self.board.white[5].trailing_zeros() as usize]
+                & self.board.white[0])
                 .count_ones() as i32
                 * ENDGAME_PAWN_DEFENSE_BONUS;
-            value -= (KING_MOVES[self.board.black_king.trailing_zeros() as usize]
-                & self.board.black_pawns)
+            value -= (KING_MOVES[self.board.black[5].trailing_zeros() as usize]
+                & self.board.black[0])
                 .count_ones() as i32
                 * ENDGAME_PAWN_DEFENSE_BONUS;
 
@@ -49,20 +49,20 @@ impl KingSafetyEval for Game {
 
         // Castle defense
 
-        let castled_white_king = self.board.white_king & CASTLED_WHITE_KING_SQUARES;
-        let castled_black_king = self.board.black_king & CASTLED_BLACK_KING_SQUARES;
+        let castled_white_king = self.board.white[5] & CASTLED_WHITE_KING_SQUARES;
+        let castled_black_king = self.board.black[5] & CASTLED_BLACK_KING_SQUARES;
 
         value += castled_white_king.count_ones() as i32 * CASTLED_BONUS;
         value -= castled_black_king.count_ones() as i32 * CASTLED_BONUS;
 
         if castled_white_king != 0 {
             let white_castle_defenders =
-                KING_MOVES[castled_white_king.trailing_zeros() as usize] & self.board.white_pawns;
+                KING_MOVES[castled_white_king.trailing_zeros() as usize] & self.board.white[0];
             value += white_castle_defenders.count_ones() as i32 * CASTLE_DEFENSE_BONUS;
         }
         if castled_black_king != 0 {
             let black_castle_defenders =
-                KING_MOVES[castled_black_king.trailing_zeros() as usize] & self.board.black_pawns;
+                KING_MOVES[castled_black_king.trailing_zeros() as usize] & self.board.black[0];
             value -= black_castle_defenders.count_ones() as i32 * CASTLE_DEFENSE_BONUS;
         }
 

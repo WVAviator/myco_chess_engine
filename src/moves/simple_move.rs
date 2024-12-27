@@ -11,7 +11,7 @@ use super::{
 pub struct SimpleMove {
     pub orig: u64,
     pub dest: u64,
-    pub promotion: Option<PieceType>,
+    pub promotion: usize,
 }
 
 impl SimpleMove {
@@ -19,24 +19,8 @@ impl SimpleMove {
         SimpleMove {
             orig,
             dest,
-            promotion: None,
+            promotion: 0,
         }
-    }
-
-    pub fn get_bits(&self) -> u64 {
-        self.orig | self.dest
-    }
-
-    pub fn get_orig(&self) -> u64 {
-        self.orig
-    }
-
-    pub fn get_dest(&self) -> u64 {
-        self.dest
-    }
-
-    pub fn get_promotion(&self) -> &Option<PieceType> {
-        &self.promotion
     }
 
     pub fn new_promotion(orig: u64, dest: u64) -> Vec<Self> {
@@ -44,22 +28,22 @@ impl SimpleMove {
             SimpleMove {
                 orig,
                 dest,
-                promotion: Some(PieceType::Rook),
+                promotion: 1,
             },
             SimpleMove {
                 orig,
                 dest,
-                promotion: Some(PieceType::Bishop),
+                promotion: 3,
             },
             SimpleMove {
                 orig,
                 dest,
-                promotion: Some(PieceType::Knight),
+                promotion: 2,
             },
             SimpleMove {
                 orig,
                 dest,
-                promotion: Some(PieceType::Queen),
+                promotion: 4,
             },
         ]
     }
@@ -70,10 +54,10 @@ impl SimpleMove {
             u64_to_algebraic(self.orig).unwrap(),
             u64_to_algebraic(self.dest).unwrap(),
             match self.promotion {
-                Some(PieceType::Rook) => "r",
-                Some(PieceType::Knight) => "n",
-                Some(PieceType::Bishop) => "b",
-                Some(PieceType::Queen) => "q",
+                1 => "r",
+                2 => "n",
+                3 => "b",
+                4 => "q",
                 _ => "",
             },
         )
@@ -90,14 +74,14 @@ impl SimpleMove {
 
         let promotion = if len == 5 {
             match &algebraic[4..5] {
-                "r" => Some(PieceType::Rook),
-                "n" => Some(PieceType::Knight),
-                "b" => Some(PieceType::Bishop),
-                "q" => Some(PieceType::Queen),
+                "r" => 1,
+                "n" => 2,
+                "b" => 3,
+                "q" => 4,
                 _ => return Err(anyhow!("Invalid promotion piece: {}", &algebraic[4..5])),
             }
         } else {
-            None
+            0
         };
 
         Ok(SimpleMove {
@@ -135,10 +119,18 @@ impl PartialEq for SimpleMove {
 
 impl From<&ContextualMove> for SimpleMove {
     fn from(value: &ContextualMove) -> Self {
+        let promotion = match value.promotion {
+            Some(PieceType::Rook) => 1,
+            Some(PieceType::Knight) => 2,
+            Some(PieceType::Bishop) => 3,
+            Some(PieceType::Queen) => 4,
+            _ => 0,
+        };
+
         SimpleMove {
             orig: value.orig,
             dest: value.dest,
-            promotion: value.promotion.clone(),
+            promotion,
         }
     }
 }
@@ -172,7 +164,7 @@ mod test {
         let long_algebraic_move = SimpleMove {
             orig: 1 << 52,
             dest: 1 << 60,
-            promotion: Some(PieceType::Queen),
+            promotion: 4,
         };
         let long_algebraic_str = long_algebraic_move.to_algebraic();
         assert_eq!(long_algebraic_str, "e7e8q");
@@ -183,7 +175,7 @@ mod test {
         let long_algebraic_move = SimpleMove {
             orig: 1 << 52,
             dest: 1 << 60,
-            promotion: Some(PieceType::Queen),
+            promotion: 4,
         };
         assert_eq!(
             SimpleMove::from_algebraic("e7e8q").unwrap(),

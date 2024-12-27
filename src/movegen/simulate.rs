@@ -31,54 +31,45 @@ impl Simulate for Game {
         match self.turn {
             Turn::White => {
                 // Pawns
-                attacks |= ((superking & !A_FILE & !EIGHTH_RANK) << 7) & simulated_board.black_pawns;
-                attacks |= ((superking & !H_FILE & !EIGHTH_RANK) << 9) & simulated_board.black_pawns;
+                attacks |= ((superking & !A_FILE & !EIGHTH_RANK) << 7) & simulated_board.black[0];
+                attacks |= ((superking & !H_FILE & !EIGHTH_RANK) << 9) & simulated_board.black[0];
                 // Knights
-                attacks |= KNIGHT_MOVES[superking_index] & simulated_board.black_knights;
+                attacks |= KNIGHT_MOVES[superking_index] & simulated_board.black[2];
                 // King
-                attacks |= KING_MOVES[superking_index] & simulated_board.black_king;
+                attacks |= KING_MOVES[superking_index] & simulated_board.black[5];
                 // Bishops
                 let bishop_moves = get_bishop_magic_map()
                     .get(superking_index)
                     .expect("could not retrieve magic bitboards for bishop moves")
                     .get(get_bishop_mask(superking) & occupied);
-                attacks |= bishop_moves
-                    & (simulated_board.black_bishops
-                        | simulated_board.black_queens);
+                attacks |= bishop_moves & (simulated_board.black[3] | simulated_board.black[4]);
                 // Rooks
                 let rook_moves = get_rook_magic_map()
                     .get(superking_index)
                     .expect("could not retrieve magic bitboards for rook moves")
                     .get(get_rook_mask(superking) & occupied);
-                attacks |= rook_moves
-                    & (simulated_board.black_rooks
-                        | simulated_board.black_queens);
-
+                attacks |= rook_moves & (simulated_board.black[1] | simulated_board.black[4]);
             }
             Turn::Black => {
                 // Pawns
-                attacks |= ((superking & !A_FILE & !FIRST_RANK) >> 9) & simulated_board.white_pawns;
-                attacks |= ((superking & !H_FILE & !FIRST_RANK) >> 7) & simulated_board.white_pawns;
+                attacks |= ((superking & !A_FILE & !FIRST_RANK) >> 9) & simulated_board.white[0];
+                attacks |= ((superking & !H_FILE & !FIRST_RANK) >> 7) & simulated_board.white[0];
                 // Knights
-                attacks |= KNIGHT_MOVES[superking_index] & simulated_board.white_knights;
+                attacks |= KNIGHT_MOVES[superking_index] & simulated_board.white[2];
                 // King
-                attacks |= KING_MOVES[superking_index] & simulated_board.white_king;
+                attacks |= KING_MOVES[superking_index] & simulated_board.white[5];
                 // Bishops
                 let bishop_moves = get_bishop_magic_map()
                     .get(superking_index)
                     .expect("could not retrieve magic bitboards for bishop moves")
                     .get(get_bishop_mask(superking) & occupied);
-                attacks |= bishop_moves
-                    & (simulated_board.white_bishops
-                        | simulated_board.white_queens);
+                attacks |= bishop_moves & (simulated_board.white[3] | simulated_board.white[4]);
                 // Rooks
                 let rook_moves = get_rook_magic_map()
                     .get(superking_index)
                     .expect("could not retrieve magic bitboards for rook moves")
                     .get(get_rook_mask(superking) & occupied);
-                attacks |= rook_moves
-                    & (simulated_board.white_rooks
-                        | simulated_board.white_queens);
+                attacks |= rook_moves & (simulated_board.white[1] | simulated_board.white[4]);
             }
         }
 

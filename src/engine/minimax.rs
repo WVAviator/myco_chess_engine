@@ -141,9 +141,9 @@ impl<'a> MinmaxEngine<'a> {
     }
 
     fn minmax(&self, depth: u8, game: Game, mut alpha: i32, mut beta: i32) -> i32 {
-        if game.board.black_king == 0 {
+        if game.board.black[5] == 0 {
             return 200000;
-        } else if game.board.white_king == 0 {
+        } else if game.board.white[5] == 0 {
             return -200000;
         }
 
