@@ -68,6 +68,7 @@ fn depth_test(depth: u8) {
     let elapsed = start.elapsed();
     println!("Total moves generated: {}", count);
     println!("Time elapsed: {}ms", elapsed.as_millis());
+    println!("Average NPS: {}", count as f32 / elapsed.as_secs_f32())
 }
 
 fn perft(depth: u8, game: Game) -> usize {
