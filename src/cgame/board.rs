@@ -5,7 +5,7 @@ use anyhow::{bail, Context};
 use crate::moves::simple_move::SimpleMove;
 
 use super::{
-    constants::{EIGHTH_RANK, FIFTH_RANK, FIRST_RANK, FOURTH_RANK},
+    constants::{EIGHTH_RANK, FIRST_RANK},
     game::Turn,
 };
 
