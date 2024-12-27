@@ -1,106 +1,33 @@
-import numpy as np
-import pandas as pd
-from sklearn.model_selection import train_test_split
+from position_data import PositionData, ChessDataset, generate_training_data
+from read_pgn import read_pgn_in_batches
+
 import torch
-import torch.nn as nn
-import torch.optim as optim
 from torch.utils.data import DataLoader, Dataset
-from fen_processing import fen_to_cnn_input_compact
-from model import MycoCNNModel
 
+def train_on_pgn(filepath, model, batch_size=5000, num_epochs=10, device='cuda' if torch.cuda.is_available() else 'cpu'):
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
+    criterion = torch.nn.L1Loss()
+    model.to(device)
+    
+    for game_batch in read_pgn_in_batches(filepath, batch_size):
+        print(f"Processing batch of {len(game_batch)} games")
 
-def process_csv_to_training_data(csv_path):
-    """
-    Reads a CSV file with FEN and evaluation columns and processes it into training data.
-    
-    :param csv_path: Path to the CSV file
-    :return: A tuple of (X, y) where:
-             - X is a numpy array of input features for each FEN
-             - y is a numpy array of evaluations
-    """
-    df = pd.read_csv(csv_path, nrows=100000)
-    
-    inputs = []
-    evaluations = []
-
-    df['Evaluation'] = df['Evaluation'].apply(lambda x: float(x.lstrip('\ufeff').lstrip('#').lstrip('+')) / 10000)
-    print(df['Evaluation'].abs().max())
-    
-    print("Converting FEN strings to sparse arrays for processing.")
-    for index, row in df.iterrows():
-        fen = row['FEN']
-        evaluation = row['Evaluation']
+        position_data = []
+        for game in game_batch:
+            position_data.extend(generate_training_data(game))
         
-        try:
-            ml_input = fen_to_cnn_input_compact(fen)
-            inputs.append(ml_input)
-            evaluations.append(evaluation)
-        except ValueError as e:
-            print(f"Error processing FEN at index {index}: {fen} - {e}")
-    
-    print("FEN strings parsed.")
-    
-    X = np.array(inputs, dtype=float)
-    y = np.array(evaluations, dtype=float)
-    
-    return X, y
-
-
-class FenDataset(Dataset):
-    def __init__(self, features, labels):
-        self.features = torch.tensor(features, dtype=torch.float32)
-        self.labels = torch.tensor(labels, dtype=torch.float32)
-
-    def __len__(self):
-        return len(self.labels)
-
-    def __getitem__(self, idx):
-        return self.features[idx], self.labels[idx]
-
-X, y = process_csv_to_training_data("./chessData.csv")
-
-X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
-
-train_dataset = FenDataset(X_train, y_train)
-val_dataset = FenDataset(X_val, y_val)
-
-train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
-
-model = MycoCNNModel()
-criterion = nn.MSELoss()
-optimizer = optim.Adam(model.parameters(), lr=0.001)
-
-num_epochs = 24
-for epoch in range(num_epochs):
-    model.train()
-    epoch_loss = 0.0
-    for batch_features, batch_labels in train_loader:
-        optimizer.zero_grad()
-        predictions = model(batch_features)
-        loss = criterion(predictions.squeeze(), batch_labels)
-        loss.backward()
-        optimizer.step()
-        epoch_loss += loss.item()
-
-    print(f"Epoch {epoch+1}/{num_epochs}, Loss: {epoch_loss:.4f}")
-
-model.eval()
-val_loss = 0.0
-with torch.no_grad():
-    for val_features, val_labels in val_loader:
-        val_predictions = model(val_features)
-        loss = criterion(val_predictions.squeeze(), val_labels)
-        val_loss += loss.item()
-
-val_loss /= len(val_loader)
-print(f"Validation Loss: {val_loss:.4f}")
-
-# w = {k: v for k, v in model.state_dict().items()}
-# torch.save(w, "chess_eval_model.ptsd")
-# torch.save(model.state_dict(), "chess_eval_model.pt")
-
-output_model = torch.jit.script(model)
-output_model.save("../resources/myco_eval_model.pt")
-
-print("Model saved as /resources/myco_eval_model.pt")
+        dataset = ChessDataset(position_data)
+        dataloader = DataLoader(dataset, batch_size=128, shuffle=True)
+        
+        for epoch in range(num_epochs):
+            model.train()
+            running_loss = 0.0
+            for inputs, targets in dataloader:
+                inputs, targets = inputs.to(device), targets.to(device)
+                optimizer.zero_grad()
+                outputs = model(inputs)
+                loss = criterion(outputs.squeeze(), targets)
+                loss.backward()
+                optimizer.step()
+                running_loss += loss.item()
+            print(f"Epoch {epoch+1}/{num_epochs}, Loss: {running_loss/len(dataloader)}")
