@@ -14,6 +14,8 @@ pub struct Board {
     pub white: [u64; 6], // pawns, rooks, knights, bishops, queens, king
     pub black: [u64; 6],
     pub all: u64,
+    pub white_pieces: u64,
+    pub black_pieces: u64,
 }
 
 impl Board {
@@ -22,6 +24,8 @@ impl Board {
             white: [0; 6],
             black: [0; 6],
             all: 0,
+            white_pieces: 0,
+            black_pieces: 0,
         }
     }
 
@@ -124,6 +128,8 @@ impl Board {
         }
 
         board.all = board.get_all();
+        board.white_pieces = board.get_white_pieces();
+        board.black_pieces = board.get_black_pieces();
 
         Ok(board)
     }
@@ -186,7 +192,7 @@ impl Board {
         fen
     }
 
-    pub fn white_pieces(&self) -> u64 {
+    fn get_white_pieces(&self) -> u64 {
         self.white[0]
             | self.white[1]
             | self.white[2]
@@ -195,7 +201,7 @@ impl Board {
             | self.white[5]
     }
 
-    pub fn black_pieces(&self) -> u64 {
+    fn get_black_pieces(&self) -> u64 {
         self.black[0]
             | self.black[1]
             | self.black[2]
@@ -204,8 +210,8 @@ impl Board {
             | self.black[5]
     }
 
-    pub fn get_all(&self) -> u64 {
-        self.white_pieces() | self.black_pieces()
+    fn get_all(&self) -> u64 {
+        self.get_white_pieces() | self.get_black_pieces()
     }
 
     pub fn empty(&self) -> u64 {
@@ -256,45 +262,59 @@ impl Board {
 
     pub fn all_pieces(&self, turn: &Turn) -> u64 {
         match turn {
-            Turn::White => self.white_pieces(),
-            Turn::Black => self.black_pieces(),
+            Turn::White => self.get_white_pieces(),
+            Turn::Black => self.get_black_pieces(),
         }
     }
 
     pub fn apply_move(&mut self, lmove: &SimpleMove) {
         self.handle_castling(&lmove);
 
-        self.black[0] ^= ((((lmove.orig & self.white[0] & FIFTH_RANK) << 7)
-            & (lmove.dest & self.empty()))
-            | ((lmove.orig & self.white[0] & FIFTH_RANK) << 9) & (lmove.dest & self.empty()))
-            >> 8;
-        self.white[0] ^= ((((lmove.orig & self.black[0] & FOURTH_RANK) >> 9)
-            & (lmove.dest & self.empty()))
-            | (((lmove.orig & self.black[0] & FOURTH_RANK) >> 7) & (lmove.dest & self.empty())))
-            << 8;
-
-        let move_shift: u32 =
-            (64 + (lmove.orig.trailing_zeros() as i32 - lmove.dest.trailing_zeros() as i32)) as u32;
-        for bitboard in self.white.iter_mut() {
-            // dest & bb will be 0 unless there is a piece at dest to be captured
-            *bitboard &= !lmove.dest;
-            // does nothing if orig & bb is 0, otherwise xors with both bits
-            *bitboard ^=
-                (lmove.orig & *bitboard) | (lmove.orig & *bitboard).rotate_right(move_shift);
+        if (lmove.orig & self.white[0] & FIFTH_RANK) | (lmove.orig & self.black[0] & FOURTH_RANK)
+            != 0
+        {
+            self.black[0] ^= ((((lmove.orig & self.white[0] & FIFTH_RANK) << 7)
+                & (lmove.dest & self.empty()))
+                | ((lmove.orig & self.white[0] & FIFTH_RANK) << 9) & (lmove.dest & self.empty()))
+                >> 8;
+            self.white[0] ^= ((((lmove.orig & self.black[0] & FOURTH_RANK) >> 9)
+                & (lmove.dest & self.empty()))
+                | (((lmove.orig & self.black[0] & FOURTH_RANK) >> 7)
+                    & (lmove.dest & self.empty())))
+                << 8;
         }
 
-        let move_shift: u32 =
-            (64 + (lmove.orig.trailing_zeros() as i32 - lmove.dest.trailing_zeros() as i32)) as u32;
-        for bitboard in self.black.iter_mut() {
-            // dest & bb will be 0 unless there is a piece at dest to be captured
-            *bitboard &= !lmove.dest;
-            // does nothing if orig & bb is 0, otherwise xors with both bits
-            *bitboard ^=
-                (lmove.orig & *bitboard) | (lmove.orig & *bitboard).rotate_right(move_shift);
+        if (lmove.orig & self.white_pieces) | (lmove.dest & self.white_pieces) != 0 {
+            let move_shift: u32 = (64
+                + (lmove.orig.trailing_zeros() as i32 - lmove.dest.trailing_zeros() as i32))
+                as u32;
+            for bitboard in self.white.iter_mut() {
+                // dest & bb will be 0 unless there is a piece at dest to be captured
+                *bitboard &= !lmove.dest;
+                // does nothing if orig & bb is 0, otherwise xors with both bits
+                *bitboard ^=
+                    (lmove.orig & *bitboard) | (lmove.orig & *bitboard).rotate_right(move_shift);
+            }
+        }
+
+        if (lmove.orig & self.black_pieces) | (lmove.dest & self.black_pieces) != 0 {
+            let move_shift: u32 = (64
+                + (lmove.orig.trailing_zeros() as i32 - lmove.dest.trailing_zeros() as i32))
+                as u32;
+            for bitboard in self.black.iter_mut() {
+                // dest & bb will be 0 unless there is a piece at dest to be captured
+                *bitboard &= !lmove.dest;
+                // does nothing if orig & bb is 0, otherwise xors with both bits
+                *bitboard ^=
+                    (lmove.orig & *bitboard) | (lmove.orig & *bitboard).rotate_right(move_shift);
+            }
         }
 
         self.handle_promotions(&lmove);
+
         self.all = self.get_all();
+        self.white_pieces = self.get_white_pieces();
+        self.black_pieces = self.get_black_pieces();
     }
 
     pub fn handle_castling(&mut self, lmove: &SimpleMove) {

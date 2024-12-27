@@ -18,8 +18,8 @@ impl BishopMoveGen for Game {
         match turn {
             Turn::White => {
                 let bishop_pieces = self.board.white[3] | self.board.white[4];
-                let player_pieces = self.board.white_pieces();
-                let opponent_pieces = self.board.black_pieces();
+                let player_pieces = self.board.white_pieces;
+                let opponent_pieces = self.board.black_pieces;
 
                 let mut remaining_bishops = bishop_pieces;
                 while remaining_bishops != 0 {
@@ -40,8 +40,8 @@ impl BishopMoveGen for Game {
             }
             Turn::Black => {
                 let bishop_pieces = self.board.black[3] | self.board.black[4];
-                let player_pieces = self.board.black_pieces();
-                let opponent_pieces = self.board.white_pieces();
+                let player_pieces = self.board.black_pieces;
+                let opponent_pieces = self.board.white_pieces;
 
                 let mut remaining_bishops = bishop_pieces;
                 while remaining_bishops != 0 {

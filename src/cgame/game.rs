@@ -169,7 +169,7 @@ impl Game {
         // Handling enpassant and halfmove clock
         let is_pawn_move = lmove.orig & (new_game.board.white[0] | new_game.board.black[0]) != 0;
         let is_enpassant = lmove.dest & new_game.en_passant != 0 && is_pawn_move;
-        let is_capture = lmove.dest & new_game.board.get_all() != 0 || is_enpassant;
+        let is_capture = lmove.dest & new_game.board.all != 0 || is_enpassant;
 
         if is_pawn_move || is_capture {
             new_game.halfmove_clock = 0;
