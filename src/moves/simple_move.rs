@@ -2,6 +2,8 @@ use std::fmt;
 
 use anyhow::anyhow;
 
+use crate::game::constants::{FILEOF, RANKOF};
+
 use super::{
     common::{algebraic_to_u64, u64_to_algebraic, PieceType},
     contextual_move::ContextualMove,
@@ -92,43 +94,62 @@ impl SimpleMove {
     }
 
     pub fn en_passant_target(&self, pawns: u64, empty: u64) -> u64 {
-        match (self.orig & pawns) | (self.dest & empty) {
-            0x20100000000 => 0x200000000,
-            0x40200000000 => 0x400000000,
-            0x80400000000 => 0x800000000,
-            0x100800000000 => 0x1000000000,
-            0x201000000000 => 0x2000000000,
-            0x402000000000 => 0x4000000000,
-            0x804000000000 => 0x8000000000,
+        let ep_orig = self.orig & pawns;
+        let ep_dest = self.dest & empty;
 
-            0x10200000000 => 0x100000000,
-            0x20400000000 => 0x200000000,
-            0x40800000000 => 0x400000000,
-            0x81000000000 => 0x800000000,
-            0x102000000000 => 0x1000000000,
-            0x204000000000 => 0x2000000000,
-            0x408000000000 => 0x4000000000,
-
-            0x1020000 => 0x2000000,
-            0x2040000 => 0x4000000,
-            0x4080000 => 0x8000000,
-            0x8100000 => 0x10000000,
-            0x10200000 => 0x20000000,
-            0x20400000 => 0x40000000,
-            0x40800000 => 0x80000000,
-
-            0x2010000 => 0x1000000,
-            0x4020000 => 0x2000000,
-            0x8040000 => 0x4000000,
-            0x10080000 => 0x8000000,
-            0x20100000 => 0x10000000,
-            0x40200000 => 0x20000000,
-            0x80400000 => 0x40000000,
-
-            _ => 0,
+        if ep_orig == 0 || ep_dest == 0 {
+            return 0;
         }
+
+        let orig_file = (ep_orig.trailing_zeros() % 8) as usize;
+        let dest_file = (ep_dest.trailing_zeros() % 8) as usize;
+
+        if orig_file == dest_file {
+            return 0;
+        }
+
+        let direction = (orig_file < dest_file) as usize;
+        let side = ((ep_orig.trailing_zeros() / 8) % 2) as usize;
+        let index = (orig_file * 2) + direction + (side * 16);
+
+        ENPASSANT_CAPTURES[index]
     }
 }
+
+const ENPASSANT_CAPTURES: [u64; 32] = [
+    0,
+    0x200000000,
+    0x100000000,
+    0x400000000,
+    0x200000000,
+    0x800000000,
+    0x400000000,
+    0x1000000000,
+    0x800000000,
+    0x2000000000,
+    0x1000000000,
+    0x4000000000,
+    0x2000000000,
+    0x8000000000,
+    0x4000000000,
+    0,
+    0,
+    0x2000000,
+    0x1000000,
+    0x4000000,
+    0x2000000,
+    0x8000000,
+    0x4000000,
+    0x10000000,
+    0x8000000,
+    0x20000000,
+    0x10000000,
+    0x40000000,
+    0x20000000,
+    0x80000000,
+    0x40000000,
+    0,
+];
 
 impl fmt::Display for SimpleMove {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -232,7 +253,10 @@ mod test {
         let pawns = algebraic_to_u64("d4").unwrap() | algebraic_to_u64("e4").unwrap();
         let empty = !pawns;
 
-        assert_eq!(long_algebraic_move.en_passant_target(pawns, empty), algebraic_to_u64("e4").unwrap());
+        assert_eq!(
+            long_algebraic_move.en_passant_target(pawns, empty),
+            algebraic_to_u64("e4").unwrap()
+        );
     }
 
     #[test]
@@ -246,7 +270,10 @@ mod test {
         let pawns = algebraic_to_u64("f5").unwrap() | algebraic_to_u64("g5").unwrap();
         let empty = !pawns;
 
-        assert_eq!(long_algebraic_move.en_passant_target(pawns, empty), algebraic_to_u64("g5").unwrap());
+        assert_eq!(
+            long_algebraic_move.en_passant_target(pawns, empty),
+            algebraic_to_u64("g5").unwrap()
+        );
     }
 
     #[test]
@@ -260,6 +287,9 @@ mod test {
         let pawns = algebraic_to_u64("h4").unwrap() | algebraic_to_u64("g4").unwrap();
         let empty = !pawns;
 
-        assert_eq!(long_algebraic_move.en_passant_target(pawns, empty), algebraic_to_u64("g4").unwrap());
+        assert_eq!(
+            long_algebraic_move.en_passant_target(pawns, empty),
+            algebraic_to_u64("g4").unwrap()
+        );
     }
 }

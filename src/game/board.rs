@@ -1,4 +1,7 @@
-use std::{fmt, simd::{num::SimdUint, Simd}};
+use std::{
+    fmt,
+    simd::{num::SimdUint, Simd},
+};
 
 use anyhow::{bail, Context};
 
@@ -11,8 +14,10 @@ use super::{
 
 const WHITE_KINGSIDE_CASTLE_MASK: Simd<u64, 8> = Simd::from_array([0, 0xa0, 0, 0, 0, 0, 0xa0, 0]);
 const WHITE_QUEENSIDE_CASTLE_MASK: Simd<u64, 8> = Simd::from_array([0, 0x9, 0, 0, 0, 0, 0x9, 0]);
-const BLACK_KINGSIDE_CASTLE_MASK: Simd<u64, 8> = Simd::from_array([0, 0xa000000000000000, 0, 0, 0, 0, 0xa000000000000000, 0]);
-const BLACK_QUEENSIDE_CASTLE_MASK: Simd<u64, 8> = Simd::from_array([0, 0x900000000000000, 0, 0, 0, 0, 0x900000000000000, 0]);
+const BLACK_KINGSIDE_CASTLE_MASK: Simd<u64, 8> =
+    Simd::from_array([0, 0xa000000000000000, 0, 0, 0, 0, 0xa000000000000000, 0]);
+const BLACK_QUEENSIDE_CASTLE_MASK: Simd<u64, 8> =
+    Simd::from_array([0, 0x900000000000000, 0, 0, 0, 0, 0x900000000000000, 0]);
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Board {
@@ -395,7 +400,6 @@ mod test {
         assert_eq!(board.black[4], 0x800000000000000);
         assert_eq!(board.white[5], 0x10);
     }
-
 
     #[test]
     fn parses_starting_position_to_fen() {
