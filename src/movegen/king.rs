@@ -32,9 +32,7 @@ impl KingMoveGen for Game {
 
         // No need to include castling in king vision because it cannot attack with a castle
 
-        *KING_MOVES
-            .get(king.trailing_zeros() as usize)
-            .expect("could not find precomputed king move")
+        KING_MOVES[(king | 0x8000000000000000).trailing_zeros() as usize]
     }
 
     fn generate_pseudolegal_king_moves(&self, moves: &mut SmallVec<[SimpleMove; 256]>) {
@@ -45,9 +43,9 @@ impl KingMoveGen for Game {
                 let occupied = self.board.all();
                 let opponent_vision = self.generate_vision(&Turn::Black);
 
+                // Ensures there's always a bit set and no index 64
                 let destination_squares = KING_MOVES
-                    .get(king.trailing_zeros() as usize)
-                    .expect("could not find precomputed king move")
+                    [(king | 0x8000000000000000).trailing_zeros() as usize]
                     & !own_pieces
                     & !opponent_vision;
 
@@ -78,9 +76,9 @@ impl KingMoveGen for Game {
                 let occupied = self.board.all();
                 let opponent_vision = self.generate_vision(&Turn::White);
 
+                // Ensures there's always a bit set and no index 64
                 let destination_squares = KING_MOVES
-                    .get(king.trailing_zeros() as usize)
-                    .expect("could not find precomputed king move")
+                    [(king | 0x8000000000000000).trailing_zeros() as usize]
                     & !own_pieces
                     & !opponent_vision;
 
@@ -109,7 +107,7 @@ impl KingMoveGen for Game {
     }
 }
 
-pub const KING_MOVES: [u64; 65] = [
+pub const KING_MOVES: [u64; 64] = [
     770,
     1797,
     3594,
@@ -174,7 +172,6 @@ pub const KING_MOVES: [u64; 65] = [
     5796132720425828352,
     11592265440851656704,
     4665729213955833856,
-    0,
 ];
 
 #[allow(dead_code)]

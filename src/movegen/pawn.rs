@@ -17,78 +17,80 @@ impl PawnMoveGen for Game {
     fn generate_pawn_vision(&self, turn: &Turn) -> u64 {
         let mut vision = 0;
 
-        let pawns = self.board.pawns(turn);
-
         match turn {
             Turn::White => {
-                vision |= (pawns & !A_FILE) << 7;
-                vision |= (pawns & !H_FILE) << 9;
+                vision |= (self.board.white[0] & !A_FILE) << 7;
+                vision |= (self.board.white[0] & !H_FILE) << 9;
             }
             Turn::Black => {
-                vision |= (pawns & !A_FILE) >> 9;
-                vision |= (pawns & !H_FILE) >> 7;
+                vision |= (self.board.black[0] & !A_FILE) >> 9;
+                vision |= (self.board.black[0] & !H_FILE) >> 7;
             }
         }
 
         vision
     }
     fn generate_psuedolegal_pawn_moves(&self, mut moves: &mut SmallVec<[SimpleMove; 256]>) {
-        let pawns = self.board.pawns(&self.turn);
-        let occupied = self.board.all();
-        let opponent_pieces = self.board.all_pieces(&self.turn.other());
-
         match self.turn {
             Turn::White => {
+                let pawns = self.board.white[0];
+                let occupied = self.board.all();
+                let opponent_pieces = self.board.black[6];
+
                 let single_advance = ((pawns & !SEVENTH_RANK) << 8) & !occupied;
-                backtrack_moves(single_advance, |bit| bit >> 8, &mut moves);
+                backtrack_moves(single_advance, |bit| bit >> 8, moves);
 
                 let double_advance = ((single_advance & THIRD_RANK) << 8) & !occupied;
-                backtrack_moves(double_advance, |bit| bit >> 16, &mut moves);
+                backtrack_moves(double_advance, |bit| bit >> 16, moves);
 
                 let take_left =
                     ((pawns & !A_FILE & !SEVENTH_RANK) << 7) & (opponent_pieces | self.en_passant);
-                backtrack_moves(take_left, |bit| bit >> 7, &mut moves);
+                backtrack_moves(take_left, |bit| bit >> 7, moves);
 
                 let take_right =
                     ((pawns & !H_FILE & !SEVENTH_RANK) << 9) & (opponent_pieces | self.en_passant);
-                backtrack_moves(take_right, |bit| bit >> 9, &mut moves);
+                backtrack_moves(take_right, |bit| bit >> 9, moves);
 
                 let single_advance_promotion = ((pawns & SEVENTH_RANK) << 8) & !occupied;
-                backtrack_moves_promotion(single_advance_promotion, |bit| bit >> 8, &mut moves);
+                backtrack_moves_promotion(single_advance_promotion, |bit| bit >> 8, moves);
 
                 let take_left_promotion =
                     ((pawns & !A_FILE & SEVENTH_RANK) << 7) & (opponent_pieces | self.en_passant);
-                backtrack_moves_promotion(take_left_promotion, |bit| bit >> 7, &mut moves);
+                backtrack_moves_promotion(take_left_promotion, |bit| bit >> 7, moves);
 
                 let take_right_promotion =
                     ((pawns & !H_FILE & SEVENTH_RANK) << 9) & (opponent_pieces | self.en_passant);
-                backtrack_moves_promotion(take_right_promotion, |bit| bit >> 9, &mut moves);
+                backtrack_moves_promotion(take_right_promotion, |bit| bit >> 9, moves);
             }
             Turn::Black => {
+                let pawns = self.board.black[0];
+                let occupied = self.board.all();
+                let opponent_pieces = self.board.white[6];
+
                 let single_advance = ((pawns & !SECOND_RANK) >> 8) & !occupied;
-                backtrack_moves(single_advance, |bit| bit << 8, &mut moves);
+                backtrack_moves(single_advance, |bit| bit << 8, moves);
 
                 let double_advance = ((single_advance & SIXTH_RANK) >> 8) & !occupied;
-                backtrack_moves(double_advance, |bit| bit << 16, &mut moves);
+                backtrack_moves(double_advance, |bit| bit << 16, moves);
 
                 let take_left =
                     ((pawns & !A_FILE & !SECOND_RANK) >> 9) & (opponent_pieces | self.en_passant);
-                backtrack_moves(take_left, |bit| bit << 9, &mut moves);
+                backtrack_moves(take_left, |bit| bit << 9, moves);
 
                 let take_right =
                     ((pawns & !H_FILE & !SECOND_RANK) >> 7) & (opponent_pieces | self.en_passant);
-                backtrack_moves(take_right, |bit| bit << 7, &mut moves);
+                backtrack_moves(take_right, |bit| bit << 7, moves);
 
                 let single_advance_promotion = ((pawns & SECOND_RANK) >> 8) & !occupied;
-                backtrack_moves_promotion(single_advance_promotion, |bit| bit << 8, &mut moves);
+                backtrack_moves_promotion(single_advance_promotion, |bit| bit << 8, moves);
 
                 let take_left_promotion =
                     ((pawns & !A_FILE & SECOND_RANK) >> 9) & (opponent_pieces | self.en_passant);
-                backtrack_moves_promotion(take_left_promotion, |bit| bit << 9, &mut moves);
+                backtrack_moves_promotion(take_left_promotion, |bit| bit << 9, moves);
 
                 let take_right_promotion =
                     ((pawns & !H_FILE & SECOND_RANK) >> 7) & (opponent_pieces | self.en_passant);
-                backtrack_moves_promotion(take_right_promotion, |bit| bit << 7, &mut moves);
+                backtrack_moves_promotion(take_right_promotion, |bit| bit << 7, moves);
             }
         }
     }

@@ -18,8 +18,8 @@ impl RookMoveGen for Game {
         match turn {
             Turn::White => {
                 let rook_pieces = self.board.white[1] | self.board.white[4];
-                let player_pieces = self.board.white_pieces();
-                let opponent_pieces = self.board.black_pieces();
+                let player_pieces = self.board.white[6];
+                let opponent_pieces = self.board.black[6];
 
                 let mut remaining_rooks = rook_pieces;
                 while remaining_rooks != 0 {
@@ -38,8 +38,8 @@ impl RookMoveGen for Game {
             }
             Turn::Black => {
                 let rook_pieces = self.board.black[1] | self.board.black[4];
-                let player_pieces = self.board.black_pieces();
-                let opponent_pieces = self.board.white_pieces();
+                let player_pieces = self.board.black[6];
+                let opponent_pieces = self.board.white[6];
 
                 let mut remaining_rooks = rook_pieces;
                 while remaining_rooks != 0 {
