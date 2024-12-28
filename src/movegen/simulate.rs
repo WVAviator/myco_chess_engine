@@ -57,16 +57,12 @@ impl Simulate for Game {
                 // King
                 attacks |= KING_MOVES[superking_index] & self.board.black[5];
                 // Bishops
-                let bishop_moves = get_bishop_magic_map()
-                    .get(superking_index)
-                    .expect("could not retrieve magic bitboards for bishop moves")
+                let bishop_moves = get_bishop_magic_map()[superking_index]
                     .get(get_bishop_mask(superking) & adjusted_occupied);
                 attacks |=
                     bishop_moves & ((self.board.black[3] | self.board.black[4]) & !lmove.dest);
                 // Rooks
-                let rook_moves = get_rook_magic_map()
-                    .get(superking_index)
-                    .expect("could not retrieve magic bitboards for rook moves")
+                let rook_moves = get_rook_magic_map()[superking_index]
                     .get(get_rook_mask(superking) & adjusted_occupied);
                 attacks |= rook_moves & ((self.board.black[1] | self.board.black[4]) & !lmove.dest);
             }
@@ -87,16 +83,12 @@ impl Simulate for Game {
                 // King
                 attacks |= KING_MOVES[superking_index] & self.board.white[5];
                 // Bishops
-                let bishop_moves = get_bishop_magic_map()
-                    .get(superking_index)
-                    .expect("could not retrieve magic bitboards for bishop moves")
+                let bishop_moves = get_bishop_magic_map()[superking_index]
                     .get(get_bishop_mask(superking) & adjusted_occupied);
                 attacks |=
                     bishop_moves & ((self.board.white[3] | self.board.white[4]) & !lmove.dest);
                 // Rooks
-                let rook_moves = get_rook_magic_map()
-                    .get(superking_index)
-                    .expect("could not retrieve magic bitboards for rook moves")
+                let rook_moves = get_rook_magic_map()[superking_index]
                     .get(get_rook_mask(superking) & adjusted_occupied);
                 attacks |= rook_moves & ((self.board.white[1] | self.board.white[4]) & !lmove.dest);
             }

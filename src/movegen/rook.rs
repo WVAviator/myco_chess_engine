@@ -26,10 +26,8 @@ impl RookMoveGen for Game {
                     let current_rook = remaining_rooks & (!remaining_rooks + 1);
                     let blockers = (player_pieces | opponent_pieces) & get_rook_mask(current_rook);
 
-                    let rook_moves = get_rook_magic_map()
-                        .get(current_rook.trailing_zeros() as usize)
-                        .expect("could not find magic bitboard for requested rook position")
-                        .get(blockers);
+                    let rook_moves =
+                        get_rook_magic_map()[current_rook.trailing_zeros() as usize].get(blockers);
 
                     vision |= rook_moves;
 
@@ -48,10 +46,8 @@ impl RookMoveGen for Game {
                     let current_rook = remaining_rooks & (!remaining_rooks + 1);
                     let blockers = (player_pieces | opponent_pieces) & get_rook_mask(current_rook);
 
-                    let rook_moves = get_rook_magic_map()
-                        .get(current_rook.trailing_zeros() as usize)
-                        .expect("could not find magic bitboard for requested rook position")
-                        .get(blockers);
+                    let rook_moves =
+                        get_rook_magic_map()[current_rook.trailing_zeros() as usize].get(blockers);
 
                     vision |= rook_moves;
 
@@ -64,29 +60,55 @@ impl RookMoveGen for Game {
     }
 
     fn generate_pseudolegal_rook_moves(&self, moves: &mut SmallVec<[SimpleMove; 256]>) {
-        let rook_pieces = self.board.rooks(&self.turn) | self.board.queens(&self.turn);
-        let player_pieces = self.board.all_pieces(&self.turn);
-        let opponent_pieces = self.board.all_pieces(&self.turn.other());
+        match self.turn {
+            Turn::White => {
+                let rook_pieces = self.board.white[1] | self.board.white[4];
+                let player_pieces = self.board.white[6];
+                let opponent_pieces = self.board.black[6];
 
-        let mut remaining_rooks = rook_pieces;
-        while remaining_rooks != 0 {
-            let current_rook = remaining_rooks & (!remaining_rooks + 1);
-            let blockers = (player_pieces | opponent_pieces) & get_rook_mask(current_rook);
+                let mut remaining_rooks = rook_pieces;
+                while remaining_rooks != 0 {
+                    let current_rook = remaining_rooks & (!remaining_rooks + 1);
+                    let blockers = (player_pieces | opponent_pieces) & get_rook_mask(current_rook);
 
-            let rook_moves = get_rook_magic_map()
-                .get(current_rook.trailing_zeros() as usize)
-                .expect("could not find magic bitboard for requested rook position")
-                .get(blockers)
-                & !player_pieces;
+                    let rook_moves = get_rook_magic_map()[current_rook.trailing_zeros() as usize]
+                        .get(blockers)
+                        & !player_pieces;
 
-            let mut remaining_rook_moves = rook_moves;
-            while remaining_rook_moves != 0 {
-                let dest = remaining_rook_moves & (!remaining_rook_moves + 1);
-                moves.push(SimpleMove::new(current_rook, dest));
-                remaining_rook_moves &= remaining_rook_moves - 1;
+                    let mut remaining_rook_moves = rook_moves;
+                    while remaining_rook_moves != 0 {
+                        let dest = remaining_rook_moves & (!remaining_rook_moves + 1);
+                        moves.push(SimpleMove::new(current_rook, dest));
+                        remaining_rook_moves &= remaining_rook_moves - 1;
+                    }
+
+                    remaining_rooks &= remaining_rooks - 1;
+                }
             }
+            Turn::Black => {
+                let rook_pieces = self.board.black[1] | self.board.black[4];
+                let player_pieces = self.board.black[6];
+                let opponent_pieces = self.board.white[6];
 
-            remaining_rooks &= remaining_rooks - 1;
+                let mut remaining_rooks = rook_pieces;
+                while remaining_rooks != 0 {
+                    let current_rook = remaining_rooks & (!remaining_rooks + 1);
+                    let blockers = (player_pieces | opponent_pieces) & get_rook_mask(current_rook);
+
+                    let rook_moves = get_rook_magic_map()[current_rook.trailing_zeros() as usize]
+                        .get(blockers)
+                        & !player_pieces;
+
+                    let mut remaining_rook_moves = rook_moves;
+                    while remaining_rook_moves != 0 {
+                        let dest = remaining_rook_moves & (!remaining_rook_moves + 1);
+                        moves.push(SimpleMove::new(current_rook, dest));
+                        remaining_rook_moves &= remaining_rook_moves - 1;
+                    }
+
+                    remaining_rooks &= remaining_rooks - 1;
+                }
+            }
         }
     }
 }
