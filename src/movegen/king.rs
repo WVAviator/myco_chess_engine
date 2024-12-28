@@ -38,7 +38,6 @@ impl KingMoveGen for Game {
     }
 
     fn generate_pseudolegal_king_moves(&self, moves: &mut SmallVec<[SimpleMove; 256]>) {
-
         match self.turn {
             Turn::White => {
                 let king = self.board.white[5];
@@ -107,7 +106,6 @@ impl KingMoveGen for Game {
                 }
             }
         }
-
     }
 }
 
@@ -310,16 +308,9 @@ mod test {
         assert!(!moves.contains(&SimpleMove::from_algebraic("e1g1").unwrap()));
     }
 
+    #[ignore = "not a test"]
     #[test]
     fn king_moves() {
-        println!(
-            "[{}]",
-            generate_all_king_moves()
-                .to_vec()
-                .iter()
-                .map(|d| d.to_string())
-                .collect::<Vec<String>>()
-                .join(", ")
-        );
+        println!("[{:?}]", generate_all_king_moves());
     }
 }

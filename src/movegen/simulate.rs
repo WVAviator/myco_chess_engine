@@ -1,11 +1,8 @@
 use crate::{
-    game::{
-        constants::{A_FILE, EIGHTH_RANK, FIRST_RANK, H_FILE},
-        game::{Game, Turn},
-    },
+    game::game::{Game, Turn},
     magic::{
         get_bishop_magic_map, get_rook_magic_map,
-        masks::{get_bishop_mask, get_rook_mask},
+        masks::{BISHOP_MASKS, ROOK_MASKS},
     },
     moves::simple_move::SimpleMove,
 };
@@ -48,23 +45,20 @@ impl Simulate for Game {
                 };
                 let superking_index = superking.trailing_zeros() as usize;
                 // Pawns
-                attacks |= ((superking & !A_FILE & !EIGHTH_RANK) << 7)
-                    & (self.board.black[0] & !lmove.dest & !enpassant_target);
-                attacks |= ((superking & !H_FILE & !EIGHTH_RANK) << 9)
-                    & (self.board.black[0] & !lmove.dest & !enpassant_target);
+                attacks |=
+                    WHITE_PAWN_ATTACKS[superking_index] & (self.board.black[0] & !enpassant_target);
                 // Knights
-                attacks |= KNIGHT_MOVES[superking_index] & (self.board.black[2] & !lmove.dest);
+                attacks |= KNIGHT_MOVES[superking_index] & self.board.black[2];
                 // King
                 attacks |= KING_MOVES[superking_index] & self.board.black[5];
                 // Bishops
                 let bishop_moves = get_bishop_magic_map()[superking_index]
-                    .get(get_bishop_mask(superking) & adjusted_occupied);
-                attacks |=
-                    bishop_moves & ((self.board.black[3] | self.board.black[4]) & !lmove.dest);
+                    .get(BISHOP_MASKS[superking_index] & adjusted_occupied);
+                attacks |= bishop_moves & (self.board.black[3] | self.board.black[4]);
                 // Rooks
                 let rook_moves = get_rook_magic_map()[superking_index]
-                    .get(get_rook_mask(superking) & adjusted_occupied);
-                attacks |= rook_moves & ((self.board.black[1] | self.board.black[4]) & !lmove.dest);
+                    .get(ROOK_MASKS[superking_index] & adjusted_occupied);
+                attacks |= rook_moves & (self.board.black[1] | self.board.black[4]);
             }
             Turn::Black => {
                 let superking = if self.board.black[5] & lmove.orig != 0 {
@@ -74,32 +68,165 @@ impl Simulate for Game {
                 };
                 let superking_index = superking.trailing_zeros() as usize;
                 // Pawns
-                attacks |= ((superking & !A_FILE & !FIRST_RANK) >> 9)
-                    & (self.board.white[0] & !lmove.dest & !enpassant_target);
-                attacks |= ((superking & !H_FILE & !FIRST_RANK) >> 7)
-                    & (self.board.white[0] & !lmove.dest & !enpassant_target);
+                attacks |=
+                    BLACK_PAWN_ATTACKS[superking_index] & (self.board.white[0] & !enpassant_target);
                 // Knights
-                attacks |= KNIGHT_MOVES[superking_index] & (self.board.white[2] & !lmove.dest);
+                attacks |= KNIGHT_MOVES[superking_index] & self.board.white[2];
                 // King
                 attacks |= KING_MOVES[superking_index] & self.board.white[5];
                 // Bishops
                 let bishop_moves = get_bishop_magic_map()[superking_index]
-                    .get(get_bishop_mask(superking) & adjusted_occupied);
-                attacks |=
-                    bishop_moves & ((self.board.white[3] | self.board.white[4]) & !lmove.dest);
+                    .get(BISHOP_MASKS[superking_index] & adjusted_occupied);
+                attacks |= bishop_moves & (self.board.white[3] | self.board.white[4]);
                 // Rooks
                 let rook_moves = get_rook_magic_map()[superking_index]
-                    .get(get_rook_mask(superking) & adjusted_occupied);
-                attacks |= rook_moves & ((self.board.white[1] | self.board.white[4]) & !lmove.dest);
+                    .get(ROOK_MASKS[superking_index] & adjusted_occupied);
+                attacks |= rook_moves & (self.board.white[1] | self.board.white[4]);
             }
         }
 
-        attacks == 0
+        attacks & !lmove.dest == 0
     }
 }
 
+const WHITE_PAWN_ATTACKS: [u64; 64] = [
+    512,
+    1280,
+    2560,
+    5120,
+    10240,
+    20480,
+    40960,
+    16384,
+    131072,
+    327680,
+    655360,
+    1310720,
+    2621440,
+    5242880,
+    10485760,
+    4194304,
+    33554432,
+    83886080,
+    167772160,
+    335544320,
+    671088640,
+    1342177280,
+    2684354560,
+    1073741824,
+    8589934592,
+    21474836480,
+    42949672960,
+    85899345920,
+    171798691840,
+    343597383680,
+    687194767360,
+    274877906944,
+    2199023255552,
+    5497558138880,
+    10995116277760,
+    21990232555520,
+    43980465111040,
+    87960930222080,
+    175921860444160,
+    70368744177664,
+    562949953421312,
+    1407374883553280,
+    2814749767106560,
+    5629499534213120,
+    11258999068426240,
+    22517998136852480,
+    45035996273704960,
+    18014398509481984,
+    144115188075855872,
+    360287970189639680,
+    720575940379279360,
+    1441151880758558720,
+    2882303761517117440,
+    5764607523034234880,
+    11529215046068469760,
+    4611686018427387904,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+];
+
+const BLACK_PAWN_ATTACKS: [u64; 64] = [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    2,
+    5,
+    10,
+    20,
+    40,
+    80,
+    160,
+    64,
+    512,
+    1280,
+    2560,
+    5120,
+    10240,
+    20480,
+    40960,
+    16384,
+    131072,
+    327680,
+    655360,
+    1310720,
+    2621440,
+    5242880,
+    10485760,
+    4194304,
+    33554432,
+    83886080,
+    167772160,
+    335544320,
+    671088640,
+    1342177280,
+    2684354560,
+    1073741824,
+    8589934592,
+    21474836480,
+    42949672960,
+    85899345920,
+    171798691840,
+    343597383680,
+    687194767360,
+    274877906944,
+    2199023255552,
+    5497558138880,
+    10995116277760,
+    21990232555520,
+    43980465111040,
+    87960930222080,
+    175921860444160,
+    70368744177664,
+    562949953421312,
+    1407374883553280,
+    2814749767106560,
+    5629499534213120,
+    11258999068426240,
+    22517998136852480,
+    45035996273704960,
+    18014398509481984,
+];
+
 #[cfg(test)]
 mod test {
+    use crate::game::constants::{A_FILE, EIGHTH_RANK, FIRST_RANK, H_FILE};
+
     use super::*;
 
     #[test]
@@ -184,5 +311,31 @@ mod test {
         let allow_check = SimpleMove::from_algebraic("d3f5").unwrap();
         assert_eq!(game.check_move_legality(&block_check), true);
         assert_eq!(game.check_move_legality(&allow_check), false);
+    }
+
+    #[ignore = "not a test"]
+    #[test]
+    fn generate_white_pawn_attacks() {
+        let mut result = Vec::new();
+        for i in 0..64 {
+            let pos: u64 = (1 << i) & !EIGHTH_RANK;
+            let take_left = (pos & !A_FILE) << 7;
+            let take_right = (pos & !H_FILE) << 9;
+            result.push(take_left | take_right);
+        }
+        println!("{:?}", result);
+    }
+
+    #[ignore = "not a test"]
+    #[test]
+    fn generate_black_pawn_attacks() {
+        let mut result = Vec::new();
+        for i in 0..64 {
+            let pos: u64 = (1 << i) & !FIRST_RANK;
+            let take_left = (pos & !A_FILE) >> 9;
+            let take_right = (pos & !H_FILE) >> 7;
+            result.push(take_left | take_right);
+        }
+        println!("{:?}", result);
     }
 }
