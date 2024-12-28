@@ -39,7 +39,6 @@ impl Simulate for Game {
 
         let mut attacks = 0;
 
-        // Pawns
         match self.turn {
             Turn::White => {
                 let superking = if self.board.white[5] & lmove.orig != 0 {

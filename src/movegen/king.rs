@@ -38,32 +38,34 @@ impl KingMoveGen for Game {
     }
 
     fn generate_pseudolegal_king_moves(&self, moves: &mut SmallVec<[SimpleMove; 256]>) {
-        let king = self.board.king(&self.turn);
-        let own_pieces = self.board.all_pieces(&self.turn);
-        let occupied = self.board.all();
-        let opponent_vision = self.generate_vision(&self.turn.other());
-
-        let destination_squares = KING_MOVES
-            .get(king.trailing_zeros() as usize)
-            .expect("could not find precomputed king move")
-            & !own_pieces
-            & !opponent_vision;
-
-        let mut remaining_destinations = destination_squares;
-        while remaining_destinations != 0 {
-            let next_destination = remaining_destinations & (!remaining_destinations + 1);
-            moves.push(SimpleMove::new(king, next_destination));
-            remaining_destinations &= remaining_destinations - 1;
-        }
 
         match self.turn {
             Turn::White => {
+                let king = self.board.white[5];
+                let own_pieces = self.board.white[6];
+                let occupied = self.board.all();
+                let opponent_vision = self.generate_vision(&Turn::Black);
+
+                let destination_squares = KING_MOVES
+                    .get(king.trailing_zeros() as usize)
+                    .expect("could not find precomputed king move")
+                    & !own_pieces
+                    & !opponent_vision;
+
+                let mut remaining_destinations = destination_squares;
+                while remaining_destinations != 0 {
+                    let next_destination = remaining_destinations & (!remaining_destinations + 1);
+                    moves.push(SimpleMove::new(king, next_destination));
+                    remaining_destinations &= remaining_destinations - 1;
+                }
+
                 if self.castling_rights.is_set(CastlingRights::WHITE_KINGSIDE)
                     && occupied & CASTLE_MOVE_WK_MASK == 0
                     && opponent_vision & CASTLE_CHECK_WK_MASK == 0
                 {
                     moves.push(SimpleMove::new(king, 0x40))
                 }
+
                 if self.castling_rights.is_set(CastlingRights::WHITE_QUEENSIDE)
                     && occupied & CASTLE_MOVE_WQ_MASK == 0
                     && opponent_vision & CASTLE_CHECK_WQ_MASK == 0
@@ -72,12 +74,31 @@ impl KingMoveGen for Game {
                 }
             }
             Turn::Black => {
+                let king = self.board.black[5];
+                let own_pieces = self.board.black[6];
+                let occupied = self.board.all();
+                let opponent_vision = self.generate_vision(&Turn::White);
+
+                let destination_squares = KING_MOVES
+                    .get(king.trailing_zeros() as usize)
+                    .expect("could not find precomputed king move")
+                    & !own_pieces
+                    & !opponent_vision;
+
+                let mut remaining_destinations = destination_squares;
+                while remaining_destinations != 0 {
+                    let next_destination = remaining_destinations & (!remaining_destinations + 1);
+                    moves.push(SimpleMove::new(king, next_destination));
+                    remaining_destinations &= remaining_destinations - 1;
+                }
+
                 if self.castling_rights.is_set(CastlingRights::BLACK_KINGSIDE)
                     && occupied & CASTLE_MOVE_BK_MASK == 0
                     && opponent_vision & CASTLE_CHECK_BK_MASK == 0
                 {
                     moves.push(SimpleMove::new(king, 0x4000000000000000))
                 }
+
                 if self.castling_rights.is_set(CastlingRights::BLACK_QUEENSIDE)
                     && occupied & CASTLE_MOVE_BQ_MASK == 0
                     && opponent_vision & CASTLE_CHECK_BQ_MASK == 0
@@ -86,6 +107,7 @@ impl KingMoveGen for Game {
                 }
             }
         }
+
     }
 }
 

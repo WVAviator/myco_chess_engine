@@ -1,3 +1,5 @@
+#![feature(portable_simd)]
+
 pub mod database;
 pub mod engine;
 pub mod eval;

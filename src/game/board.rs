@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{fmt, simd::{num::SimdUint, Simd}};
 
 use anyhow::{bail, Context};
 
@@ -9,17 +9,22 @@ use super::{
     game::Turn,
 };
 
+const WHITE_KINGSIDE_CASTLE_MASK: Simd<u64, 8> = Simd::from_array([0, 0xa0, 0, 0, 0, 0, 0xa0, 0]);
+const WHITE_QUEENSIDE_CASTLE_MASK: Simd<u64, 8> = Simd::from_array([0, 0x9, 0, 0, 0, 0, 0x9, 0]);
+const BLACK_KINGSIDE_CASTLE_MASK: Simd<u64, 8> = Simd::from_array([0, 0xa000000000000000, 0, 0, 0, 0, 0xa000000000000000, 0]);
+const BLACK_QUEENSIDE_CASTLE_MASK: Simd<u64, 8> = Simd::from_array([0, 0x900000000000000, 0, 0, 0, 0, 0x900000000000000, 0]);
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Board {
-    pub white: [u64; 8], // pawns, rooks, knights, bishops, queens, king, all, unused
-    pub black: [u64; 8],
+    pub white: Simd<u64, 8>, // pawns, rooks, knights, bishops, queens, king, all, unused
+    pub black: Simd<u64, 8>,
 }
 
 impl Board {
     pub fn new_empty() -> Self {
         Board {
-            white: [0; 8],
-            black: [0; 8],
+            white: Simd::splat(0),
+            black: Simd::splat(0),
         }
     }
 
@@ -121,18 +126,8 @@ impl Board {
             }
         }
 
-        board.white[6] = board.white[0]
-            | board.white[1]
-            | board.white[2]
-            | board.white[3]
-            | board.white[4]
-            | board.white[5];
-        board.black[6] = board.black[0]
-            | board.black[1]
-            | board.black[2]
-            | board.black[3]
-            | board.black[4]
-            | board.black[5];
+        board.white[6] = board.white.reduce_or();
+        board.black[6] = board.black.reduce_or();
 
         Ok(board)
     }
@@ -268,27 +263,21 @@ impl Board {
         self.handle_castling(&lmove);
         self.handle_enpassant(&lmove);
 
-        let move_shift: u32 =
-            (64 + (lmove.orig.trailing_zeros() as i32 - lmove.dest.trailing_zeros() as i32)) as u32;
+        let move_shift =
+            (64 + (lmove.orig.trailing_zeros() as i32 - lmove.dest.trailing_zeros() as i32)) as u64;
+        let move_shift = Simd::splat(move_shift);
+
+        let orig = Simd::splat(lmove.orig);
+        let dest = Simd::splat(lmove.dest);
 
         if (lmove.orig & self.white[6]) | (lmove.dest & self.white[6]) != 0 {
-            for bitboard in self.white.iter_mut() {
-                // dest & bb will be 0 unless there is a piece at dest to be captured
-                *bitboard &= !lmove.dest;
-                // does nothing if orig & bb is 0, otherwise xors with both bits
-                *bitboard ^=
-                    (lmove.orig & *bitboard) | (lmove.orig & *bitboard).rotate_right(move_shift);
-            }
+            self.white &= !dest;
+            self.white ^= (self.white & orig) | (self.white & orig).rotate_right(move_shift);
         }
 
         if (lmove.orig & self.black[6]) | (lmove.dest & self.black[6]) != 0 {
-            for bitboard in self.black.iter_mut() {
-                // dest & bb will be 0 unless there is a piece at dest to be captured
-                *bitboard &= !lmove.dest;
-                // does nothing if orig & bb is 0, otherwise xors with both bits
-                *bitboard ^=
-                    (lmove.orig & *bitboard) | (lmove.orig & *bitboard).rotate_right(move_shift);
-            }
+            self.black &= !dest;
+            self.black ^= (self.black & orig) | (self.black & orig).rotate_right(move_shift);
         }
 
         self.handle_promotions(&lmove);
@@ -300,21 +289,17 @@ impl Board {
         // Moves the rook if so, king will be moved later
         match (lmove.orig & (self.black[5] | self.white[5])) | lmove.dest {
             0x5000000000000000 => {
-                self.black[1] ^= 0xa000000000000000;
-                self.black[6] ^= 0xa000000000000000;
-            } // Castle kingside
+                self.black ^= BLACK_KINGSIDE_CASTLE_MASK;
+            }
             0x1400000000000000 => {
-                self.black[1] ^= 0x900000000000000;
-                self.black[6] ^= 0x900000000000000;
-            } // Castle queenside
+                self.black ^= BLACK_QUEENSIDE_CASTLE_MASK;
+            }
             0x50 => {
-                self.white[1] ^= 0xa0;
-                self.white[6] ^= 0xa0;
-            } // Castle kingside
+                self.white ^= WHITE_KINGSIDE_CASTLE_MASK;
+            }
             0x14 => {
-                self.white[1] ^= 0x9;
-                self.white[6] ^= 0x9;
-            } // Castle queenside
+                self.white ^= WHITE_QUEENSIDE_CASTLE_MASK;
+            }
             _ => {}
         }
     }
@@ -322,11 +307,11 @@ impl Board {
     #[inline(always)]
     fn handle_enpassant(&mut self, lmove: &SimpleMove) {
         let capture = lmove.en_passant_target(self.white[0] | self.black[0], self.empty());
-
-        self.white[0] &= !capture;
-        self.white[6] &= !capture;
-        self.black[0] &= !capture;
-        self.black[6] &= !capture;
+        if capture != 0 {
+            let capture = Simd::splat(capture);
+            self.white &= !capture;
+            self.black &= !capture;
+        }
     }
 
     #[inline(always)]
@@ -337,6 +322,17 @@ impl Board {
         self.white[0] ^= white_promotion;
         self.black[lmove.promotion] ^= black_promotion;
         self.white[lmove.promotion] ^= white_promotion;
+    }
+}
+
+pub trait SimdRotateRight {
+    fn rotate_right(self, shift: Simd<u64, 8>) -> Simd<u64, 8>;
+}
+
+impl SimdRotateRight for Simd<u64, 8> {
+    fn rotate_right(self, shift: Simd<u64, 8>) -> Simd<u64, 8> {
+        let bits = Simd::splat(64); // Number of bits in a u64
+        (self >> shift) | (self << (bits - shift))
     }
 }
 
@@ -399,6 +395,7 @@ mod test {
         assert_eq!(board.black[4], 0x800000000000000);
         assert_eq!(board.white[5], 0x10);
     }
+
 
     #[test]
     fn parses_starting_position_to_fen() {
