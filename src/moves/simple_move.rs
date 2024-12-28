@@ -109,21 +109,21 @@ impl SimpleMove {
             0x204000000000 => 0x2000000000,
             0x408000000000 => 0x4000000000,
 
-            0x10200 => 0x20000,
-            0x20400 => 0x40000,
-            0x40800 => 0x80000,
-            0x81000 => 0x100000,
-            0x102000 => 0x200000,
-            0x204000 => 0x400000,
-            0x408000 => 0x800000,
+            0x1020000 => 0x2000000,
+            0x2040000 => 0x4000000,
+            0x4080000 => 0x8000000,
+            0x8100000 => 0x10000000,
+            0x10200000 => 0x20000000,
+            0x20400000 => 0x40000000,
+            0x40800000 => 0x80000000,
 
-            0x20100 => 0x10000,
-            0x40200 => 0x20000,
-            0x80400 => 0x40000,
-            0x100800 => 0x80000,
-            0x201000 => 0x100000,
-            0x402000 => 0x200000,
-            0x804000 => 0x400000,
+            0x2010000 => 0x1000000,
+            0x4020000 => 0x2000000,
+            0x8040000 => 0x4000000,
+            0x10080000 => 0x8000000,
+            0x20100000 => 0x10000000,
+            0x40200000 => 0x20000000,
+            0x80400000 => 0x40000000,
 
             _ => 0,
         }
@@ -219,5 +219,47 @@ mod test {
             SimpleMove::from_algebraic("e7e8q").unwrap(),
             long_algebraic_move
         );
+    }
+
+    #[test]
+    fn enpassant_target_correct() {
+        let long_algebraic_move = SimpleMove {
+            orig: algebraic_to_u64("d4").unwrap(),
+            dest: algebraic_to_u64("e3").unwrap(),
+            promotion: 0,
+        };
+
+        let pawns = algebraic_to_u64("d4").unwrap() | algebraic_to_u64("e4").unwrap();
+        let empty = !pawns;
+
+        assert_eq!(long_algebraic_move.en_passant_target(pawns, empty), algebraic_to_u64("e4").unwrap());
+    }
+
+    #[test]
+    fn enpassant_target_correct_black() {
+        let long_algebraic_move = SimpleMove {
+            orig: algebraic_to_u64("f5").unwrap(),
+            dest: algebraic_to_u64("g6").unwrap(),
+            promotion: 0,
+        };
+
+        let pawns = algebraic_to_u64("f5").unwrap() | algebraic_to_u64("g5").unwrap();
+        let empty = !pawns;
+
+        assert_eq!(long_algebraic_move.en_passant_target(pawns, empty), algebraic_to_u64("g5").unwrap());
+    }
+
+    #[test]
+    fn enpassant_target_correct_white() {
+        let long_algebraic_move = SimpleMove {
+            orig: algebraic_to_u64("h4").unwrap(),
+            dest: algebraic_to_u64("g3").unwrap(),
+            promotion: 0,
+        };
+
+        let pawns = algebraic_to_u64("h4").unwrap() | algebraic_to_u64("g4").unwrap();
+        let empty = !pawns;
+
+        assert_eq!(long_algebraic_move.en_passant_target(pawns, empty), algebraic_to_u64("g4").unwrap());
     }
 }

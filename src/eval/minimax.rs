@@ -63,30 +63,21 @@ impl MinimaxEval for Game {
         let mut beta = beta;
 
         let pseudolegal_moves = self.generate_pseudolegal_moves();
+
         let mut first_pass_evaluations = pseudolegal_moves
             .par_iter()
-            .map(|lmove| MoveEvaluation(lmove, get_or_write_eval(&self.apply_move(lmove))))
+            .map(|lmove| MoveEvaluation(&self, get_or_write_eval(&self.apply_move(lmove))))
             .collect::<Vec<MoveEvaluation>>();
-
-        match self.turn {
-            Turn::White => first_pass_evaluations.sort_unstable_by(|a, b| b.cmp(a)),
-            Turn::Black => first_pass_evaluations.sort_unstable(),
-        }
 
         match self.turn {
             Turn::White => {
                 let mut highest_val = i32::MIN;
                 first_pass_evaluations.sort_unstable_by(|a, b| b.cmp(a));
-                // Considers the top 6 and bottom 2 move evals
-                for eval in first_pass_evaluations[..6.min(first_pass_evaluations.len())]
-                    .iter()
-                    .chain(
-                        first_pass_evaluations[first_pass_evaluations.len().saturating_sub(2)..]
-                            .iter(),
-                    )
+
+                for eval in first_pass_evaluations
+                    .iter().take(3 + depth as usize)
                 {
-                    let value = self
-                        .apply_move(&eval.0)
+                    let value = eval.0
                         .minimax_eval(depth - 1, alpha, beta);
                     highest_val = cmp::max(value, highest_val);
                     alpha = cmp::max(highest_val, alpha);
@@ -99,16 +90,11 @@ impl MinimaxEval for Game {
             Turn::Black => {
                 let mut lowest_val = i32::MAX;
                 first_pass_evaluations.sort_unstable();
-                // Considers the top 6 and bottom 2 move evals
-                for eval in first_pass_evaluations[..6.min(first_pass_evaluations.len())]
-                    .iter()
-                    .chain(
-                        first_pass_evaluations[first_pass_evaluations.len().saturating_sub(2)..]
-                            .iter(),
-                    )
+
+                for eval in first_pass_evaluations
+                    .iter().take(3 + depth as usize)
                 {
-                    let value = self
-                        .apply_move(&eval.0)
+                    let value = eval.0                        
                         .minimax_eval(depth - 1, alpha, beta);
                     lowest_val = cmp::min(value, lowest_val);
                     beta = cmp::min(lowest_val, beta);
@@ -123,7 +109,7 @@ impl MinimaxEval for Game {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
-struct MoveEvaluation<'a>(&'a SimpleMove, i32);
+struct MoveEvaluation<'a>(&'a Game, i32);
 
 impl<'a> PartialOrd for MoveEvaluation<'a> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {

@@ -3,7 +3,6 @@ use center::CenterEval;
 use development::DevelopmentEval;
 use king_safety::KingSafetyEval;
 use knights::KnightEval;
-use nn::NeuralNetEval;
 use pawn_structure::PawnStructureEval;
 use piece::PieceEval;
 use rooks::RookEval;
@@ -62,6 +61,7 @@ impl Eval for Game {
 
         #[cfg(feature = "pytorch")]
         {
+            use nn::NeuralNetEval;
             value += self.calculate_neural_network_evaluation();
         }
 
