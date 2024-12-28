@@ -321,12 +321,11 @@ impl Board {
 
     #[inline(always)]
     pub fn handle_promotions(&mut self, lmove: &SimpleMove) {
-        let black_promotion = self.black[0] & FIRST_RANK;
-        let white_promotion = self.white[0] & EIGHTH_RANK;
-        self.black[0] ^= black_promotion;
-        self.white[0] ^= white_promotion;
-        self.black[lmove.promotion] ^= black_promotion;
-        self.white[lmove.promotion] ^= white_promotion;
+        self.black[lmove.promotion] |= self.black[0] & FIRST_RANK;
+        self.white[lmove.promotion] |= self.white[0] & EIGHTH_RANK;
+
+        self.black[0] &= !FIRST_RANK;
+        self.white[0] &= !EIGHTH_RANK;
     }
 }
 
