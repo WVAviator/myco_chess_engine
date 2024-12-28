@@ -3,6 +3,7 @@ use center::CenterEval;
 use development::DevelopmentEval;
 use king_safety::KingSafetyEval;
 use knights::KnightEval;
+use nn::NeuralNetEval;
 use pawn_structure::PawnStructureEval;
 use piece::PieceEval;
 use rooks::RookEval;
@@ -14,6 +15,10 @@ mod center;
 mod development;
 mod king_safety;
 mod knights;
+
+#[cfg(feature = "pytorch")]
+mod nn;
+
 mod pawn_structure;
 mod piece;
 mod rooks;
@@ -31,6 +36,7 @@ pub trait Eval:
     + PawnStructureEval
 {
     fn evaluate_position(&self) -> i32;
+    fn evaluate_position_ml(&self) -> i32;
 }
 
 impl Eval for Game {
@@ -45,6 +51,19 @@ impl Eval for Game {
         // value += self.calculate_center_value();
         // value += self.calculate_knights_value();
         value += self.calculate_pawn_structure_value();
+
+        value
+    }
+
+    fn evaluate_position_ml(&self) -> i32 {
+        // Separate because it's slower
+
+        let mut value = 0;
+
+        #[cfg(feature = "pytorch")]
+        {
+            value += self.calculate_neural_network_evaluation();
+        }
 
         value
     }

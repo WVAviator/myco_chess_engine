@@ -2,7 +2,7 @@ use std::ops::Deref;
 
 use tch::Tensor;
 
-use crate::cgame::game::{Game, Turn};
+use crate::game::game::{Game, Turn};
 
 #[derive(Debug, PartialEq)]
 pub struct BoardTensor(Tensor);
@@ -29,19 +29,19 @@ impl From<&Game> for BoardTensor {
             }
         };
 
-        populate_plane(&mut cnn_input, 0, game.board.white_pawns, 1.0);
-        populate_plane(&mut cnn_input, 1, game.board.white_knights, 1.0);
-        populate_plane(&mut cnn_input, 2, game.board.white_bishops, 1.0);
-        populate_plane(&mut cnn_input, 3, game.board.white_rooks, 1.0);
-        populate_plane(&mut cnn_input, 4, game.board.white_queens, 1.0);
-        populate_plane(&mut cnn_input, 5, game.board.white_king, 1.0);
+        populate_plane(&mut cnn_input, 0, game.board.white[0], 1.0);
+        populate_plane(&mut cnn_input, 1, game.board.white[2], 1.0);
+        populate_plane(&mut cnn_input, 2, game.board.white[3], 1.0);
+        populate_plane(&mut cnn_input, 3, game.board.white[1], 1.0);
+        populate_plane(&mut cnn_input, 4, game.board.white[4], 1.0);
+        populate_plane(&mut cnn_input, 5, game.board.white[5], 1.0);
 
-        populate_plane(&mut cnn_input, 0, game.board.black_pawns, -1.0);
-        populate_plane(&mut cnn_input, 1, game.board.black_knights, -1.0);
-        populate_plane(&mut cnn_input, 2, game.board.black_bishops, -1.0);
-        populate_plane(&mut cnn_input, 3, game.board.black_rooks, -1.0);
-        populate_plane(&mut cnn_input, 4, game.board.black_queens, -1.0);
-        populate_plane(&mut cnn_input, 5, game.board.black_king, -1.0);
+        populate_plane(&mut cnn_input, 0, game.board.black[0], -1.0);
+        populate_plane(&mut cnn_input, 1, game.board.black[2], -1.0);
+        populate_plane(&mut cnn_input, 2, game.board.black[3], -1.0);
+        populate_plane(&mut cnn_input, 3, game.board.black[1], -1.0);
+        populate_plane(&mut cnn_input, 4, game.board.black[4], -1.0);
+        populate_plane(&mut cnn_input, 5, game.board.black[5], -1.0);
 
         if game.en_passant != 0 {
             let index = (64 * 6) + game.en_passant.trailing_zeros() as usize;

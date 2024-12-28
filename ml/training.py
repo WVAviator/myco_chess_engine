@@ -4,7 +4,7 @@ from read_pgn import read_pgn_in_batches
 import torch
 from torch.utils.data import DataLoader, Dataset
 
-def train_on_pgn(filepath, model, batch_size=5000, num_epochs=10, device='cuda' if torch.cuda.is_available() else 'cpu'):
+def train_on_pgn(filepath, model, batch_size=500, num_epochs=24, device='cuda' if torch.cuda.is_available() else 'cpu'):
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
     criterion = torch.nn.L1Loss()
     model.to(device)

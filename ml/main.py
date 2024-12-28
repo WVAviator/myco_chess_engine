@@ -23,6 +23,8 @@ def main():
 
     train_on_pgn(pgn_file, model)
 
+    save_model(model)
+
 
 def save_model(model: nn.Module):
     model.eval()

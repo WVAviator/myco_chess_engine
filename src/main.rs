@@ -183,18 +183,8 @@ fn extract_moves(command: &str) -> Result<Game, anyhow::Error> {
     Err(anyhow!("could not extract moves from startpos"))
 }
 
-#[cfg(not(feature = "pytorch"))]
 fn get_best_move(game: &Game) -> Result<SimpleMove, anyhow::Error> {
-    let engine = MinmaxEngine::new(game, 10, 13);
-    let best_move = engine.evaluate_best_move();
-    Ok(best_move)
-}
-
-#[cfg(feature = "pytorch")]
-fn get_best_move(game: &Game) -> Result<SimpleMove, anyhow::Error> {
-    use myco_chess_engine::engine::minmax_ml::MinmaxMLEngine;
-
-    let engine = MinmaxMLEngine::new(game, 10, 13);
+    let engine = MinmaxEngine::new(game, 8, 13);
     let best_move = engine.evaluate_best_move();
     Ok(best_move)
 }

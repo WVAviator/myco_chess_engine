@@ -7,9 +7,9 @@ use std::{
 use rayon::prelude::*;
 
 use crate::{
-    game::game::{Game, Turn},
     database::{connection::get_connection, retrieve::MoveRetrieval},
     eval::{minimax::MinimaxEval, Eval},
+    game::game::{Game, Turn},
     movegen::MoveGen,
     moves::simple_move::SimpleMove,
 };
@@ -43,12 +43,10 @@ impl<'a> MinmaxEngine<'a> {
         let mut first_pass_evaluations = legal_moves
             .par_iter()
             .map(|lmove| {
-                MoveEvaluation(
-                    lmove,
-                    self.game
-                        .apply_move(lmove)
-                        .minimax_eval(3, i32::MIN, i32::MAX),
-                )
+                MoveEvaluation(lmove, {
+                    let next_turn = self.game.apply_move(lmove);
+                    next_turn.minimax_eval(3, i32::MIN, i32::MAX) + next_turn.evaluate_position_ml()
+                })
             })
             .collect::<Vec<MoveEvaluation>>();
 
@@ -63,14 +61,11 @@ impl<'a> MinmaxEngine<'a> {
                 .take(8)
                 .map(|eval| {
                     println!("info currmove {}", eval.0.to_algebraic());
-                    MoveEvaluation(
-                        eval.0,
-                        self.game.apply_move(eval.0).minimax_eval(
-                            self.depth - 1,
-                            i32::MIN,
-                            i32::MAX,
-                        ),
-                    )
+                    MoveEvaluation(eval.0, {
+                        let next_turn = self.game.apply_move(eval.0);
+                        next_turn.minimax_eval(self.depth - 1, i32::MIN, i32::MAX)
+                            + next_turn.evaluate_position_ml()
+                    })
                 })
                 .max()
                 .expect("no moves to evaluate"),

@@ -1,2 +1,5 @@
 [env]
 LIBTORCH_USE_PYTORCH='1'
+
+[build]
+rustflags = ["--cfg", "feature=\"pytorch\""]
