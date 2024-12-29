@@ -265,8 +265,8 @@ impl Board {
     }
 
     pub fn apply_move(&mut self, lmove: &SimpleMove) {
-        self.handle_castling(&lmove);
-        self.handle_enpassant(&lmove);
+        self.handle_castling(lmove);
+        self.handle_enpassant(lmove);
 
         let move_shift =
             (64 + (lmove.orig.trailing_zeros() as i32 - lmove.dest.trailing_zeros() as i32)) as u64;
@@ -285,7 +285,7 @@ impl Board {
             self.black ^= (self.black & orig) | (self.black & orig).rotate_right(move_shift);
         }
 
-        self.handle_promotions(&lmove);
+        self.handle_promotions(lmove);
     }
 
     #[inline(always)]

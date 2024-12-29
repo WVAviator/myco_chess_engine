@@ -23,17 +23,22 @@ mod integration_tests {
     use super::*;
 
     fn perft(depth: u8, game: Game) -> usize {
+        println!("perft depth {}", depth);
         if depth == 0 {
+            println!("returning 1");
             return 1;
         }
 
+        println!("generating moves... ");
         let moves = game.generate_legal_moves();
+        println!("generated {} legal moves", moves.len());
 
         moves
-            .into_par_iter() // Parallelize over legal moves
+            .into_par_iter()
             .map(|lmove| {
-                let new_game = game.apply_move(&lmove); // Apply the move
-                perft(depth - 1, new_game) // Recursive call for child nodes
+                let new_game = game.apply_move(lmove);
+                println!("applied move {}", lmove);
+                perft(depth - 1, new_game)
             })
             .sum()
     }

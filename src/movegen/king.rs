@@ -298,7 +298,7 @@ mod test {
     fn cannot_castle_while_in_check_white() {
         let moves_string =
             "g1f3 d7d5 b1c3 g8f6 d2d4 c7c5 c1g5 f6e4 e2e3 d8a5 f1b5 b8d7 d1b1 e4c3 b2c3 a5c3";
-        let game = Game::from_uci_startpos(&moves_string).unwrap();
+        let game = Game::from_uci_startpos(moves_string).unwrap();
         let mut moves = SmallVec::new();
         game.generate_pseudolegal_king_moves(&mut moves);
 

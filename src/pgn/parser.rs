@@ -22,9 +22,8 @@ pub fn parse_pgn_file(file_path: &str) -> Result<Vec<PGN>, anyhow::Error> {
             .next()
             .ok_or(anyhow!("expected movetext to go with metadata"))?;
 
-        match PGN::new(metadata, movetext) {
-            Ok(pgn) => pgn_list.push(pgn),
-            Err(_) => {}
+        if let Ok(pgn) = PGN::new(metadata, movetext) {
+            pgn_list.push(pgn);
         }
     }
 

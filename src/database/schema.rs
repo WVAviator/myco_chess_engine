@@ -46,7 +46,7 @@ impl MovesEntry {
     pub fn find_by_hash(connection: &Connection, hash: u64) -> Result<Option<Self>, anyhow::Error> {
         let mut stmt = connection.prepare("SELECT move FROM moves WHERE hash = ?1")?;
         let moves = stmt
-            .query_map([hash as i64], |row| Ok(row.get(0)?))?
+            .query_map([hash as i64], |row| row.get(0))?
             .collect::<Result<Vec<String>, rusqlite::Error>>()?;
 
         if moves.is_empty() {

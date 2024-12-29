@@ -32,11 +32,11 @@ fn compute_bishop_magic_map() -> SmallVec<[MagicHashMap; 64]> {
 }
 
 pub fn get_rook_magic_map() -> &'static SmallVec<[MagicHashMap; 64]> {
-    ROOK_MAGIC_MAP.get_or_init(|| compute_rook_magic_map())
+    ROOK_MAGIC_MAP.get_or_init(compute_rook_magic_map)
 }
 
 pub fn get_bishop_magic_map() -> &'static SmallVec<[MagicHashMap; 64]> {
-    BISHOP_MAGIC_MAP.get_or_init(|| compute_bishop_magic_map())
+    BISHOP_MAGIC_MAP.get_or_init(compute_bishop_magic_map)
 }
 
 fn generate_rook_magic_hashmap(rook: u64) -> MagicHashMap {
@@ -54,12 +54,12 @@ fn generate_rook_magic_hashmap(rook: u64) -> MagicHashMap {
         for index in 0..blocker_subsets.len() {
             let blockers = blocker_subsets[index];
             let moveset = movesets[index];
-            if let Err(_) = magic_hashmap.set(blockers, moveset) {
+            if magic_hashmap.set(blockers, moveset).is_err() {
                 failure = true;
                 break;
             }
         }
-        if failure == false {
+        if !failure {
             return magic_hashmap;
         }
     }
@@ -80,12 +80,12 @@ fn generate_bishop_magic_hashmap(bishop: u64) -> MagicHashMap {
         for index in 0..blocker_subsets.len() {
             let blockers = blocker_subsets[index];
             let moveset = movesets[index];
-            if let Err(_) = magic_hashmap.set(blockers, moveset) {
+            if magic_hashmap.set(blockers, moveset).is_err() {
                 failure = true;
                 break;
             }
         }
-        if failure == false {
+        if !failure {
             return magic_hashmap;
         }
     }

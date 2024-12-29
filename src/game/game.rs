@@ -28,10 +28,7 @@ pub struct Game {
 
 impl Game {
     pub fn new_default() -> Self {
-        let game =
-            Game::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap();
-
-        game
+        Game::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1").unwrap()
     }
     pub fn from_fen(fen_str: &str) -> Result<Self, anyhow::Error> {
         let mut fen_iter = fen_str.split(" ");
@@ -118,8 +115,7 @@ impl Game {
     pub fn from_uci_startpos(moves_list: &str) -> Result<Self, anyhow::Error> {
         let moves: Vec<SimpleMove> = moves_list
             .split(' ')
-            .map(|m| SimpleMove::from_algebraic(m))
-            .into_iter()
+            .map(SimpleMove::from_algebraic)
             .collect::<Result<Vec<SimpleMove>, anyhow::Error>>()?;
 
         let mut game = Game::new_default();
@@ -152,14 +148,6 @@ impl Game {
         self.generate_vision(&self.turn.other()) & self.board.king(&self.turn) != 0
     }
 
-    pub fn is_checkmate(&self) -> bool {
-        self.king_in_check() && self.generate_legal_moves().is_empty()
-    }
-
-    pub fn is_stalemate(&self) -> bool {
-        !self.king_in_check() && self.generate_legal_moves().is_empty()
-    }
-
     pub fn apply_move(&self, lmove: &SimpleMove) -> Game {
         let mut new_game = self.clone();
 
@@ -175,8 +163,9 @@ impl Game {
         }
 
         let is_pawn_double_advance = is_pawn_move
-            && lmove.orig & (SECOND_RANK | SEVENTH_RANK) != 0
-            && lmove.dest & (FOURTH_RANK | FIFTH_RANK) != 0;
+            && (lmove.orig & (SECOND_RANK | SEVENTH_RANK))
+                | (lmove.dest & (FOURTH_RANK | FIFTH_RANK))
+                != 0;
 
         if is_pawn_double_advance {
             new_game.en_passant =
@@ -339,8 +328,8 @@ mod test {
         let fen_str = "r1b1kb1r/pp1npppp/8/1Bpp2B1/3P4/2q1PN2/P1P2PPP/RQ2K2R w KQkq - 0 17";
 
         assert_eq!(
-            Game::from_uci_startpos(&moves_list).unwrap(),
-            Game::from_fen(&fen_str).unwrap()
+            Game::from_uci_startpos(moves_list).unwrap(),
+            Game::from_fen(fen_str).unwrap()
         )
     }
 }

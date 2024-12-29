@@ -12,7 +12,7 @@ pub fn raycast_rook(rook: u64, blockers: u64) -> Result<u64, anyhow::Error> {
     // North
     let mut ray = rook & !EIGHTH_RANK;
     while ray != 0 {
-        ray = ray << 8;
+        ray <<= 8;
         result |= ray;
         ray &= !EIGHTH_RANK;
         ray &= !blockers;
@@ -21,7 +21,7 @@ pub fn raycast_rook(rook: u64, blockers: u64) -> Result<u64, anyhow::Error> {
     // South
     let mut ray = rook & !FIRST_RANK;
     while ray != 0 {
-        ray = ray >> 8;
+        ray >>= 8;
         result |= ray;
         ray &= !FIRST_RANK;
         ray &= !blockers;
@@ -30,7 +30,7 @@ pub fn raycast_rook(rook: u64, blockers: u64) -> Result<u64, anyhow::Error> {
     // East
     let mut ray = rook & !H_FILE;
     while ray != 0 {
-        ray = ray << 1;
+        ray <<= 1;
         result |= ray;
         ray &= !H_FILE;
         ray &= !blockers;
@@ -39,7 +39,7 @@ pub fn raycast_rook(rook: u64, blockers: u64) -> Result<u64, anyhow::Error> {
     // West
     let mut ray = rook & !A_FILE;
     while ray != 0 {
-        ray = ray >> 1;
+        ray >>= 1;
         result |= ray;
         ray &= !A_FILE;
         ray &= !blockers;
@@ -58,7 +58,7 @@ pub fn raycast_bishop(bishop: u64, blockers: u64) -> Result<u64, anyhow::Error> 
     // Northeast
     let mut ray = bishop & !(EIGHTH_RANK | H_FILE);
     while ray != 0 {
-        ray = ray << 9;
+        ray <<= 9;
         result |= ray;
         ray &= !(EIGHTH_RANK | H_FILE);
         ray &= !blockers;
@@ -67,7 +67,7 @@ pub fn raycast_bishop(bishop: u64, blockers: u64) -> Result<u64, anyhow::Error> 
     // Southeast
     let mut ray = bishop & !(FIRST_RANK | H_FILE);
     while ray != 0 {
-        ray = ray >> 7;
+        ray >>= 7;
         result |= ray;
         ray &= !(FIRST_RANK | H_FILE);
         ray &= !blockers;
@@ -76,7 +76,7 @@ pub fn raycast_bishop(bishop: u64, blockers: u64) -> Result<u64, anyhow::Error> 
     // Southwest
     let mut ray = bishop & !(FIRST_RANK | A_FILE);
     while ray != 0 {
-        ray = ray >> 9;
+        ray >>= 9;
         result |= ray;
         ray &= !(FIRST_RANK | A_FILE);
         ray &= !blockers;
@@ -85,7 +85,7 @@ pub fn raycast_bishop(bishop: u64, blockers: u64) -> Result<u64, anyhow::Error> 
     // Northwest
     let mut ray = bishop & !(EIGHTH_RANK | A_FILE);
     while ray != 0 {
-        ray = ray << 7;
+        ray <<= 7;
         result |= ray;
         ray &= !(EIGHTH_RANK | A_FILE);
         ray &= !blockers;

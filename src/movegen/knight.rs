@@ -1,12 +1,7 @@
 use smallvec::SmallVec;
 
 use crate::{
-    game::{
-        constants::{
-            A_FILE, B_FILE, EIGHTH_RANK, FIRST_RANK, G_FILE, H_FILE, SECOND_RANK, SEVENTH_RANK,
-        },
-        game::{Game, Turn},
-    },
+    game::game::{Game, Turn},
     moves::simple_move::SimpleMove,
 };
 
@@ -128,6 +123,9 @@ pub const KNIGHT_MOVES: [u64; 64] = [
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::game::constants::{
+        A_FILE, B_FILE, EIGHTH_RANK, FIRST_RANK, G_FILE, H_FILE, SECOND_RANK, SEVENTH_RANK,
+    };
 
     #[test]
     fn calculate_knight_moves() {

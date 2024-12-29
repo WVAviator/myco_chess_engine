@@ -124,11 +124,11 @@ impl PGN {
         let re = Regex::new(r"[\d]+\.")?;
 
         let algebraic_moves = re.replace_all(movetext, "");
-        let mut algebraic_moves = algebraic_moves.split_whitespace();
+        let algebraic_moves = algebraic_moves.split_whitespace();
         let mut moves = Vec::new();
         let mut game = Game::new_default();
 
-        while let Some(next_move) = algebraic_moves.next() {
+        for next_move in algebraic_moves {
             match next_move {
                 "1/2-1/2" => continue,
                 "1-0" => continue,

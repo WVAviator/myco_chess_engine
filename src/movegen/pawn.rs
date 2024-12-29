@@ -30,7 +30,7 @@ impl PawnMoveGen for Game {
 
         vision
     }
-    fn generate_psuedolegal_pawn_moves(&self, mut moves: &mut SmallVec<[SimpleMove; 256]>) {
+    fn generate_psuedolegal_pawn_moves(&self, moves: &mut SmallVec<[SimpleMove; 256]>) {
         match self.turn {
             Turn::White => {
                 let pawns = self.board.white[0];

@@ -18,7 +18,7 @@ mod test {
     #[test]
     fn gets_all_subsets_contiguous_bits() {
         let mask = 0b0000_0111;
-        let expected = vec![0, 1, 2, 3, 4, 5, 6, 7];
+        let expected = [0, 1, 2, 3, 4, 5, 6, 7];
         let subsets = calculate_subsets(mask);
 
         assert_eq!(subsets.len(), expected.len());
@@ -31,7 +31,7 @@ mod test {
     #[test]
     fn gets_all_subsets_noncontiguous_bits() {
         let mask = 0b1000_0011;
-        let expected = vec![0, 1, 2, 3, 128, 129, 130, 131];
+        let expected = [0, 1, 2, 3, 128, 129, 130, 131];
         let subsets = calculate_subsets(mask);
 
         assert_eq!(subsets.len(), expected.len());

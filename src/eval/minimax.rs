@@ -10,7 +10,6 @@ use crate::{
     game::game::{Game, Turn},
     hash::zobrist::ZobristHash,
     movegen::MoveGen,
-    moves::simple_move::SimpleMove,
 };
 
 use super::Eval;
@@ -66,7 +65,7 @@ impl MinimaxEval for Game {
 
         let mut first_pass_evaluations = pseudolegal_moves
             .par_iter()
-            .map(|lmove| MoveEvaluation(&self, get_or_write_eval(&self.apply_move(lmove))))
+            .map(|lmove| MoveEvaluation(self, get_or_write_eval(&self.apply_move(lmove))))
             .collect::<Vec<MoveEvaluation>>();
 
         match self.turn {
@@ -74,11 +73,8 @@ impl MinimaxEval for Game {
                 let mut highest_val = i32::MIN;
                 first_pass_evaluations.sort_unstable_by(|a, b| b.cmp(a));
 
-                for eval in first_pass_evaluations
-                    .iter().take(3 + depth as usize)
-                {
-                    let value = eval.0
-                        .minimax_eval(depth - 1, alpha, beta);
+                for eval in first_pass_evaluations.iter().take(3 + depth as usize) {
+                    let value = eval.0.minimax_eval(depth - 1, alpha, beta);
                     highest_val = cmp::max(value, highest_val);
                     alpha = cmp::max(highest_val, alpha);
                     if beta <= alpha {
@@ -91,11 +87,8 @@ impl MinimaxEval for Game {
                 let mut lowest_val = i32::MAX;
                 first_pass_evaluations.sort_unstable();
 
-                for eval in first_pass_evaluations
-                    .iter().take(3 + depth as usize)
-                {
-                    let value = eval.0                        
-                        .minimax_eval(depth - 1, alpha, beta);
+                for eval in first_pass_evaluations.iter().take(3 + depth as usize) {
+                    let value = eval.0.minimax_eval(depth - 1, alpha, beta);
                     lowest_val = cmp::min(value, lowest_val);
                     beta = cmp::min(lowest_val, beta);
                     if beta <= alpha {
@@ -111,13 +104,13 @@ impl MinimaxEval for Game {
 #[derive(Debug, PartialEq, Eq, Clone)]
 struct MoveEvaluation<'a>(&'a Game, i32);
 
-impl<'a> PartialOrd for MoveEvaluation<'a> {
+impl PartialOrd for MoveEvaluation<'_> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.1.partial_cmp(&other.1)
+        Some(self.1.cmp(&other.1))
     }
 }
 
-impl<'a> Ord for MoveEvaluation<'a> {
+impl Ord for MoveEvaluation<'_> {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.1.cmp(&other.1)
     }

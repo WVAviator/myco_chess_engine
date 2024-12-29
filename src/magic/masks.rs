@@ -149,7 +149,6 @@ pub const BISHOP_MASKS: [u64; 64] = [
 #[allow(dead_code)]
 fn generate_rook_masks() {
     let rook_masks = (0..64)
-        .into_iter()
         .map(|sq| calculate_rook_mask(1 << sq).unwrap().to_string())
         .collect::<Vec<String>>();
     println!(
@@ -161,7 +160,6 @@ fn generate_rook_masks() {
 #[allow(dead_code)]
 fn generate_bishop_masks() {
     let bishop_masks = (0..64)
-        .into_iter()
         .map(|sq| calculate_bishop_mask(1 << sq).unwrap().to_string())
         .collect::<Vec<String>>();
     println!(
@@ -181,7 +179,7 @@ fn calculate_rook_mask(square: u64) -> Result<u64, anyhow::Error> {
     // North
     let mut ray = square & !EIGHTH_RANK;
     while ray != 0 {
-        ray = ray << 8;
+        ray <<= 8;
         ray &= !EIGHTH_RANK;
         result |= ray;
     }
@@ -189,7 +187,7 @@ fn calculate_rook_mask(square: u64) -> Result<u64, anyhow::Error> {
     // South
     let mut ray = square & !FIRST_RANK;
     while ray != 0 {
-        ray = ray >> 8;
+        ray >>= 8;
         ray &= !FIRST_RANK;
         result |= ray;
     }
@@ -197,7 +195,7 @@ fn calculate_rook_mask(square: u64) -> Result<u64, anyhow::Error> {
     // East
     let mut ray = square & !H_FILE;
     while ray != 0 {
-        ray = ray << 1;
+        ray <<= 1;
         ray &= !H_FILE;
         result |= ray;
     }
@@ -205,7 +203,7 @@ fn calculate_rook_mask(square: u64) -> Result<u64, anyhow::Error> {
     // West
     let mut ray = square & !A_FILE;
     while ray != 0 {
-        ray = ray >> 1;
+        ray >>= 1;
         ray &= !A_FILE;
         result |= ray;
     }
@@ -224,7 +222,7 @@ fn calculate_bishop_mask(square: u64) -> Result<u64, anyhow::Error> {
     // Northeast
     let mut ray = square & !(EIGHTH_RANK | H_FILE);
     while ray != 0 {
-        ray = ray << 9;
+        ray <<= 9;
         ray &= !(EIGHTH_RANK | H_FILE);
         result |= ray;
     }
@@ -232,7 +230,7 @@ fn calculate_bishop_mask(square: u64) -> Result<u64, anyhow::Error> {
     // Southeast
     let mut ray = square & !(FIRST_RANK | H_FILE);
     while ray != 0 {
-        ray = ray >> 7;
+        ray >>= 7;
         ray &= !(FIRST_RANK | H_FILE);
         result |= ray;
     }
@@ -240,7 +238,7 @@ fn calculate_bishop_mask(square: u64) -> Result<u64, anyhow::Error> {
     // Southwest
     let mut ray = square & !(FIRST_RANK | A_FILE);
     while ray != 0 {
-        ray = ray >> 9;
+        ray >>= 9;
         ray &= !(FIRST_RANK | A_FILE);
         result |= ray;
     }
@@ -248,7 +246,7 @@ fn calculate_bishop_mask(square: u64) -> Result<u64, anyhow::Error> {
     // Northwest
     let mut ray = square & !(EIGHTH_RANK | A_FILE);
     while ray != 0 {
-        ray = ray << 7;
+        ray <<= 7;
         ray &= !(EIGHTH_RANK | A_FILE);
         result |= ray;
     }

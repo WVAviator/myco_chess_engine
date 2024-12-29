@@ -41,6 +41,12 @@ impl MagicHashMap {
     }
 }
 
+impl Default for MagicHashMap {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;

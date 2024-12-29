@@ -1,6 +1,5 @@
 use std::{
     cmp::{max, min},
-    i32,
     time::{Duration, Instant},
 };
 
@@ -87,52 +86,7 @@ impl<'a> MinmaxEngine<'a> {
                 .expect("no moves to evaluate"),
         };
 
-        return best_move.0.clone();
-
-        // let mut evaluations: Vec<MoveEvaluation<'_>> = legal_moves
-        //     .into_par_iter()
-        //     .map(|move_eval| {
-        //         println!("info currmove {}", move_eval.0.to_algebraic());
-        //         MoveEvaluation(
-        //             move_eval.0,
-        //             self.minmax(
-        //                 self.depth,
-        //                 self.game.apply_move(move_eval.0),
-        //                 i32::MIN,
-        //                 i32::MAX,
-        //             ),
-        //         )
-        //     })
-        //     .collect();
-
-        // evaluations.sort_unstable();
-
-        // let evaluation = match self.game.turn {
-        //     Turn::White => {
-        //         println!(
-        //             "info string selected move evaluation {}",
-        //             evaluations.last().unwrap().1
-        //         );
-        //         evaluations
-        //             .last()
-        //             .expect("info string no legal moves available")
-        //             .0
-        //             .clone()
-        //     }
-        //     Turn::Black => {
-        //         println!(
-        //             "info string selected move evaluation {}",
-        //             evaluations.first().unwrap().1
-        //         );
-        //         evaluations
-        //             .first()
-        //             .expect("info string no legal moves available")
-        //             .0
-        //             .clone()
-        //     }
-        // };
-
-        // evaluation
+        best_move.0.clone()
     }
 
     fn minmax(&self, depth: u8, game: Game, mut alpha: i32, mut beta: i32) -> i32 {

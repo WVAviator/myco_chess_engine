@@ -168,13 +168,13 @@ impl ContextualMove {
                 }
 
                 match chars.next() {
-                    Some(file) if !file.is_digit(10) => {
+                    Some(file) if !file.is_ascii_digit() => {
                         ambiguous_file = get_file(&file);
                         if let Some(rank) = chars.next() {
                             ambiguous_rank = get_rank(&rank);
                         }
                     }
-                    Some(rank) if rank.is_digit(10) => ambiguous_rank = get_rank(&rank),
+                    Some(rank) if rank.is_ascii_digit() => ambiguous_rank = get_rank(&rank),
                     Some(c) => bail!("unexpected character {} in move {}", c, move_str),
                     None => {}
                 }
@@ -277,7 +277,7 @@ mod test {
         let game = Game::new_default();
         let cmove = ContextualMove::from_algebraic("e4", &game).unwrap();
         assert_eq!(cmove.piece, PieceType::Pawn);
-        assert_eq!(cmove.capture, false);
+        assert!(!cmove.capture);
         assert_eq!(cmove.orig, algebraic_to_u64("e2").unwrap());
         assert_eq!(cmove.dest, algebraic_to_u64("e4").unwrap());
     }
@@ -288,7 +288,7 @@ mod test {
         let cmove = ContextualMove::from_algebraic("g1=Q", &game).unwrap();
 
         assert_eq!(cmove.piece, PieceType::Pawn);
-        assert_eq!(cmove.capture, false);
+        assert!(!cmove.capture);
         assert_eq!(cmove.orig, algebraic_to_u64("g2").unwrap());
         assert_eq!(cmove.dest, algebraic_to_u64("g1").unwrap());
         assert_eq!(cmove.promotion, Some(PieceType::Queen));
@@ -300,7 +300,7 @@ mod test {
         let cmove = ContextualMove::from_algebraic("Nbd5+", &game).unwrap();
 
         assert_eq!(cmove.piece, PieceType::Knight);
-        assert_eq!(cmove.capture, false);
+        assert!(!cmove.capture);
         assert_eq!(cmove.orig, algebraic_to_u64("b6").unwrap());
         assert_eq!(cmove.dest, algebraic_to_u64("d5").unwrap());
     }
@@ -311,7 +311,7 @@ mod test {
         let cmove = ContextualMove::from_algebraic("Nxc4", &game).unwrap();
 
         assert_eq!(cmove.piece, PieceType::Knight);
-        assert_eq!(cmove.capture, true);
+        assert!(cmove.capture);
         assert_eq!(cmove.orig, algebraic_to_u64("b6").unwrap());
         assert_eq!(cmove.dest, algebraic_to_u64("c4").unwrap());
     }
@@ -322,10 +322,10 @@ mod test {
         let cmove = ContextualMove::from_algebraic("Nbxd5+", &game).unwrap();
 
         assert_eq!(cmove.piece, PieceType::Knight);
-        assert_eq!(cmove.capture, true);
+        assert!(cmove.capture);
         assert_eq!(cmove.orig, algebraic_to_u64("b6").unwrap());
         assert_eq!(cmove.dest, algebraic_to_u64("d5").unwrap());
-        assert_eq!(cmove.check, true);
+        assert!(cmove.check);
     }
 
     #[test]
@@ -334,7 +334,7 @@ mod test {
         let cmove = ContextualMove::from_algebraic("Qf4f2", &game).unwrap();
 
         assert_eq!(cmove.piece, PieceType::Queen);
-        assert_eq!(cmove.capture, false);
+        assert!(!cmove.capture);
         assert_eq!(cmove.orig, algebraic_to_u64("f4").unwrap());
         assert_eq!(cmove.dest, algebraic_to_u64("f2").unwrap());
     }
@@ -346,7 +346,7 @@ mod test {
         let cmove = ContextualMove::from_algebraic("Bd3", &game).unwrap();
 
         assert_eq!(cmove.piece, PieceType::Bishop);
-        assert_eq!(cmove.capture, false);
+        assert!(!cmove.capture);
         assert_eq!(cmove.orig, algebraic_to_u64("f1").unwrap());
         assert_eq!(cmove.dest, algebraic_to_u64("d3").unwrap());
     }
@@ -359,7 +359,7 @@ mod test {
         let cmove = ContextualMove::from_algebraic("exd5", &game).unwrap();
 
         assert_eq!(cmove.piece, PieceType::Pawn);
-        assert_eq!(cmove.capture, true);
+        assert!(cmove.capture);
         assert_eq!(cmove.orig, algebraic_to_u64("e4").unwrap());
         assert_eq!(cmove.dest, algebraic_to_u64("d5").unwrap());
     }

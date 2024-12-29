@@ -99,7 +99,7 @@ pub fn repl() {
 
     loop {
         let mut buffer = String::new();
-        if let Err(_) = reader.read_line(&mut buffer) {
+        if reader.read_line(&mut buffer).is_err() {
             panic!("info string \"failed to initialize stdin\" ");
         }
 
@@ -144,17 +144,14 @@ pub fn repl() {
 fn process_position_command(cmd: &str) -> Result<Game, anyhow::Error> {
     match cmd
         .split(" ")
-        .skip(1)
-        .next()
+        .nth(1)
         .context("expected 'fen' or 'startpos'")?
     {
         "fen" => {
             let fen_str = extract_fen(cmd).ok_or(anyhow!("missing fen string"))?;
-            return Game::from_fen(&fen_str).context("invalid fen string");
+            Game::from_fen(&fen_str).context("invalid fen string")
         }
-        "startpos" => {
-            return extract_moves(cmd).context("invalid moves list");
-        }
+        "startpos" => extract_moves(cmd).context("invalid moves list"),
         _ => bail!("invalid position command"),
     }
 }

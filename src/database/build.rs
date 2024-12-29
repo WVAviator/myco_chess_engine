@@ -82,7 +82,7 @@ impl DatabaseTrainingSession {
                     }
                 }
                 GameResult::Draw => {
-                    while let Some(m) = moves_iter.next() {
+                    for m in moves_iter {
                         let sm = SimpleMove::from(m);
                         let entry = MovesEntry::new(game.zobrist(), vec![sm.to_algebraic()]);
                         entry.insert(&mut self.connection)?;

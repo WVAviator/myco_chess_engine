@@ -294,14 +294,14 @@ mod test {
     fn simluate_move_false_if_illegal() {
         let game = Game::from_fen("8/8/4k3/8/5N2/8/1K6/4R3 b - - 0 1").unwrap();
         let lmove = SimpleMove::from_algebraic("e6e7").unwrap();
-        assert_eq!(game.check_move_legality(&lmove), false);
+        assert!(!game.check_move_legality(&lmove));
     }
 
     #[test]
     fn simluate_move_true_if_legal() {
         let game = Game::from_fen("8/8/4k3/8/5N2/8/1K6/4R3 b - - 0 1").unwrap();
         let lmove = SimpleMove::from_algebraic("e6f6").unwrap();
-        assert_eq!(game.check_move_legality(&lmove), true);
+        assert!(game.check_move_legality(&lmove));
     }
 
     #[test]
@@ -309,8 +309,8 @@ mod test {
         let game = Game::from_fen("8/8/4k3/8/8/3b4/1K6/4R3 b - - 0 1").unwrap();
         let block_check = SimpleMove::from_algebraic("d3e4").unwrap();
         let allow_check = SimpleMove::from_algebraic("d3f5").unwrap();
-        assert_eq!(game.check_move_legality(&block_check), true);
-        assert_eq!(game.check_move_legality(&allow_check), false);
+        assert!(game.check_move_legality(&block_check));
+        assert!(!game.check_move_legality(&allow_check));
     }
 
     #[ignore = "not a test"]

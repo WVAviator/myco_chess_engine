@@ -74,7 +74,6 @@ pub fn generate_hash_values() {
             true => panic!("Cannot overwrite existing hash values! Delete the old file first. Warning: Any existing database items that rely on zobrist hashes will become useless and will need to be rehashed."),
             false => {
                 let values = (0..781)
-                    .into_iter()
                     .map(|_| random::<u64>().to_string())
                     .collect::<Vec<String>>()
                     .join(", ");

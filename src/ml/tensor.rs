@@ -62,8 +62,8 @@ impl From<&Game> for BoardTensor {
                 }
             }
 
-            for sq in 0..384 {
-                cnn_input[sq] *= -1.0;
+            for sq in cnn_input.iter_mut().take(384) {
+                *sq *= -1.0;
             }
         }
 
