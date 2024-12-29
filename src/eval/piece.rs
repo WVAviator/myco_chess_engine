@@ -1,4 +1,7 @@
-use std::simd::{num::SimdUint, Simd};
+use std::simd::{
+    num::{SimdInt, SimdUint},
+    Simd,
+};
 
 use crate::{
     game::game::{Game, Turn},
@@ -30,8 +33,8 @@ const ZERO: Simd<u64, 8> = Simd::from_array([0, 0, 0, 0, 0, 0, 0, 0]);
 const ONE: Simd<u64, 8> = Simd::from_array([1, 1, 1, 1, 1, 1, 1, 1]);
 
 const PIECE_TABLE_MASK: Simd<u64, 8> = Simd::from_array([1, 1, 1, 1, 1, 1, 0, 0]);
-const PIECE_TABLE_OFFSETS: Simd<usize, 8> = Simd::from_array([0, 64, 128, 192, 256, 320, 0, 0]);
-const ENDGAME_OFFSET: Simd<usize, 8> = Simd::from_array([384, 384, 384, 384, 384, 384, 0, 0]);
+const PIECE_TABLE_OFFSETS: Simd<u64, 8> = Simd::from_array([0, 65, 130, 195, 260, 325, 0, 0]);
+const ENDGAME_OFFSET: Simd<u64, 8> = Simd::from_array([390, 390, 390, 390, 390, 390, 0, 0]);
 
 pub trait PieceEval {
     fn calculate_piece_value(&self) -> i32;
@@ -48,123 +51,74 @@ impl PieceEval for Game {
             || (self.board.all().count_ones() < 20
                 && (self.board.white[4] | self.board.black[4]).count_ones() == 0);
 
-        value += calculate_ps_value(
-            self.board.white[0],
-            &PieceType::Pawn,
-            &Turn::White,
-            is_endgame,
-        );
-        value -= calculate_ps_value(
-            self.board.black[0],
-            &PieceType::Pawn,
-            &Turn::Black,
-            is_endgame,
-        );
-        value += calculate_ps_value(
-            self.board.white[2],
-            &PieceType::Knight,
-            &Turn::White,
-            is_endgame,
-        );
-        value -= calculate_ps_value(
-            self.board.black[2],
-            &PieceType::Knight,
-            &Turn::Black,
-            is_endgame,
-        );
-        value += calculate_ps_value(
-            self.board.white[3],
-            &PieceType::Bishop,
-            &Turn::White,
-            is_endgame,
-        );
-        value -= calculate_ps_value(
-            self.board.black[3],
-            &PieceType::Bishop,
-            &Turn::Black,
-            is_endgame,
-        );
-        value += calculate_ps_value(
-            self.board.white[1],
-            &PieceType::Rook,
-            &Turn::White,
-            is_endgame,
-        );
-        value -= calculate_ps_value(
-            self.board.black[1],
-            &PieceType::Rook,
-            &Turn::Black,
-            is_endgame,
-        );
-        value += calculate_ps_value(
-            self.board.white[4],
-            &PieceType::Queen,
-            &Turn::White,
-            is_endgame,
-        );
-        value -= calculate_ps_value(
-            self.board.black[4],
-            &PieceType::Queen,
-            &Turn::Black,
-            is_endgame,
-        );
-        value += calculate_ps_value(
-            self.board.white[5],
-            &PieceType::King,
-            &Turn::White,
-            is_endgame,
-        );
-        value -= calculate_ps_value(
-            self.board.black[5],
-            &PieceType::King,
-            &Turn::Black,
-            is_endgame,
-        );
+        let mut remaining_white = self.board.white * PIECE_TABLE_MASK;
+        while remaining_white != ZERO {
+            let index = remaining_white.trailing_zeros()
+                + PIECE_TABLE_OFFSETS
+                + match is_endgame {
+                    true => ENDGAME_OFFSET,
+                    false => ZERO,
+                };
+
+            let result = Simd::gather_or(&WHITE_PIECE_TABLES, index.cast(), ZERO.cast());
+            value += result.reduce_sum();
+
+            remaining_white &= remaining_white - ONE;
+        }
+
+        let mut remaining_black = self.board.black * PIECE_TABLE_MASK;
+        while remaining_black != ZERO {
+            let index = remaining_black.trailing_zeros()
+                + PIECE_TABLE_OFFSETS
+                + match is_endgame {
+                    true => ENDGAME_OFFSET,
+                    false => ZERO,
+                };
+
+            let result = Simd::gather_or(&BLACK_PIECE_TABLES, index.cast(), ZERO.cast());
+            value -= result.reduce_sum();
+
+            remaining_black &= remaining_black - ONE;
+        }
 
         value
     }
 }
 
-fn calculate_ps_value(bitboard: u64, piece_type: &PieceType, turn: &Turn, endgame: bool) -> i32 {
-    let mut eval: i32 = 0;
+#[cfg(test)]
+mod test {
+    use super::*;
 
-    let mut bb = bitboard;
-    while bb != 0 {
-        let index = bb.trailing_zeros() as usize;
-        eval += match (piece_type, turn, endgame) {
-            (PieceType::Pawn, Turn::White, false) => PAWN_MG_PS_TABLE[index],
-            (PieceType::Pawn, Turn::White, true) => PAWN_EG_PS_TABLE[index],
-            (PieceType::Pawn, Turn::Black, false) => PAWN_MG_PS_TABLE[64 - index - 1],
-            (PieceType::Pawn, Turn::Black, true) => PAWN_EG_PS_TABLE[64 - index - 1],
-
-            (PieceType::Knight, Turn::White, false) => KNIGHT_MG_PS_TABLE[index],
-            (PieceType::Knight, Turn::White, true) => KNIGHT_EG_PS_TABLE[index],
-            (PieceType::Knight, Turn::Black, false) => KNIGHT_MG_PS_TABLE[64 - index - 1],
-            (PieceType::Knight, Turn::Black, true) => KNIGHT_EG_PS_TABLE[64 - index - 1],
-
-            (PieceType::Bishop, Turn::White, false) => BISHOP_MG_PS_TABLE[index],
-            (PieceType::Bishop, Turn::White, true) => BISHOP_EG_PS_TABLE[index],
-            (PieceType::Bishop, Turn::Black, false) => BISHOP_MG_PS_TABLE[64 - index - 1],
-            (PieceType::Bishop, Turn::Black, true) => BISHOP_EG_PS_TABLE[64 - index - 1],
-
-            (PieceType::Rook, Turn::White, false) => ROOK_MG_PS_TABLE[index],
-            (PieceType::Rook, Turn::White, true) => ROOK_EG_PS_TABLE[index],
-            (PieceType::Rook, Turn::Black, false) => ROOK_MG_PS_TABLE[64 - index - 1],
-            (PieceType::Rook, Turn::Black, true) => ROOK_EG_PS_TABLE[64 - index - 1],
-
-            (PieceType::Queen, Turn::White, false) => QUEEN_MG_PS_TABLE[index],
-            (PieceType::Queen, Turn::White, true) => QUEEN_EG_PS_TABLE[index],
-            (PieceType::Queen, Turn::Black, false) => QUEEN_MG_PS_TABLE[64 - index - 1],
-            (PieceType::Queen, Turn::Black, true) => QUEEN_EG_PS_TABLE[64 - index - 1],
-
-            (PieceType::King, Turn::White, false) => KING_MG_PS_TABLE[index],
-            (PieceType::King, Turn::White, true) => KING_EG_PS_TABLE[index],
-            (PieceType::King, Turn::Black, false) => KING_MG_PS_TABLE[64 - index - 1],
-            (PieceType::King, Turn::Black, true) => KING_EG_PS_TABLE[64 - index - 1],
-        };
-
-        bb &= bb - 1;
+    #[test]
+    fn zero_indicies_set() {
+        assert_eq!(WHITE_PIECE_TABLES[64], 0);
+        assert_eq!(WHITE_PIECE_TABLES[129], 0);
+        assert_eq!(WHITE_PIECE_TABLES[194], 0);
+        assert_eq!(WHITE_PIECE_TABLES[259], 0);
+        assert_eq!(WHITE_PIECE_TABLES[519], 0);
+        assert_eq!(WHITE_PIECE_TABLES[779], 0);
     }
 
-    eval
+    #[test]
+    fn evaluates_simultaneous_piece_values() {
+        // An endgame with two kings and two pawns
+        let game = Game::from_fen("8/5k2/8/1p6/7P/2K5/8/8 w - - 0 1").unwrap();
+
+        // Material value is zero since both sides have the same material
+        // White king on c3: 11 * 1 (white)
+        // White pawn on h4: -1 * 1 (white)
+        // Black king on f7: 4 * -1 (black)
+        // Black pawn on b5: 9 * -1 (black)
+
+        let eval = game.calculate_piece_value();
+        assert_eq!(eval, -3);
+    }
+
+    #[test]
+    fn evaluates_symmetrical_position() {
+        let game = Game::from_fen("b7/5k2/8/3p3p/3P3P/8/5K2/B7 w - - 0 1").unwrap();
+
+        let eval = game.calculate_piece_value();
+        assert_eq!(eval, 0);
+    }
 }

@@ -1,7 +1,8 @@
-const ALL_PIECE_TABLES: [i32; 768] = concat_all_piece_tables();
+const WHITE_PIECE_TABLES: [i32; 780] = concat_white_piece_tables();
+const BLACK_PIECE_TABLES: [i32; 780] = concat_black_piece_tables();
 
-const fn concat_all_piece_tables() -> [i32; 768] {
-    let mut all: [i32; 768] = [0; 768];
+const fn concat_white_piece_tables() -> [i32; 780] {
+    let mut all: [i32; 780] = [0; 780];
     let tables = [
         PAWN_MG_PS_TABLE,
         ROOK_MG_PS_TABLE,
@@ -20,10 +21,47 @@ const fn concat_all_piece_tables() -> [i32; 768] {
     let mut t = 0;
     while t < 12 {
         let mut i = 0;
+        let table_offset = t * 65;
         while i < 64 {
-            all[t * 64 + i] = tables[t][i];
+            all[table_offset + i] = tables[t][i];
             i += 1
         }
+        all[table_offset + 64] = 0;
+        t += 1;
+    }
+
+    all
+}
+
+const fn concat_black_piece_tables() -> [i32; 780] {
+    let mut all: [i32; 780] = [0; 780];
+    let tables = [
+        PAWN_MG_PS_TABLE,
+        ROOK_MG_PS_TABLE,
+        KNIGHT_MG_PS_TABLE,
+        BISHOP_MG_PS_TABLE,
+        QUEEN_MG_PS_TABLE,
+        KING_MG_PS_TABLE,
+        PAWN_EG_PS_TABLE,
+        ROOK_EG_PS_TABLE,
+        KNIGHT_EG_PS_TABLE,
+        BISHOP_EG_PS_TABLE,
+        QUEEN_EG_PS_TABLE,
+        KING_EG_PS_TABLE,
+    ];
+
+    let mut t = 0;
+    while t < 12 {
+        let mut i = 0;
+        let table_offset = t * 65;
+        while i < 64 {
+            let row = 8 - (i / 8) - 1;
+            let col = i % 8;
+            let idx = row * 8 + col;
+            all[table_offset + i] = tables[t][idx];
+            i += 1
+        }
+        all[table_offset + 64] = 0;
         t += 1;
     }
 
