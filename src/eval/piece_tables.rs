@@ -1,3 +1,35 @@
+const ALL_PIECE_TABLES: [i32; 768] = concat_all_piece_tables();
+
+const fn concat_all_piece_tables() -> [i32; 768] {
+    let mut all: [i32; 768] = [0; 768];
+    let tables = [
+        PAWN_MG_PS_TABLE,
+        ROOK_MG_PS_TABLE,
+        KNIGHT_MG_PS_TABLE,
+        BISHOP_MG_PS_TABLE,
+        QUEEN_MG_PS_TABLE,
+        KING_MG_PS_TABLE,
+        PAWN_EG_PS_TABLE,
+        ROOK_EG_PS_TABLE,
+        KNIGHT_EG_PS_TABLE,
+        BISHOP_EG_PS_TABLE,
+        QUEEN_EG_PS_TABLE,
+        KING_EG_PS_TABLE,
+    ];
+
+    let mut t = 0;
+    while t < 12 {
+        let mut i = 0;
+        while i < 64 {
+            all[t * 64 + i] = tables[t][i];
+            i += 1
+        }
+        t += 1;
+    }
+
+    all
+}
+
 #[rustfmt::skip]
 const PAWN_MG_PS_TABLE: [i32; 64] = [
     0,   0,   0,   0,   0,   0,  0,   0,

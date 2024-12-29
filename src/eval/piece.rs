@@ -6,6 +6,8 @@ use crate::{
     util::simd::SimdCountOnes,
 };
 
+include!("./piece_tables.rs");
+
 const KING_VALUE: u64 = 10000000;
 const QUEEN_VALUE: u64 = 900;
 const ROOK_VALUE: u64 = 500;
@@ -24,7 +26,12 @@ const PIECE_VALUES: Simd<u64, 8> = Simd::from_array([
     0,
 ]);
 
-include!("./piece_tables.rs");
+const ZERO: Simd<u64, 8> = Simd::from_array([0, 0, 0, 0, 0, 0, 0, 0]);
+const ONE: Simd<u64, 8> = Simd::from_array([1, 1, 1, 1, 1, 1, 1, 1]);
+
+const PIECE_TABLE_MASK: Simd<u64, 8> = Simd::from_array([1, 1, 1, 1, 1, 1, 0, 0]);
+const PIECE_TABLE_OFFSETS: Simd<usize, 8> = Simd::from_array([0, 64, 128, 192, 256, 320, 0, 0]);
+const ENDGAME_OFFSET: Simd<usize, 8> = Simd::from_array([384, 384, 384, 384, 384, 384, 0, 0]);
 
 pub trait PieceEval {
     fn calculate_piece_value(&self) -> i32;
