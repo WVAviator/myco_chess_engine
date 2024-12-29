@@ -1,14 +1,28 @@
+use std::simd::{num::SimdUint, Simd};
+
 use crate::{
     game::game::{Game, Turn},
     moves::common::PieceType,
+    util::simd::SimdCountOnes,
 };
 
-const KING_VALUE: i32 = 10000000;
-const QUEEN_VALUE: i32 = 900;
-const ROOK_VALUE: i32 = 500;
-const BISHOP_VALUE: i32 = 325;
-const KNIGHT_VALUE: i32 = 300;
-const PAWN_VALUE: i32 = 100;
+const KING_VALUE: u64 = 10000000;
+const QUEEN_VALUE: u64 = 900;
+const ROOK_VALUE: u64 = 500;
+const BISHOP_VALUE: u64 = 325;
+const KNIGHT_VALUE: u64 = 300;
+const PAWN_VALUE: u64 = 100;
+
+const PIECE_VALUES: Simd<u64, 8> = Simd::from_array([
+    PAWN_VALUE,
+    ROOK_VALUE,
+    KNIGHT_VALUE,
+    BISHOP_VALUE,
+    QUEEN_VALUE,
+    KING_VALUE,
+    0,
+    0,
+]);
 
 include!("./piece_tables.rs");
 
@@ -19,19 +33,9 @@ pub trait PieceEval {
 impl PieceEval for Game {
     fn calculate_piece_value(&self) -> i32 {
         let mut value = 0;
-        value += self.board.white[5].count_ones() as i32 * KING_VALUE;
-        value += self.board.white[4].count_ones() as i32 * QUEEN_VALUE;
-        value += self.board.white[1].count_ones() as i32 * ROOK_VALUE;
-        value += self.board.white[3].count_ones() as i32 * BISHOP_VALUE;
-        value += self.board.white[2].count_ones() as i32 * KNIGHT_VALUE;
-        value += self.board.white[0].count_ones() as i32 * PAWN_VALUE;
 
-        value -= self.board.black[5].count_ones() as i32 * KING_VALUE;
-        value -= self.board.black[4].count_ones() as i32 * QUEEN_VALUE;
-        value -= self.board.black[1].count_ones() as i32 * ROOK_VALUE;
-        value -= self.board.black[3].count_ones() as i32 * BISHOP_VALUE;
-        value -= self.board.black[2].count_ones() as i32 * KNIGHT_VALUE;
-        value -= self.board.black[0].count_ones() as i32 * PAWN_VALUE;
+        value += (self.board.white.count_ones() * PIECE_VALUES).reduce_sum() as i32;
+        value -= (self.board.black.count_ones() * PIECE_VALUES).reduce_sum() as i32;
 
         let is_endgame = self.board.all().count_ones() < 14
             || (self.board.all().count_ones() < 20

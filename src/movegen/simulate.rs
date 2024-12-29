@@ -25,7 +25,9 @@ impl Simulate for Game {
         }
 
         // Uses a 'shadow board' and 'superking' to compute potentially illegal moves.
-        // Leverages the fact that orig will always be unset and dest will always be set with the player's own piece (so it can be used as a mask for sliding pieces but omitted from any potential attacking pieces)
+        // Leverages the fact that orig will always be unset and dest will always be set with the
+        // player's own piece (so it can be used as a mask for sliding pieces but omitted from any
+        // potential attacking pieces)
 
         let enpassant_target = lmove.en_passant_target(
             self.board.white[0] | self.board.black[0],
@@ -44,18 +46,18 @@ impl Simulate for Game {
                     self.board.white[5]
                 };
                 let superking_index = superking.trailing_zeros() as usize;
-                // Pawns
+
                 attacks |=
                     WHITE_PAWN_ATTACKS[superking_index] & (self.board.black[0] & !enpassant_target);
-                // Knights
+
                 attacks |= KNIGHT_MOVES[superking_index] & self.board.black[2];
-                // King
+
                 attacks |= KING_MOVES[superking_index] & self.board.black[5];
-                // Bishops
+
                 let bishop_moves = get_bishop_magic_map()[superking_index]
                     .get(BISHOP_MASKS[superking_index] & adjusted_occupied);
                 attacks |= bishop_moves & (self.board.black[3] | self.board.black[4]);
-                // Rooks
+
                 let rook_moves = get_rook_magic_map()[superking_index]
                     .get(ROOK_MASKS[superking_index] & adjusted_occupied);
                 attacks |= rook_moves & (self.board.black[1] | self.board.black[4]);
@@ -67,18 +69,18 @@ impl Simulate for Game {
                     self.board.black[5]
                 };
                 let superking_index = superking.trailing_zeros() as usize;
-                // Pawns
+
                 attacks |=
                     BLACK_PAWN_ATTACKS[superking_index] & (self.board.white[0] & !enpassant_target);
-                // Knights
+
                 attacks |= KNIGHT_MOVES[superking_index] & self.board.white[2];
-                // King
+
                 attacks |= KING_MOVES[superking_index] & self.board.white[5];
-                // Bishops
+
                 let bishop_moves = get_bishop_magic_map()[superking_index]
                     .get(BISHOP_MASKS[superking_index] & adjusted_occupied);
                 attacks |= bishop_moves & (self.board.white[3] | self.board.white[4]);
-                // Rooks
+
                 let rook_moves = get_rook_magic_map()[superking_index]
                     .get(ROOK_MASKS[superking_index] & adjusted_occupied);
                 attacks |= rook_moves & (self.board.white[1] | self.board.white[4]);
