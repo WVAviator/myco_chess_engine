@@ -16,10 +16,10 @@ mod king_safety;
 mod knights;
 
 #[cfg(feature = "pytorch")]
-mod nn;
+pub mod nn;
 
 mod pawn_structure;
-mod piece;
+pub mod piece;
 mod rooks;
 
 pub mod minimax;

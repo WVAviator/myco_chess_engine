@@ -3,11 +3,7 @@ use std::simd::{
     Simd,
 };
 
-use crate::{
-    game::game::{Game, Turn},
-    moves::common::PieceType,
-    util::simd::SimdCountOnes,
-};
+use crate::{game::game::Game, util::simd::SimdCountOnes};
 
 include!("./piece_tables.rs");
 

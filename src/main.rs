@@ -12,6 +12,7 @@ use myco_chess_engine::{
     magic::{get_bishop_magic_map, get_rook_magic_map},
     movegen::MoveGen,
     moves::simple_move::SimpleMove,
+    search::quiescence::QuiescenceSearch,
 };
 use rayon::ThreadPoolBuilder;
 
@@ -181,7 +182,7 @@ fn extract_moves(command: &str) -> Result<Game, anyhow::Error> {
 }
 
 fn get_best_move(game: &Game) -> Result<SimpleMove, anyhow::Error> {
-    let engine = MinmaxEngine::new(game, 8, 13);
-    let best_move = engine.evaluate_best_move();
+    let engine = QuiescenceSearch::new(game, 6);
+    let best_move = engine.search();
     Ok(best_move)
 }
