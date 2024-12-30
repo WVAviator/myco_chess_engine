@@ -10,6 +10,7 @@ debug = true
 anyhow = "1.0.93"
 bitflags = "2.6.0"
 clap = { version = "4.5.23", features = ["derive"] }
+nohash-hasher = "0.2.0"
 rand = "0.8.5"
 rayon = "1.10.0"
 regex = "1.11.1"
