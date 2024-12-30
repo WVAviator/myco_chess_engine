@@ -2,7 +2,10 @@ use arrayvec::ArrayVec;
 
 use crate::{
     game::game::{Game, Turn},
-    magic::{get_bishop_magic_map, masks::get_bishop_mask},
+    magic::{
+        get_bishop_magic_map,
+        masks::{get_bishop_mask, BISHOP_MASKS},
+    },
     moves::simple_move::SimpleMove,
 };
 
@@ -70,13 +73,12 @@ impl BishopMoveGen for Game {
                 let mut remaining_bishops = bishop_pieces;
                 while remaining_bishops != 0 {
                     let current_bishop = remaining_bishops & (!remaining_bishops + 1);
+                    let current_bishop_index = remaining_bishops.trailing_zeros() as usize;
                     let blockers =
-                        (player_pieces | opponent_pieces) & get_bishop_mask(current_bishop);
+                        (player_pieces | opponent_pieces) & BISHOP_MASKS[current_bishop_index];
 
-                    let bishop_moves = get_bishop_magic_map()
-                        [current_bishop.trailing_zeros() as usize]
-                        .get(blockers)
-                        & !player_pieces;
+                    let bishop_moves =
+                        get_bishop_magic_map()[current_bishop_index].get(blockers) & !player_pieces;
 
                     let mut remaining_bishop_moves = bishop_moves;
                     while remaining_bishop_moves != 0 {
@@ -96,13 +98,12 @@ impl BishopMoveGen for Game {
                 let mut remaining_bishops = bishop_pieces;
                 while remaining_bishops != 0 {
                     let current_bishop = remaining_bishops & (!remaining_bishops + 1);
+                    let current_bishop_index = remaining_bishops.trailing_zeros() as usize;
                     let blockers =
-                        (player_pieces | opponent_pieces) & get_bishop_mask(current_bishop);
+                        (player_pieces | opponent_pieces) & BISHOP_MASKS[current_bishop_index];
 
-                    let bishop_moves = get_bishop_magic_map()
-                        [current_bishop.trailing_zeros() as usize]
-                        .get(blockers)
-                        & !player_pieces;
+                    let bishop_moves =
+                        get_bishop_magic_map()[current_bishop_index].get(blockers) & !player_pieces;
 
                     let mut remaining_bishop_moves = bishop_moves;
                     while remaining_bishop_moves != 0 {
