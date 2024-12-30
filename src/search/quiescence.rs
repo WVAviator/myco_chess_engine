@@ -3,8 +3,11 @@ use std::cmp;
 use rayon::prelude::*;
 
 use crate::{
-    eval::piece::PieceEval,
+    cache::eval::EvaluationCache,
+    database::{connection::get_connection, retrieve::MoveRetrieval},
+    eval::{mvvlva::MVVLVAEval, piece::PieceEval},
     game::game::{Game, Turn},
+    hash::zobrist::ZobristHash,
     movegen::MoveGen,
     moves::simple_move::SimpleMove,
 };
@@ -20,10 +23,18 @@ impl<'a> QuiescenceSearch<'a> {
     }
 
     pub fn search(&self) -> SimpleMove {
+        println!("info score cp {}", self.root.calculate_piece_value());
+
+        if let Ok(Some(database_move)) = self.root.random_database_move(&get_connection()) {
+            println!("info string book move {}", database_move);
+            return database_move;
+        }
+
         let legal_moves = self.root.generate_legal_moves();
         let mut evaluations: Vec<MoveEvaluation> = legal_moves
             .into_par_iter()
             .map(|lmove| {
+                println!("info currmove {}", lmove.to_algebraic());
                 MoveEvaluation(
                     lmove,
                     self.root
@@ -56,7 +67,14 @@ pub trait QuiescenceEval {
 
 impl QuiescenceEval for Game {
     fn quiescence_eval(&self, depth: usize, alpha: i32, beta: i32) -> i32 {
+        let zobrist = self.zobrist();
+
+        if let Some(eval) = EvaluationCache::get(zobrist) {
+            return eval;
+        }
+
         if depth == 0 {
+            // Don't insert into the cache in this case since the eval might be premature
             return self.calculate_piece_value();
         }
 
@@ -68,7 +86,9 @@ impl QuiescenceEval for Game {
         let black_vision = self.generate_vision(&Turn::Black);
 
         if (white_vision & self.board.black[6]) | (black_vision & self.board.white[6]) == 0 {
-            return self.calculate_piece_value();
+            let eval = self.calculate_piece_value();
+            EvaluationCache::insert(zobrist, eval);
+            return eval;
         }
 
         match self.turn {
@@ -76,15 +96,8 @@ impl QuiescenceEval for Game {
                 let mut tactical_moves = legal_moves
                     .into_iter()
                     .map(|lmove| {
-                        let mut tactical_activity = 0;
-                        // Captures
-                        tactical_activity += (lmove.dest & self.board.black[6]).count_ones();
-                        // Saves
-                        tactical_activity += (lmove.orig & black_vision).count_ones();
-                        // Sacrifices
-                        tactical_activity += (lmove.dest & black_vision).count_ones();
-
-                        TacticalEvaluation(lmove, tactical_activity)
+                        let eval = self.evaluate_mvv_lva(&lmove);
+                        TacticalEvaluation(lmove, eval)
                     })
                     .collect::<Vec<TacticalEvaluation>>();
 
@@ -110,15 +123,8 @@ impl QuiescenceEval for Game {
                 let mut tactical_moves = legal_moves
                     .into_iter()
                     .map(|lmove| {
-                        let mut tactical_activity = 0;
-                        // Captures
-                        tactical_activity += (lmove.dest & self.board.white[6]).count_ones();
-                        // Saves
-                        tactical_activity += (lmove.orig & white_vision).count_ones();
-                        // Sacrifices
-                        tactical_activity += (lmove.dest & white_vision).count_ones();
-
-                        TacticalEvaluation(lmove, tactical_activity)
+                        let eval = self.evaluate_mvv_lva(&lmove);
+                        TacticalEvaluation(lmove, eval)
                     })
                     .collect::<Vec<TacticalEvaluation>>();
 
@@ -140,45 +146,6 @@ impl QuiescenceEval for Game {
                 lowest_eval
             }
         }
-
-        //
-        // let is_check = self.king_in_check();
-        // let tactical_activity = self.evaluate_tactical_activity() + if is_check { 1 } else { 0 };
-        //
-        // if tactical_activity == 0 {
-        //     return self.calculate_piece_value();
-        // }
-        //
-        // let mut tactical_evals = self
-        //     .generate_legal_moves()
-        //     .into_iter()
-        //     .map(|lmove| {
-        //         let game = self.apply_move(&lmove);
-        //         let tactical_eval = game.evaluate_tactical_activity();
-        //         IntermediateEvaluation(game, tactical_eval as i32)
-        //     })
-        //     .collect::<Vec<IntermediateEvaluation>>();
-        //
-        // tactical_evals.sort_unstable_by(|a, b| b.cmp(a));
-        //
-        // match self.turn {
-        //     Turn::White => tactical_evals
-        //         .into_iter()
-        //         .map(|eval| eval.0.quiescence_eval(depth - 1))
-        //         .max()
-        //         .unwrap_or(match is_check {
-        //             true => -200000,
-        //             false => 0,
-        //         }),
-        //     Turn::Black => tactical_evals
-        //         .into_iter()
-        //         .map(|eval| eval.0.quiescence_eval(depth - 1))
-        //         .max()
-        //         .unwrap_or(match is_check {
-        //             true => 200000,
-        //             false => 0,
-        //         }),
-        // }
     }
 }
 
@@ -198,7 +165,7 @@ impl<'a> Ord for MoveEvaluation<'a> {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
-struct TacticalEvaluation(SimpleMove, u32);
+struct TacticalEvaluation(SimpleMove, i32);
 
 impl PartialOrd for TacticalEvaluation {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {

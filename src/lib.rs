@@ -1,5 +1,6 @@
 #![feature(portable_simd, core_intrinsics)]
 
+pub mod cache;
 pub mod database;
 pub mod engine;
 pub mod eval;

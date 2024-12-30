@@ -18,9 +18,11 @@ mod knights;
 #[cfg(feature = "pytorch")]
 pub mod nn;
 
+pub mod mvvlva;
 mod pawn_structure;
 pub mod piece;
 mod rooks;
+pub mod threats;
 
 pub mod minimax;
 
