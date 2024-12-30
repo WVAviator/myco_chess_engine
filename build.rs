@@ -16,9 +16,13 @@ fn main() {
 
     fs::create_dir_all(&dest_resources_dir).expect("Failed to create resources directory");
 
-    fs::copy(&source_db, dest_resources_dir.join("myco.db3"))
-        .expect("Failed to copy database file");
+    if source_db.exists() {
+        fs::copy(source_db, dest_resources_dir.join("myco.db3"))
+            .expect("Failed to copy database file");
+    }
 
-    fs::copy(&source_model, dest_resources_dir.join("myco_eval_model.pt"))
-        .expect("Failed to copy pytorch model file");
+    if source_model.exists() {
+        fs::copy(source_model, dest_resources_dir.join("myco_eval_model.pt"))
+            .expect("Failed to copy pytorch model file");
+    }
 }

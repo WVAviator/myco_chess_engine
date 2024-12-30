@@ -7,6 +7,7 @@ pub mod eval;
 pub mod game;
 pub mod hash;
 pub mod magic;
+pub mod performance;
 pub mod search;
 pub mod util;
 

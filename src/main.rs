@@ -8,9 +8,11 @@ use clap::Parser;
 use myco_chess_engine::{
     database::build::DatabaseTrainingSession,
     game::game::Game,
+    hash::zobrist::{generate_hash_values, ZobristHash},
     magic::{get_bishop_magic_map, get_rook_magic_map},
     movegen::MoveGen,
     moves::simple_move::SimpleMove,
+    performance::perft::perft_test,
     search::quiescence::QuiescenceSearch,
 };
 use rayon::ThreadPoolBuilder;
@@ -27,10 +29,10 @@ fn main() {
 
     if let Some(depth) = args.perft {
         initialize();
-        depth_test(depth);
+        perft_test(depth);
     }
 
-    if let Some(pgn_path) = args.train {
+    if let Some(pgn_path) = args.load_database {
         train_pgn(pgn_path);
     }
 
@@ -44,45 +46,18 @@ struct Args {
     #[arg(long, name = "depth")]
     perft: Option<u8>,
 
-    /// Train moves from the given PGN file to the engine's database
-    #[arg(long, name = "pgn file")]
-    train: Option<String>,
+    /// Load moves from the given PGN file to the engine's database
+    #[arg(short, long, name = "pgn file")]
+    load_database: Option<String>,
 
     /// Explictly set the number of threads the engine should use (default is the number of CPU cores on the host machine)
-    #[arg(long, name = "num threads")]
+    #[arg(short, long, name = "num threads")]
     threads: Option<usize>,
 }
 
 fn initialize() {
     get_rook_magic_map();
     get_bishop_magic_map();
-}
-
-fn depth_test(depth: u8) {
-    let start = Instant::now();
-
-    let count = perft(depth, Game::new_default());
-
-    let elapsed = start.elapsed();
-    println!("Total moves generated: {}", count);
-    println!("Time elapsed: {}ms", elapsed.as_millis());
-    println!("Average NPS: {}", count as f32 / elapsed.as_secs_f32())
-}
-
-fn perft(depth: u8, game: Game) -> usize {
-    if depth == 0 {
-        return 1;
-    }
-
-    let moves = game.generate_legal_moves();
-
-    moves
-        .into_iter()
-        .map(|lmove| {
-            let new_game = game.apply_move(&lmove);
-            perft(depth - 1, new_game)
-        })
-        .sum()
 }
 
 fn train_pgn(pgn_path: String) {
