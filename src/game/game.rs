@@ -145,7 +145,7 @@ impl Turn {
 
 impl Game {
     pub fn king_in_check(&self) -> bool {
-        self.generate_vision(&self.turn.other()) & self.board.king(&self.turn) != 0
+        self.generate_vision(&self.turn.other())[6] & self.board.king(&self.turn) != 0
     }
 
     pub fn apply_move(&self, lmove: &SimpleMove) -> Game {

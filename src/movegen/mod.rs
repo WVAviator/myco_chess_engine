@@ -1,3 +1,5 @@
+use std::simd::Simd;
+
 use bishop::BishopMoveGen;
 use king::KingMoveGen;
 use knight::KnightMoveGen;
@@ -21,19 +23,29 @@ pub mod simulate;
 pub trait MoveGen:
     PawnMoveGen + KingMoveGen + BishopMoveGen + RookMoveGen + KnightMoveGen + Simulate
 {
-    fn generate_vision(&self, turn: &Turn) -> u64;
+    fn generate_vision(&self, turn: &Turn) -> Simd<u64, 8>;
     fn generate_pseudolegal_moves(&self) -> SmallVec<[SimpleMove; 256]>;
     fn generate_legal_moves(&self) -> SmallVec<[SimpleMove; 256]>;
 }
 
 impl MoveGen for Game {
-    fn generate_vision(&self, turn: &Turn) -> u64 {
-        let mut vision = 0;
-        vision |= self.generate_king_vision(turn);
-        vision |= self.generate_pawn_vision(turn);
-        vision |= self.generate_rook_vision(turn);
-        vision |= self.generate_bishop_vision(turn);
-        vision |= self.generate_knight_vision(turn);
+    fn generate_vision(&self, turn: &Turn) -> Simd<u64, 8> {
+        let king_vision = self.generate_king_vision(turn);
+        let pawn_vision = self.generate_pawn_vision(turn);
+        let rook_vision = self.generate_rook_vision(turn);
+        let bishop_vision = self.generate_bishop_vision(turn);
+        let knight_vision = self.generate_knight_vision(turn);
+
+        let vision = Simd::from_array([
+            pawn_vision,
+            rook_vision,
+            knight_vision,
+            bishop_vision,
+            rook_vision | bishop_vision,
+            king_vision,
+            pawn_vision | rook_vision | knight_vision | bishop_vision | king_vision,
+            0,
+        ]);
 
         vision
     }
@@ -65,14 +77,14 @@ mod test {
     fn calculates_opponent_vision() {
         let game = Game::from_fen("8/8/8/8/1pbk1p2/1r3P2/3B2NK/1n1Q3R b - - 0 1").unwrap();
         let opponent_vision = game.generate_vision(&Turn::White);
-        assert_eq!(opponent_vision, 0xf2f6dcfe);
+        assert_eq!(opponent_vision[6], 0xf2f6dcfe);
     }
 
     #[test]
     fn calculates_opponent_vision_2() {
         let game = Game::from_fen("8/8/8/4k3/1pb2p2/1r3P2/6NK/1n1Q2R1 b - - 0 1").unwrap();
         let opponent_vision = game.generate_vision(&Turn::White);
-        assert_eq!(opponent_vision, 0x8080808f8fa5cfe);
+        assert_eq!(opponent_vision[6], 0x8080808f8fa5cfe);
     }
 
     #[test]

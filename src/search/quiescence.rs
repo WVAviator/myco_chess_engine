@@ -1,11 +1,14 @@
-use std::cmp;
+use std::{
+    cmp,
+    time::{Duration, Instant},
+};
 
 use rayon::prelude::*;
 
 use crate::{
     cache::eval::EvaluationCache,
     database::{connection::get_connection, retrieve::MoveRetrieval},
-    eval::{mvvlva::MVVLVAEval, piece::PieceEval},
+    eval::{mvvlva::MVVLVAEval, piece::PieceEval, threats::ThreatEval},
     game::game::{Game, Turn},
     hash::zobrist::ZobristHash,
     movegen::MoveGen,
@@ -15,11 +18,17 @@ use crate::{
 pub struct QuiescenceSearch<'a> {
     root: &'a Game,
     max_depth: usize,
+    deadline: Instant,
 }
 
 impl<'a> QuiescenceSearch<'a> {
-    pub fn new(root: &'a Game, max_depth: usize) -> Self {
-        Self { root, max_depth }
+    pub fn new(root: &'a Game, max_depth: usize, max_seconds: u64) -> Self {
+        let deadline = Instant::now() + Duration::from_secs(max_seconds);
+        Self {
+            root,
+            max_depth,
+            deadline,
+        }
     }
 
     pub fn search(&self) -> SimpleMove {
@@ -31,15 +40,32 @@ impl<'a> QuiescenceSearch<'a> {
         }
 
         let legal_moves = self.root.generate_legal_moves();
+
         let mut evaluations: Vec<MoveEvaluation> = legal_moves
             .into_par_iter()
             .map(|lmove| {
-                println!("info currmove {}", lmove.to_algebraic());
                 MoveEvaluation(
                     lmove,
-                    self.root
-                        .apply_move(lmove)
-                        .quiescence_eval(self.max_depth, i32::MIN, i32::MAX),
+                    self.root.evaluate_mvv_lva(lmove) + self.root.evaluate_threats(lmove),
+                )
+            })
+            .collect();
+
+        evaluations.sort_unstable_by(|a, b| b.cmp(a));
+
+        let mut evaluations: Vec<MoveEvaluation> = evaluations
+            .into_iter()
+            .take_while(|_| Instant::now() < self.deadline)
+            .par_bridge()
+            .map(|eval| {
+                println!("info currmove {}", eval.0.to_algebraic());
+                MoveEvaluation(
+                    eval.0,
+                    self.root.apply_move(eval.0).quiescence_eval(
+                        self.max_depth,
+                        i32::MIN,
+                        i32::MAX,
+                    ),
                 )
             })
             .collect();
@@ -82,8 +108,8 @@ impl QuiescenceEval for Game {
         let mut beta = beta;
 
         let legal_moves = self.generate_legal_moves();
-        let white_vision = self.generate_vision(&Turn::White);
-        let black_vision = self.generate_vision(&Turn::Black);
+        let white_vision = self.generate_vision(&Turn::White)[6];
+        let black_vision = self.generate_vision(&Turn::Black)[6];
 
         if (white_vision & self.board.black[6]) | (black_vision & self.board.white[6]) == 0 {
             let eval = self.calculate_piece_value();
@@ -96,7 +122,7 @@ impl QuiescenceEval for Game {
                 let mut tactical_moves = legal_moves
                     .into_iter()
                     .map(|lmove| {
-                        let eval = self.evaluate_mvv_lva(&lmove);
+                        let eval = self.evaluate_mvv_lva(&lmove) + self.evaluate_threats(&lmove);
                         TacticalEvaluation(lmove, eval)
                     })
                     .collect::<Vec<TacticalEvaluation>>();
@@ -123,7 +149,7 @@ impl QuiescenceEval for Game {
                 let mut tactical_moves = legal_moves
                     .into_iter()
                     .map(|lmove| {
-                        let eval = self.evaluate_mvv_lva(&lmove);
+                        let eval = self.evaluate_mvv_lva(&lmove) + self.evaluate_threats(&lmove);
                         TacticalEvaluation(lmove, eval)
                     })
                     .collect::<Vec<TacticalEvaluation>>();

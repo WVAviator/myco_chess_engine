@@ -7,7 +7,6 @@ use anyhow::{anyhow, bail, Context};
 use clap::Parser;
 use myco_chess_engine::{
     database::build::DatabaseTrainingSession,
-    engine::minimax::MinmaxEngine,
     game::game::Game,
     magic::{get_bishop_magic_map, get_rook_magic_map},
     movegen::MoveGen,
@@ -182,7 +181,7 @@ fn extract_moves(command: &str) -> Result<Game, anyhow::Error> {
 }
 
 fn get_best_move(game: &Game) -> Result<SimpleMove, anyhow::Error> {
-    let engine = QuiescenceSearch::new(game, 6);
+    let engine = QuiescenceSearch::new(game, 6, 15);
     let best_move = engine.search();
     Ok(best_move)
 }

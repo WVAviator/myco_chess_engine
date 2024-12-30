@@ -1,7 +1,4 @@
-use std::simd::{num::SimdUint, Simd};
-
-const ZERO: Simd<u64, 8> = Simd::from_array([0, 0, 0, 0, 0, 0, 0, 0]);
-const ONE: Simd<u64, 8> = Simd::from_array([1, 1, 1, 1, 1, 1, 1, 1]);
+use std::simd::Simd;
 
 pub trait SimdCountOnes {
     fn count_ones(self) -> Self;

@@ -27,8 +27,8 @@ impl CenterEval for Game {
         let white_pieces = self.board.white_pieces();
         let black_pieces = self.board.black_pieces();
 
-        let white_vision = self.generate_vision(&Turn::White);
-        let black_vision = self.generate_vision(&Turn::Black);
+        let white_vision = self.generate_vision(&Turn::White)[6];
+        let black_vision = self.generate_vision(&Turn::Black)[6];
 
         value += (INNER_CENTER & white_pieces).count_ones() as i32 * INNER_CENTER_OCCUPANCY_BONUS;
         value -= (INNER_CENTER & black_pieces).count_ones() as i32 * INNER_CENTER_OCCUPANCY_BONUS;

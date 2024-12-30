@@ -41,7 +41,7 @@ impl KingMoveGen for Game {
                 let king = self.board.white[5];
                 let own_pieces = self.board.white[6];
                 let occupied = self.board.all();
-                let opponent_vision = self.generate_vision(&Turn::Black);
+                let opponent_vision = self.generate_vision(&Turn::Black)[6];
 
                 // Ensures there's always a bit set and no index 64
                 let destination_squares = KING_MOVES
@@ -74,7 +74,7 @@ impl KingMoveGen for Game {
                 let king = self.board.black[5];
                 let own_pieces = self.board.black[6];
                 let occupied = self.board.all();
-                let opponent_vision = self.generate_vision(&Turn::White);
+                let opponent_vision = self.generate_vision(&Turn::White)[6];
 
                 // Ensures there's always a bit set and no index 64
                 let destination_squares = KING_MOVES

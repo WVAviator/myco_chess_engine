@@ -18,8 +18,8 @@ impl KnightEval for Game {
     fn calculate_knights_value(&self) -> i32 {
         let mut value = 0;
 
-        let white_vision = self.generate_vision(&Turn::White);
-        let black_vision = self.generate_vision(&Turn::Black);
+        let white_vision = self.generate_vision(&Turn::White)[6];
+        let black_vision = self.generate_vision(&Turn::Black)[6];
 
         value -= (self.board.white[2] & BOARD_EDGE).count_ones() as i32 * BOARD_EDGE_PENALTY;
         value += (self.board.black[2] & BOARD_EDGE).count_ones() as i32 * BOARD_EDGE_PENALTY;
