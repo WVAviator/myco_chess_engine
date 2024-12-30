@@ -1,8 +1,9 @@
-use std::hash::Hash;
+use std::{hash::Hash, simd::Simd};
 
 use anyhow::{anyhow, bail, Context};
 
 use crate::{
+    hash::zobrist::ZobristHash,
     movegen::MoveGen,
     moves::{
         common::{algebraic_to_u64, u64_to_algebraic},
@@ -16,7 +17,7 @@ use super::{
     constants::{FIFTH_RANK, FOURTH_RANK, SECOND_RANK, SEVENTH_RANK},
 };
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Eq)]
 pub struct Game {
     pub board: Board,
     pub turn: Turn,
@@ -128,10 +129,11 @@ impl Game {
     }
 }
 
+#[repr(u8)]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Turn {
-    White,
-    Black,
+    White = 0,
+    Black = 1,
 }
 
 impl Turn {
@@ -222,9 +224,26 @@ impl Game {
 
 impl Hash for Game {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.board.hash(state);
-        self.castling_rights.hash(state);
-        self.en_passant.hash(state);
+        self.zobrist().hash(state);
+    }
+}
+
+impl Clone for Game {
+    fn clone(&self) -> Self {
+        Self {
+            board: self.board.clone(),
+            turn: self.turn.clone(),
+            castling_rights: self.castling_rights.clone(),
+            en_passant: self.en_passant,
+            halfmove_clock: self.halfmove_clock,
+            fullmove_number: self.fullmove_number,
+        }
+    }
+}
+
+impl PartialEq for Game {
+    fn eq(&self, other: &Self) -> bool {
+        self.zobrist().eq(&other.zobrist())
     }
 }
 
