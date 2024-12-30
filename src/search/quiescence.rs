@@ -63,6 +63,7 @@ impl<'a> QuiescenceSearch<'a> {
                     eval.0,
                     self.root.apply_move(eval.0).quiescence_eval(
                         self.max_depth,
+                        self.deadline,
                         i32::MIN,
                         i32::MAX,
                     ),
@@ -88,18 +89,18 @@ impl<'a> QuiescenceSearch<'a> {
 }
 
 pub trait QuiescenceEval {
-    fn quiescence_eval(&self, depth: usize, alpha: i32, beta: i32) -> i32;
+    fn quiescence_eval(&self, depth: usize, deadline: Instant, alpha: i32, beta: i32) -> i32;
 }
 
 impl QuiescenceEval for Game {
-    fn quiescence_eval(&self, depth: usize, alpha: i32, beta: i32) -> i32 {
+    fn quiescence_eval(&self, depth: usize, deadline: Instant, alpha: i32, beta: i32) -> i32 {
         let zobrist = self.zobrist();
 
         if let Some(eval) = EvaluationCache::get(zobrist) {
             return eval;
         }
 
-        if depth == 0 {
+        if depth == 0 || Instant::now() > deadline {
             // Don't insert into the cache in this case since the eval might be premature
             return self.calculate_piece_value();
         }
@@ -132,9 +133,9 @@ impl QuiescenceEval for Game {
                 let mut highest_eval = i32::MIN;
 
                 for tmove in tactical_moves {
-                    let eval = self
-                        .apply_move(&tmove.0)
-                        .quiescence_eval(depth - 1, alpha, beta);
+                    let eval =
+                        self.apply_move(&tmove.0)
+                            .quiescence_eval(depth - 1, deadline, alpha, beta);
                     highest_eval = cmp::max(eval, highest_eval);
                     alpha = cmp::max(highest_eval, alpha);
                     if beta <= alpha {
@@ -159,9 +160,9 @@ impl QuiescenceEval for Game {
                 let mut lowest_eval = i32::MAX;
 
                 for tmove in tactical_moves {
-                    let eval = self
-                        .apply_move(&tmove.0)
-                        .quiescence_eval(depth - 1, alpha, beta);
+                    let eval =
+                        self.apply_move(&tmove.0)
+                            .quiescence_eval(depth - 1, deadline, alpha, beta);
                     lowest_eval = cmp::min(eval, lowest_eval);
                     beta = cmp::min(lowest_eval, beta);
                     if beta <= alpha {
@@ -178,13 +179,13 @@ impl QuiescenceEval for Game {
 #[derive(Debug, PartialEq, Eq, Clone)]
 struct MoveEvaluation<'a>(&'a SimpleMove, i32);
 
-impl<'a> PartialOrd for MoveEvaluation<'a> {
+impl PartialOrd for MoveEvaluation<'_> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.1.partial_cmp(&other.1)
+        Some(self.1.cmp(&other.1))
     }
 }
 
-impl<'a> Ord for MoveEvaluation<'a> {
+impl Ord for MoveEvaluation<'_> {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         self.1.cmp(&other.1)
     }
@@ -195,7 +196,7 @@ struct TacticalEvaluation(SimpleMove, i32);
 
 impl PartialOrd for TacticalEvaluation {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.1.partial_cmp(&other.1)
+        Some(self.1.cmp(&other.1))
     }
 }
 

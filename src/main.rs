@@ -181,7 +181,7 @@ fn extract_moves(command: &str) -> Result<Game, anyhow::Error> {
 }
 
 fn get_best_move(game: &Game) -> Result<SimpleMove, anyhow::Error> {
-    let engine = QuiescenceSearch::new(game, 6, 15);
+    let engine = QuiescenceSearch::new(game, 6, 8);
     let best_move = engine.search();
     Ok(best_move)
 }
