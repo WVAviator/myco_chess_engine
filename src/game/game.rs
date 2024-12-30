@@ -1,5 +1,3 @@
-use std::{hash::Hash, simd::Simd};
-
 use anyhow::{anyhow, bail, Context};
 
 use crate::{
@@ -219,12 +217,6 @@ impl Game {
         new_game.board.apply_move(lmove);
 
         new_game
-    }
-}
-
-impl Hash for Game {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.zobrist().hash(state);
     }
 }
 

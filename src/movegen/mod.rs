@@ -1,12 +1,12 @@
 use std::simd::Simd;
 
+use arrayvec::ArrayVec;
 use bishop::BishopMoveGen;
 use king::KingMoveGen;
 use knight::KnightMoveGen;
 use pawn::PawnMoveGen;
 use rook::RookMoveGen;
 use simulate::Simulate;
-use smallvec::SmallVec;
 
 use crate::{
     game::game::{Game, Turn},
@@ -24,8 +24,8 @@ pub trait MoveGen:
     PawnMoveGen + KingMoveGen + BishopMoveGen + RookMoveGen + KnightMoveGen + Simulate
 {
     fn generate_vision(&self, turn: &Turn) -> Simd<u64, 8>;
-    fn generate_pseudolegal_moves(&self) -> SmallVec<[SimpleMove; 256]>;
-    fn generate_legal_moves(&self) -> SmallVec<[SimpleMove; 256]>;
+    fn generate_pseudolegal_moves(&self) -> ArrayVec<SimpleMove, 256>;
+    fn generate_legal_moves(&self) -> ArrayVec<SimpleMove, 256>;
 }
 
 impl MoveGen for Game {
@@ -49,8 +49,8 @@ impl MoveGen for Game {
 
         vision
     }
-    fn generate_pseudolegal_moves(&self) -> SmallVec<[SimpleMove; 256]> {
-        let mut moves: SmallVec<[SimpleMove; 256]> = SmallVec::new();
+    fn generate_pseudolegal_moves(&self) -> ArrayVec<SimpleMove, 256> {
+        let mut moves: ArrayVec<SimpleMove, 256> = ArrayVec::new();
 
         self.generate_pseudolegal_king_moves(&mut moves);
         self.generate_pseudolegal_bishop_moves(&mut moves);
@@ -60,7 +60,7 @@ impl MoveGen for Game {
 
         moves
     }
-    fn generate_legal_moves(&self) -> SmallVec<[SimpleMove; 256]> {
+    fn generate_legal_moves(&self) -> ArrayVec<SimpleMove, 256> {
         let mut moves = self.generate_pseudolegal_moves();
         moves.retain(|lmove| self.check_move_legality(lmove));
 

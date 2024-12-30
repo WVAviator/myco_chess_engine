@@ -1,4 +1,4 @@
-use smallvec::SmallVec;
+use arrayvec::ArrayVec;
 
 use crate::{
     game::game::{Game, Turn},
@@ -8,7 +8,7 @@ use crate::{
 
 pub trait BishopMoveGen {
     fn generate_bishop_vision(&self, turn: &Turn) -> u64;
-    fn generate_pseudolegal_bishop_moves(&self, moves: &mut SmallVec<[SimpleMove; 256]>);
+    fn generate_pseudolegal_bishop_moves(&self, moves: &mut ArrayVec<SimpleMove, 256>);
 }
 
 impl BishopMoveGen for Game {
@@ -60,7 +60,7 @@ impl BishopMoveGen for Game {
             }
         }
     }
-    fn generate_pseudolegal_bishop_moves(&self, moves: &mut SmallVec<[SimpleMove; 256]>) {
+    fn generate_pseudolegal_bishop_moves(&self, moves: &mut ArrayVec<SimpleMove, 256>) {
         match self.turn {
             Turn::White => {
                 let bishop_pieces = self.board.white[3] | self.board.white[4];
@@ -126,7 +126,7 @@ mod test {
     fn calculates_basic_bishop_moves() {
         let game = Game::from_fen("1k6/6p1/3r4/1q1NB2p/4BR2/8/1b6/7K w - - 0 1").unwrap();
 
-        let mut moves = SmallVec::new();
+        let mut moves = ArrayVec::new();
         game.generate_pseudolegal_bishop_moves(&mut moves);
 
         assert_eq!(moves.len(), 14);

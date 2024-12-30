@@ -1,4 +1,5 @@
-use smallvec::SmallVec;
+
+use arrayvec::ArrayVec;
 
 use crate::{
     game::{
@@ -22,7 +23,7 @@ const CASTLE_CHECK_BK_MASK: u64 = 0x7000000000000000;
 const CASTLE_CHECK_BQ_MASK: u64 = 0x1c00000000000000;
 
 pub trait KingMoveGen {
-    fn generate_pseudolegal_king_moves(&self, moves: &mut SmallVec<[SimpleMove; 256]>);
+    fn generate_pseudolegal_king_moves(&self, moves: &mut ArrayVec<SimpleMove, 256>);
     fn generate_king_vision(&self, turn: &Turn) -> u64;
 }
 
@@ -35,7 +36,7 @@ impl KingMoveGen for Game {
         KING_MOVES[(king | 0x8000000000000000).trailing_zeros() as usize]
     }
 
-    fn generate_pseudolegal_king_moves(&self, moves: &mut SmallVec<[SimpleMove; 256]>) {
+    fn generate_pseudolegal_king_moves(&self, moves: &mut ArrayVec<SimpleMove, 256>) {
         match self.turn {
             Turn::White => {
                 let king = self.board.white[5];
@@ -206,7 +207,7 @@ mod test {
     #[test]
     fn calculate_simple_king_moves() {
         let game = Game::from_fen("8/6k1/8/8/8/1n6/KP6/8 w - - 0 1").unwrap();
-        let mut moves = SmallVec::new();
+        let mut moves = ArrayVec::new();
         game.generate_pseudolegal_king_moves(&mut moves);
 
         assert_eq!(moves.len(), 3);
@@ -221,7 +222,7 @@ mod test {
         let game =
             Game::from_fen("rn1qk1r1/pbpp1ppp/1p6/2b1p3/4P3/1PNP3N/PBPQBnPP/R3K2R w KQq - 0 1")
                 .unwrap();
-        let mut moves = SmallVec::new();
+        let mut moves = ArrayVec::new();
         game.generate_pseudolegal_king_moves(&mut moves);
 
         assert_eq!(moves.len(), 2);
@@ -235,7 +236,7 @@ mod test {
         let game =
             Game::from_fen("rn1qk1r1/pbpp1ppp/1p6/2b1p3/4P3/1PNP3N/PBPQBnPP/R3K2R b KQq - 0 1")
                 .unwrap();
-        let mut moves = SmallVec::new();
+        let mut moves = ArrayVec::new();
         game.generate_pseudolegal_king_moves(&mut moves);
 
         assert_eq!(moves.len(), 2);
@@ -247,7 +248,7 @@ mod test {
     #[test]
     fn king_cannot_put_self_in_check() {
         let game = Game::from_fen("8/8/8/4k3/1pb2p2/1r3P2/6NK/1n1Q2R1 b - - 0 1").unwrap();
-        let mut moves = SmallVec::new();
+        let mut moves = ArrayVec::new();
         game.generate_pseudolegal_king_moves(&mut moves);
 
         assert_eq!(moves.len(), 3);
@@ -260,7 +261,7 @@ mod test {
     #[test]
     fn king_cannot_castle_through_check() {
         let game = Game::from_fen("8/8/k7/6P1/2b5/8/8/4K2R w K - 0 1").unwrap();
-        let mut moves = SmallVec::new();
+        let mut moves = ArrayVec::new();
         game.generate_pseudolegal_king_moves(&mut moves);
 
         assert!(!moves.contains(&SimpleMove::from_algebraic("e1g1").unwrap()));
@@ -269,7 +270,7 @@ mod test {
     #[test]
     fn king_cannot_castle_into_check() {
         let game = Game::from_fen("8/8/k7/6P1/3b4/8/8/4K2R w K - 0 1").unwrap();
-        let mut moves = SmallVec::new();
+        let mut moves = ArrayVec::new();
         game.generate_pseudolegal_king_moves(&mut moves);
 
         assert!(!moves.contains(&SimpleMove::from_algebraic("e1g1").unwrap()));
@@ -278,7 +279,7 @@ mod test {
     #[test]
     fn king_cannot_castle_while_in_check() {
         let game = Game::from_fen("8/8/k7/6P1/1b6/8/8/4K2R w K - 0 1").unwrap();
-        let mut moves = SmallVec::new();
+        let mut moves = ArrayVec::new();
         game.generate_pseudolegal_king_moves(&mut moves);
 
         assert!(!moves.contains(&SimpleMove::from_algebraic("e1g1").unwrap()));
@@ -288,7 +289,7 @@ mod test {
     fn cannot_castle_while_in_check_black() {
         let game =
             Game::from_fen("1n2k2r/4bpp1/3ppn1p/pB6/4P1P1/1PN1BP2/1P5P/2KR3R b k - 1 40").unwrap();
-        let mut moves = SmallVec::new();
+        let mut moves = ArrayVec::new();
         game.generate_pseudolegal_king_moves(&mut moves);
 
         assert!(!moves.contains(&SimpleMove::from_algebraic("e8g8").unwrap()));
@@ -299,7 +300,7 @@ mod test {
         let moves_string =
             "g1f3 d7d5 b1c3 g8f6 d2d4 c7c5 c1g5 f6e4 e2e3 d8a5 f1b5 b8d7 d1b1 e4c3 b2c3 a5c3";
         let game = Game::from_uci_startpos(moves_string).unwrap();
-        let mut moves = SmallVec::new();
+        let mut moves = ArrayVec::new();
         game.generate_pseudolegal_king_moves(&mut moves);
 
         assert!(!moves.contains(&SimpleMove::from_algebraic("e1g1").unwrap()));

@@ -1,4 +1,4 @@
-use smallvec::SmallVec;
+use arrayvec::ArrayVec;
 
 use crate::{
     game::game::{Game, Turn},
@@ -7,7 +7,7 @@ use crate::{
 
 pub trait KnightMoveGen {
     fn generate_knight_vision(&self, turn: &Turn) -> u64;
-    fn generate_psuedolegal_knight_moves(&self, moves: &mut SmallVec<[SimpleMove; 256]>);
+    fn generate_psuedolegal_knight_moves(&self, moves: &mut ArrayVec<SimpleMove, 256>);
 }
 
 impl KnightMoveGen for Game {
@@ -29,7 +29,7 @@ impl KnightMoveGen for Game {
 
         vision
     }
-    fn generate_psuedolegal_knight_moves(&self, moves: &mut SmallVec<[SimpleMove; 256]>) {
+    fn generate_psuedolegal_knight_moves(&self, moves: &mut ArrayVec<SimpleMove, 256>) {
         let (knights, own_pieces) = match self.turn {
             Turn::White => (self.board.white[2], self.board.white[6]),
             Turn::Black => (self.board.black[2], self.board.black[6]),
@@ -122,6 +122,8 @@ pub const KNIGHT_MOVES: [u64; 64] = [
 
 #[cfg(test)]
 mod test {
+    use arrayvec::ArrayVec;
+
     use super::*;
     use crate::game::constants::{
         A_FILE, B_FILE, EIGHTH_RANK, FIRST_RANK, G_FILE, H_FILE, SECOND_RANK, SEVENTH_RANK,
@@ -130,7 +132,7 @@ mod test {
     #[test]
     fn calculate_knight_moves() {
         let game = Game::from_fen("6k1/3b4/2P2n2/1P6/3NP3/1b3PN1/2R1P3/1K5R w - - 0 1").unwrap();
-        let mut moves = SmallVec::new();
+        let mut moves = ArrayVec::new();
         game.generate_psuedolegal_knight_moves(&mut moves);
 
         assert_eq!(moves.len(), 6);

@@ -2,7 +2,6 @@ use std::{
     collections::HashSet,
     fs,
     io::Write,
-    path::Path,
     simd::{num::SimdUint, Simd},
 };
 

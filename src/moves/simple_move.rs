@@ -2,8 +2,6 @@ use std::fmt;
 
 use anyhow::anyhow;
 
-use crate::game::constants::{FILEOF, RANKOF};
-
 use super::{
     common::{algebraic_to_u64, u64_to_algebraic, PieceType},
     contextual_move::ContextualMove,

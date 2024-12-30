@@ -59,6 +59,7 @@ impl Eval for Game {
     fn evaluate_position_ml(&self) -> i32 {
         // Separate because it's slower
 
+        #[allow(unused_mut)]
         let mut value = 0;
 
         #[cfg(feature = "pytorch")]

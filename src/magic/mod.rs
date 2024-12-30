@@ -1,9 +1,9 @@
 use std::sync::OnceLock;
 
+use arrayvec::ArrayVec;
 use hashmap::MagicHashMap;
 use masks::{get_bishop_mask, get_rook_mask};
 use raycast::{raycast_bishop, raycast_rook};
-use smallvec::SmallVec;
 use subsets::calculate_subsets;
 
 pub mod masks;
@@ -12,30 +12,30 @@ mod subsets;
 
 pub mod hashmap;
 
-static ROOK_MAGIC_MAP: OnceLock<SmallVec<[MagicHashMap; 64]>> = OnceLock::new();
-static BISHOP_MAGIC_MAP: OnceLock<SmallVec<[MagicHashMap; 64]>> = OnceLock::new();
+static ROOK_MAGIC_MAP: OnceLock<ArrayVec<MagicHashMap, 64>> = OnceLock::new();
+static BISHOP_MAGIC_MAP: OnceLock<ArrayVec<MagicHashMap, 64>> = OnceLock::new();
 
-fn compute_rook_magic_map() -> SmallVec<[MagicHashMap; 64]> {
-    let mut maps: SmallVec<[MagicHashMap; 64]> = SmallVec::new();
+fn compute_rook_magic_map() -> ArrayVec<MagicHashMap, 64> {
+    let mut maps: ArrayVec<MagicHashMap, 64> = ArrayVec::new();
     for square in 0..64 {
         maps.push(generate_rook_magic_hashmap(1 << square));
     }
     maps
 }
 
-fn compute_bishop_magic_map() -> SmallVec<[MagicHashMap; 64]> {
-    let mut maps: SmallVec<[MagicHashMap; 64]> = SmallVec::new();
+fn compute_bishop_magic_map() -> ArrayVec<MagicHashMap, 64> {
+    let mut maps: ArrayVec<MagicHashMap, 64> = ArrayVec::new();
     for square in 0..64 {
         maps.push(generate_bishop_magic_hashmap(1 << square));
     }
     maps
 }
 
-pub fn get_rook_magic_map() -> &'static SmallVec<[MagicHashMap; 64]> {
+pub fn get_rook_magic_map() -> &'static ArrayVec<MagicHashMap, 64> {
     ROOK_MAGIC_MAP.get_or_init(compute_rook_magic_map)
 }
 
-pub fn get_bishop_magic_map() -> &'static SmallVec<[MagicHashMap; 64]> {
+pub fn get_bishop_magic_map() -> &'static ArrayVec<MagicHashMap, 64> {
     BISHOP_MAGIC_MAP.get_or_init(compute_bishop_magic_map)
 }
 
