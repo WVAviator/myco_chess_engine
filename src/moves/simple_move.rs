@@ -99,7 +99,7 @@ impl SimpleMove {
         })
     }
 
-    #[inline(never)]
+    #[inline(always)]
     pub fn en_passant_target(&self, pawns: u64, empty: u64) -> u64 {
         let ep_orig = self.orig & pawns;
         let ep_orig_index = ep_orig.trailing_zeros() as usize;

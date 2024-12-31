@@ -19,7 +19,7 @@ const BLACK_KINGSIDE_CASTLE_MASK: Simd<u64, 8> =
 const BLACK_QUEENSIDE_CASTLE_MASK: Simd<u64, 8> =
     Simd::from_array([0, 0x900000000000000, 0, 0, 0, 0, 0x900000000000000, 0]);
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Copy)]
 pub struct Board {
     pub white: Simd<u64, 8>, // pawns, rooks, knights, bishops, queens, king, all, unused
     pub black: Simd<u64, 8>,

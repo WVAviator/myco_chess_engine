@@ -15,7 +15,7 @@ use super::{
     constants::{FIFTH_RANK, FOURTH_RANK, SECOND_RANK, SEVENTH_RANK},
 };
 
-#[derive(Debug, Eq)]
+#[derive(Debug, Eq, Clone, PartialEq, Copy)]
 pub struct Game {
     pub board: Board,
     pub turn: Turn,
@@ -128,7 +128,7 @@ impl Game {
 }
 
 #[repr(u8)]
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Copy)]
 pub enum Turn {
     White = 0,
     Black = 1,
@@ -148,8 +148,9 @@ impl Game {
         self.generate_vision(&self.turn.other())[6] & self.board.king(&self.turn) != 0
     }
 
+    #[inline(never)]
     pub fn apply_move(&self, lmove: &SimpleMove) -> Game {
-        let mut new_game = self.clone();
+        let mut new_game = *self;
 
         // Handling enpassant and halfmove clock
         let is_pawn_move = lmove.orig & (new_game.board.white[0] | new_game.board.black[0]) != 0;
@@ -162,50 +163,10 @@ impl Game {
             new_game.halfmove_clock += 1;
         }
 
-        let is_pawn_double_advance = is_pawn_move
-            && (lmove.orig & (SECOND_RANK | SEVENTH_RANK))
-                | (lmove.dest & (FOURTH_RANK | FIFTH_RANK))
-                != 0;
+        new_game.en_passant = (((lmove.orig & new_game.board.white[0]) << 8) & (lmove.dest >> 8))
+            | (((lmove.orig & new_game.board.black[0]) >> 8) & (lmove.dest << 8));
 
-        if is_pawn_double_advance {
-            new_game.en_passant =
-                ((SECOND_RANK & lmove.orig) << 8) | (SEVENTH_RANK & lmove.orig) >> 8;
-        } else {
-            new_game.en_passant = 0;
-        }
-
-        // Handling castling
-        match lmove.orig {
-            0x1 => new_game
-                .castling_rights
-                .unset(CastlingRights::WHITE_QUEENSIDE),
-            0x80 => new_game
-                .castling_rights
-                .unset(CastlingRights::WHITE_KINGSIDE),
-            0x100000000000000 => new_game
-                .castling_rights
-                .unset(CastlingRights::BLACK_QUEENSIDE),
-            0x8000000000000000 => new_game
-                .castling_rights
-                .unset(CastlingRights::BLACK_KINGSIDE),
-            0x10 => {
-                new_game
-                    .castling_rights
-                    .unset(CastlingRights::WHITE_KINGSIDE);
-                new_game
-                    .castling_rights
-                    .unset(CastlingRights::WHITE_QUEENSIDE);
-            }
-            0x1000000000000000 => {
-                new_game
-                    .castling_rights
-                    .unset(CastlingRights::BLACK_KINGSIDE);
-                new_game
-                    .castling_rights
-                    .unset(CastlingRights::BLACK_QUEENSIDE);
-            }
-            _ => {}
-        }
+        new_game.castling_rights.forfeit(lmove.orig);
 
         // Note: promotions handled by the board apply_move function
 
@@ -217,25 +178,6 @@ impl Game {
         new_game.board.apply_move(lmove);
 
         new_game
-    }
-}
-
-impl Clone for Game {
-    fn clone(&self) -> Self {
-        Self {
-            board: self.board.clone(),
-            turn: self.turn.clone(),
-            castling_rights: self.castling_rights.clone(),
-            en_passant: self.en_passant,
-            halfmove_clock: self.halfmove_clock,
-            fullmove_number: self.fullmove_number,
-        }
-    }
-}
-
-impl PartialEq for Game {
-    fn eq(&self, other: &Self) -> bool {
-        self.zobrist().eq(&other.zobrist())
     }
 }
 
