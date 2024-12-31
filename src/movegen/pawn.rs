@@ -9,27 +9,24 @@ use crate::{
 };
 
 pub trait PawnMoveGen {
-    fn generate_pawn_vision(&self, turn: &Turn) -> u64;
+    fn generate_pawn_vision(&self, turn: &Turn, vision: &mut [u64; 8]);
     fn generate_psuedolegal_pawn_moves(&self, moves: &mut ArrayVec<SimpleMove, 256>);
 }
 
 impl PawnMoveGen for Game {
-    fn generate_pawn_vision(&self, turn: &Turn) -> u64 {
-        let mut vision = 0;
-
+    fn generate_pawn_vision(&self, turn: &Turn, vision: &mut [u64; 8]) {
         match turn {
             Turn::White => {
-                vision |= (self.board.white[0] & !A_FILE) << 7;
-                vision |= (self.board.white[0] & !H_FILE) << 9;
+                vision[1] |= (self.board.white[0] & !A_FILE) << 7;
+                vision[1] |= (self.board.white[0] & !H_FILE) << 9;
             }
             Turn::Black => {
-                vision |= (self.board.black[0] & !A_FILE) >> 9;
-                vision |= (self.board.black[0] & !H_FILE) >> 7;
+                vision[1] |= (self.board.black[0] & !A_FILE) >> 9;
+                vision[1] |= (self.board.black[0] & !H_FILE) >> 7;
             }
         }
-
-        vision
     }
+
     fn generate_psuedolegal_pawn_moves(&self, moves: &mut ArrayVec<SimpleMove, 256>) {
         match self.turn {
             Turn::White => {

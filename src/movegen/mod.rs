@@ -30,24 +30,17 @@ pub trait MoveGen:
 
 impl MoveGen for Game {
     fn generate_vision(&self, turn: &Turn) -> Simd<u64, 8> {
-        let king_vision = self.generate_king_vision(turn);
-        let pawn_vision = self.generate_pawn_vision(turn);
-        let rook_vision = self.generate_rook_vision(turn);
-        let bishop_vision = self.generate_bishop_vision(turn);
-        let knight_vision = self.generate_knight_vision(turn);
+        let mut vision = [0; 8];
 
-        let vision = Simd::from_array([
-            pawn_vision,
-            rook_vision,
-            knight_vision,
-            bishop_vision,
-            rook_vision | bishop_vision,
-            king_vision,
-            pawn_vision | rook_vision | knight_vision | bishop_vision | king_vision,
-            0,
-        ]);
+        self.generate_king_vision(turn, &mut vision);
+        self.generate_pawn_vision(turn, &mut vision);
+        self.generate_rook_vision(turn, &mut vision);
+        self.generate_bishop_vision(turn, &mut vision);
+        self.generate_knight_vision(turn, &mut vision);
 
-        vision
+        vision[6] = vision[0] | vision[1] | vision[2] | vision[3] | vision[4] | vision[5];
+
+        Simd::from_array(vision)
     }
     fn generate_pseudolegal_moves(&self) -> ArrayVec<SimpleMove, 256> {
         let mut moves: ArrayVec<SimpleMove, 256> = ArrayVec::new();

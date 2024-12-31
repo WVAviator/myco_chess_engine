@@ -1,4 +1,3 @@
-
 use arrayvec::ArrayVec;
 
 use crate::{
@@ -8,6 +7,7 @@ use crate::{
         game::{Game, Turn},
     },
     moves::simple_move::SimpleMove,
+    util::iter::{BitIndexIterable, BitIterable},
 };
 
 use super::MoveGen;
@@ -23,17 +23,19 @@ const CASTLE_CHECK_BK_MASK: u64 = 0x7000000000000000;
 const CASTLE_CHECK_BQ_MASK: u64 = 0x1c00000000000000;
 
 pub trait KingMoveGen {
+    fn generate_king_vision(&self, turn: &Turn, vision: &mut [u64; 8]);
     fn generate_pseudolegal_king_moves(&self, moves: &mut ArrayVec<SimpleMove, 256>);
-    fn generate_king_vision(&self, turn: &Turn) -> u64;
 }
 
 impl KingMoveGen for Game {
-    fn generate_king_vision(&self, turn: &Turn) -> u64 {
+    fn generate_king_vision(&self, turn: &Turn, vision: &mut [u64; 8]) {
         let king = self.board.king(turn);
 
         // No need to include castling in king vision because it cannot attack with a castle
 
-        KING_MOVES[(king | 0x8000000000000000).trailing_zeros() as usize]
+        for index in king.bit_indexes() {
+            vision[5] |= KING_MOVES[index];
+        }
     }
 
     fn generate_pseudolegal_king_moves(&self, moves: &mut ArrayVec<SimpleMove, 256>) {
@@ -50,11 +52,8 @@ impl KingMoveGen for Game {
                     & !own_pieces
                     & !opponent_vision;
 
-                let mut remaining_destinations = destination_squares;
-                while remaining_destinations != 0 {
-                    let next_destination = remaining_destinations & (!remaining_destinations + 1);
-                    moves.push(SimpleMove::new(king, next_destination));
-                    remaining_destinations &= remaining_destinations - 1;
+                for dest in destination_squares.bits() {
+                    moves.push(SimpleMove::new(king, dest));
                 }
 
                 if self.castling_rights.is_set(CastlingRights::WHITE_KINGSIDE)
@@ -83,11 +82,8 @@ impl KingMoveGen for Game {
                     & !own_pieces
                     & !opponent_vision;
 
-                let mut remaining_destinations = destination_squares;
-                while remaining_destinations != 0 {
-                    let next_destination = remaining_destinations & (!remaining_destinations + 1);
-                    moves.push(SimpleMove::new(king, next_destination));
-                    remaining_destinations &= remaining_destinations - 1;
+                for dest in destination_squares.bits() {
+                    moves.push(SimpleMove::new(king, dest));
                 }
 
                 if self.castling_rights.is_set(CastlingRights::BLACK_KINGSIDE)

@@ -7,62 +7,34 @@ use crate::{
         masks::{get_bishop_mask, BISHOP_MASKS},
     },
     moves::simple_move::SimpleMove,
+    util::iter::{BitIndexIterable, BitIterable},
 };
 
 pub trait BishopMoveGen {
-    fn generate_bishop_vision(&self, turn: &Turn) -> u64;
+    fn generate_bishop_vision(&self, turn: &Turn, vision: &mut [u64; 8]);
     fn generate_pseudolegal_bishop_moves(&self, moves: &mut ArrayVec<SimpleMove, 256>);
 }
 
 impl BishopMoveGen for Game {
-    fn generate_bishop_vision(&self, turn: &Turn) -> u64 {
-        let mut vision = 0;
+    fn generate_bishop_vision(&self, turn: &Turn, vision: &mut [u64; 8]) {
+        let (bishops, queens) = match turn {
+            Turn::White => (self.board.white[3], self.board.white[4]),
+            Turn::Black => (self.board.black[3], self.board.black[4]),
+        };
 
-        match turn {
-            Turn::White => {
-                let bishop_pieces = self.board.white[3] | self.board.white[4];
-                let player_pieces = self.board.white[6];
-                let opponent_pieces = self.board.black[6];
+        for index in bishops.bit_indexes() {
+            let blockers = self.board.all() & BISHOP_MASKS[index];
+            let bishop_moves = get_bishop_magic_map()[index].get(blockers);
+            vision[3] |= bishop_moves;
+        }
 
-                let mut remaining_bishops = bishop_pieces;
-                while remaining_bishops != 0 {
-                    let current_bishop = remaining_bishops & (!remaining_bishops + 1);
-                    let blockers =
-                        (player_pieces | opponent_pieces) & get_bishop_mask(current_bishop);
-                    let bishop_moves = get_bishop_magic_map()
-                        [current_bishop.trailing_zeros() as usize]
-                        .get(blockers);
-
-                    vision |= bishop_moves;
-
-                    remaining_bishops &= remaining_bishops - 1;
-                }
-
-                vision
-            }
-            Turn::Black => {
-                let bishop_pieces = self.board.black[3] | self.board.black[4];
-                let player_pieces = self.board.black[6];
-                let opponent_pieces = self.board.white[6];
-
-                let mut remaining_bishops = bishop_pieces;
-                while remaining_bishops != 0 {
-                    let current_bishop = remaining_bishops & (!remaining_bishops + 1);
-                    let blockers =
-                        (player_pieces | opponent_pieces) & get_bishop_mask(current_bishop);
-                    let bishop_moves = get_bishop_magic_map()
-                        [current_bishop.trailing_zeros() as usize]
-                        .get(blockers);
-
-                    vision |= bishop_moves;
-
-                    remaining_bishops &= remaining_bishops - 1;
-                }
-
-                vision
-            }
+        for index in queens.bit_indexes() {
+            let blockers = self.board.all() & BISHOP_MASKS[index];
+            let queen_moves = get_bishop_magic_map()[index].get(blockers);
+            vision[4] |= queen_moves;
         }
     }
+
     fn generate_pseudolegal_bishop_moves(&self, moves: &mut ArrayVec<SimpleMove, 256>) {
         match self.turn {
             Turn::White => {
@@ -154,8 +126,10 @@ mod test {
         let game =
             Game::from_fen("rn2k1r1/pbpp1ppp/1p6/2b1p3/4P3/1PNP3N/PBPQBnPP/R3K2R w KQq - 0 1")
                 .unwrap();
-        let bishop_vision = game.generate_bishop_vision(&Turn::Black);
+        let mut vision = [0; 8];
+        let bishop_vision = game.generate_bishop_vision(&Turn::Black, &mut vision);
 
-        assert_eq!(bishop_vision, 0x25100f081a112000);
+        assert_eq!(vision[3], 0x25100f081a112000);
+        assert_eq!(vision[4], 0x25100f081a112000);
     }
 }

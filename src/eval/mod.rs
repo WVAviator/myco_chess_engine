@@ -1,19 +1,10 @@
-use bishops::BishopEval;
-use center::CenterEval;
-use development::DevelopmentEval;
 use king_safety::KingSafetyEval;
-use knights::KnightEval;
 use pawn_structure::PawnStructureEval;
 use piece::PieceEval;
-use rooks::RookEval;
 
 use crate::game::game::Game;
 
-mod bishops;
-mod center;
-mod development;
 mod king_safety;
-mod knights;
 
 #[cfg(feature = "pytorch")]
 pub mod nn;
@@ -21,21 +12,11 @@ pub mod nn;
 pub mod mvvlva;
 mod pawn_structure;
 pub mod piece;
-mod rooks;
 pub mod threats;
 
 pub mod minimax;
 
-pub trait Eval:
-    BishopEval
-    + RookEval
-    + DevelopmentEval
-    + KingSafetyEval
-    + PieceEval
-    + CenterEval
-    + KnightEval
-    + PawnStructureEval
-{
+pub trait Eval {
     fn evaluate_position(&self) -> i32;
     fn evaluate_position_ml(&self) -> i32;
 }

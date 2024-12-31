@@ -3,52 +3,35 @@ use arrayvec::ArrayVec;
 use crate::{
     game::game::{Game, Turn},
     moves::simple_move::SimpleMove,
+    util::iter::{BitIndexIterable, BitIterable},
 };
 
 pub trait KnightMoveGen {
-    fn generate_knight_vision(&self, turn: &Turn) -> u64;
+    fn generate_knight_vision(&self, turn: &Turn, vision: &mut [u64; 8]);
     fn generate_psuedolegal_knight_moves(&self, moves: &mut ArrayVec<SimpleMove, 256>);
 }
 
 impl KnightMoveGen for Game {
-    fn generate_knight_vision(&self, turn: &Turn) -> u64 {
-        let mut vision = 0;
-
+    fn generate_knight_vision(&self, turn: &Turn, vision: &mut [u64; 8]) {
         let knights = self.board.knights(turn);
 
-        let mut remaining_knights = knights;
-        while remaining_knights != 0 {
-            let current_knight = remaining_knights & (!remaining_knights + 1);
-
-            let possible_destinations = KNIGHT_MOVES[current_knight.trailing_zeros() as usize];
-
-            vision |= possible_destinations;
-
-            remaining_knights &= remaining_knights - 1;
+        for index in knights.bit_indexes() {
+            vision[2] |= KNIGHT_MOVES[index];
         }
-
-        vision
     }
+
     fn generate_psuedolegal_knight_moves(&self, moves: &mut ArrayVec<SimpleMove, 256>) {
         let (knights, own_pieces) = match self.turn {
             Turn::White => (self.board.white[2], self.board.white[6]),
             Turn::Black => (self.board.black[2], self.board.black[6]),
         };
 
-        let mut remaining_knights = knights;
-        while remaining_knights != 0 {
-            let current_knight = remaining_knights & (!remaining_knights + 1);
+        for current_knight in knights.bits() {
             let possible_destinations =
                 KNIGHT_MOVES[current_knight.trailing_zeros() as usize] & !own_pieces;
-            let mut remaining_destinations = possible_destinations;
-            while remaining_destinations != 0 {
-                let dest = remaining_destinations & (!remaining_destinations + 1);
-
+            for dest in possible_destinations.bits() {
                 moves.push(SimpleMove::new(current_knight, dest));
-
-                remaining_destinations &= remaining_destinations - 1;
             }
-            remaining_knights &= remaining_knights - 1;
         }
     }
 }
