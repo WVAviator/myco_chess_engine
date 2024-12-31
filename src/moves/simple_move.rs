@@ -23,8 +23,16 @@ impl SimpleMove {
         }
     }
 
-    pub fn new_promotion(orig: u64, dest: u64) -> Vec<Self> {
-        vec![
+    pub fn new_with_promotion(orig: u64, dest: u64, promotion: usize) -> Self {
+        SimpleMove {
+            orig,
+            dest,
+            promotion,
+        }
+    }
+
+    pub fn new_promotion(orig: u64, dest: u64) -> [Self; 4] {
+        [
             SimpleMove {
                 orig,
                 dest,
@@ -91,24 +99,28 @@ impl SimpleMove {
         })
     }
 
+    #[inline(never)]
     pub fn en_passant_target(&self, pawns: u64, empty: u64) -> u64 {
         let ep_orig = self.orig & pawns;
-        let ep_dest = self.dest & empty;
+        let ep_orig_index = ep_orig.trailing_zeros() as usize;
+
+        let ep_dest = self.dest & empty & PAWN_ATTACKS[ep_orig_index & !64];
 
         if ep_orig == 0 || ep_dest == 0 {
             return 0;
         }
 
-        let orig_file = (ep_orig.trailing_zeros() % 8) as usize;
-        let dest_file = (ep_dest.trailing_zeros() % 8) as usize;
+        let ep_dest_index = ep_dest.trailing_zeros() as usize;
 
-        if orig_file == dest_file {
-            return 0;
-        }
+        let orig_file = ep_orig_index % 8;
+        let dest_file = ep_dest_index % 8;
 
-        let direction = (orig_file < dest_file) as usize;
-        let side = ((ep_orig.trailing_zeros() / 8) % 2) as usize;
-        let index = (orig_file * 2) + direction + (side * 16);
+        // let direction = (orig_file < dest_file) as usize;
+        // let side = (ep_orig_index & 8) << 1;
+        // let index = (orig_file << 1) + direction + side;
+
+        let index =
+            ((ep_orig_index & 8) << 1) | (orig_file << 1) | ((orig_file < dest_file) as usize);
 
         ENPASSANT_CAPTURES[index]
     }
@@ -146,6 +158,73 @@ const ENPASSANT_CAPTURES: [u64; 32] = [
     0x20000000,
     0x80000000,
     0x40000000,
+    0,
+];
+
+const PAWN_ATTACKS: [u64; 64] = [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    163840,
+    327681,
+    655362,
+    1310724,
+    2621448,
+    5242896,
+    10485792,
+    4194368,
+    41943040,
+    83886336,
+    167772672,
+    335545344,
+    671090688,
+    1342181376,
+    2684362752,
+    1073758208,
+    10737418240,
+    21474902016,
+    42949804032,
+    85899608064,
+    171799216128,
+    343598432256,
+    687196864512,
+    274882101248,
+    2748779069440,
+    5497574916096,
+    10995149832192,
+    21990299664384,
+    43980599328768,
+    87961198657536,
+    175922397315072,
+    70369817919488,
+    703687441776640,
+    1407379178520576,
+    2814758357041152,
+    5629516714082304,
+    11259033428164608,
+    22518066856329216,
+    45036133712658432,
+    18014673387388928,
+    180143985094819840,
+    360289069701267456,
+    720578139402534912,
+    1441156278805069824,
+    2882312557610139648,
+    5764625115220279296,
+    11529250230440558592,
+    4611756387171565568,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
     0,
 ];
 
@@ -194,6 +273,8 @@ impl From<&ContextualMove> for SimpleMove {
 
 #[cfg(test)]
 mod test {
+    use crate::game::constants::{A_FILE, EIGHTH_RANK, FIRST_RANK, H_FILE};
+
     use super::*;
 
     #[test]
@@ -289,5 +370,21 @@ mod test {
             long_algebraic_move.en_passant_target(pawns, empty),
             algebraic_to_u64("g4").unwrap()
         );
+    }
+
+    #[ignore = "not a test"]
+    #[test]
+    fn generate_pawn_attacks() {
+        let mut attacks = [0; 64];
+        for i in 0..64 {
+            let pawn = (1 << i) & !FIRST_RANK & !EIGHTH_RANK;
+
+            attacks[i] |= (pawn & !A_FILE) << 7;
+            attacks[i] |= (pawn & !A_FILE) >> 9;
+            attacks[i] |= (pawn & !H_FILE) << 9;
+            attacks[i] |= (pawn & !H_FILE) << 7;
+        }
+
+        println!("Pawn Attacks: {:?}", attacks);
     }
 }
