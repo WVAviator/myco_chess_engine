@@ -87,7 +87,7 @@ impl Simulate for Game {
     }
 }
 
-const WHITE_PAWN_ATTACKS: [u64; 64] = [
+pub const WHITE_PAWN_ATTACKS: [u64; 64] = [
     512,
     1280,
     2560,
@@ -154,7 +154,7 @@ const WHITE_PAWN_ATTACKS: [u64; 64] = [
     0,
 ];
 
-const BLACK_PAWN_ATTACKS: [u64; 64] = [
+pub const BLACK_PAWN_ATTACKS: [u64; 64] = [
     0,
     0,
     0,

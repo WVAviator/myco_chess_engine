@@ -103,19 +103,21 @@ impl QuiescenceEval for Game {
         let mut alpha = alpha;
         let mut beta = beta;
 
-        let legal_moves = self.generate_legal_moves();
-        let white_vision = self.generate_vision(&Turn::White)[6];
-        let black_vision = self.generate_vision(&Turn::Black)[6];
-
-        if (white_vision & self.board.black[6]) | (black_vision & self.board.white[6]) == 0 {
-            let eval = self.calculate_piece_value();
-            EvaluationCache::insert(zobrist, eval);
-            return eval;
-        }
+        let pseudolegal_moves = self.generate_pseudolegal_moves();
 
         match self.turn {
             Turn::White => {
-                let mut tactical_moves = legal_moves
+                if self.board.white[5] == 0 {
+                    return -200000;
+                }
+
+                if self.generate_vision(&Turn::White)[6] & self.board.black[6] == 0 {
+                    let eval = self.calculate_piece_value();
+                    EvaluationCache::insert(zobrist, eval);
+                    return eval;
+                }
+
+                let mut tactical_moves = pseudolegal_moves
                     .into_iter()
                     .map(|lmove| {
                         let eval = self.evaluate_mvv_lva(&lmove);
@@ -142,7 +144,17 @@ impl QuiescenceEval for Game {
             }
 
             Turn::Black => {
-                let mut tactical_moves = legal_moves
+                if self.board.black[5] == 0 {
+                    return 200000;
+                }
+
+                if self.generate_vision(&Turn::Black)[6] & self.board.white[6] == 0 {
+                    let eval = self.calculate_piece_value();
+                    EvaluationCache::insert(zobrist, eval);
+                    return eval;
+                }
+
+                let mut tactical_moves = pseudolegal_moves
                     .into_iter()
                     .map(|lmove| {
                         let eval = self.evaluate_mvv_lva(&lmove);
