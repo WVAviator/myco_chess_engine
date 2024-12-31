@@ -2,10 +2,7 @@ use arrayvec::ArrayVec;
 
 use crate::{
     game::game::{Game, Turn},
-    magic::{
-        get_bishop_magic_map,
-        masks::{get_bishop_mask, BISHOP_MASKS},
-    },
+    magic::{get_bishop_magic_map, masks::BISHOP_MASKS},
     moves::simple_move::SimpleMove,
     util::iter::{BitIndexIterable, BitIterable},
 };
@@ -36,56 +33,24 @@ impl BishopMoveGen for Game {
     }
 
     fn generate_pseudolegal_bishop_moves(&self, moves: &mut ArrayVec<SimpleMove, 256>) {
-        match self.turn {
-            Turn::White => {
-                let bishop_pieces = self.board.white[3] | self.board.white[4];
-                let player_pieces = self.board.white[6];
-                let opponent_pieces = self.board.black[6];
+        let (bishops, own_pieces) = match self.turn {
+            Turn::White => (
+                self.board.white[3] | self.board.white[4],
+                self.board.white[6],
+            ),
+            Turn::Black => (
+                self.board.black[3] | self.board.black[4],
+                self.board.black[6],
+            ),
+        };
 
-                let mut remaining_bishops = bishop_pieces;
-                while remaining_bishops != 0 {
-                    let current_bishop = remaining_bishops & (!remaining_bishops + 1);
-                    let current_bishop_index = remaining_bishops.trailing_zeros() as usize;
-                    let blockers =
-                        (player_pieces | opponent_pieces) & BISHOP_MASKS[current_bishop_index];
+        for current_bishop in bishops.bits() {
+            let index = current_bishop.trailing_zeros() as usize;
+            let blockers = self.board.all() & BISHOP_MASKS[index];
+            let bishop_moves = get_bishop_magic_map()[index].get(blockers) & !own_pieces;
 
-                    let bishop_moves =
-                        get_bishop_magic_map()[current_bishop_index].get(blockers) & !player_pieces;
-
-                    let mut remaining_bishop_moves = bishop_moves;
-                    while remaining_bishop_moves != 0 {
-                        let dest = remaining_bishop_moves & (!remaining_bishop_moves + 1);
-                        moves.push(SimpleMove::new(current_bishop, dest));
-                        remaining_bishop_moves &= remaining_bishop_moves - 1;
-                    }
-
-                    remaining_bishops &= remaining_bishops - 1;
-                }
-            }
-            Turn::Black => {
-                let bishop_pieces = self.board.black[3] | self.board.black[4];
-                let player_pieces = self.board.black[6];
-                let opponent_pieces = self.board.white[6];
-
-                let mut remaining_bishops = bishop_pieces;
-                while remaining_bishops != 0 {
-                    let current_bishop = remaining_bishops & (!remaining_bishops + 1);
-                    let current_bishop_index = remaining_bishops.trailing_zeros() as usize;
-                    let blockers =
-                        (player_pieces | opponent_pieces) & BISHOP_MASKS[current_bishop_index];
-
-                    let bishop_moves =
-                        get_bishop_magic_map()[current_bishop_index].get(blockers) & !player_pieces;
-
-                    let mut remaining_bishop_moves = bishop_moves;
-                    while remaining_bishop_moves != 0 {
-                        let dest = remaining_bishop_moves & (!remaining_bishop_moves + 1);
-                        moves.push(SimpleMove::new(current_bishop, dest));
-                        remaining_bishop_moves &= remaining_bishop_moves - 1;
-                    }
-
-                    remaining_bishops &= remaining_bishops - 1;
-                }
+            for dest in bishop_moves.bits() {
+                moves.push(SimpleMove::new(current_bishop, dest));
             }
         }
     }

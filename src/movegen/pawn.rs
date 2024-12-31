@@ -6,6 +6,7 @@ use crate::{
         game::{Game, Turn},
     },
     moves::simple_move::SimpleMove,
+    util::iter::BitIterable,
 };
 
 pub trait PawnMoveGen {
@@ -98,14 +99,8 @@ fn backtrack_moves<F>(dest_squares: u64, calculate_origin: F, moves: &mut ArrayV
 where
     F: Fn(u64) -> u64,
 {
-    let mut bb = dest_squares;
-
-    while bb != 0 {
-        let lsb = bb & (!bb + 1);
-        let origin = calculate_origin(lsb);
-        let lmove = SimpleMove::new(origin, lsb);
-        moves.push(lmove);
-        bb &= bb - 1; // Clear the least significant bit
+    for dest in dest_squares.bits() {
+        moves.push(SimpleMove::new(calculate_origin(dest), dest));
     }
 }
 
@@ -117,13 +112,12 @@ fn backtrack_moves_promotion<F>(
 ) where
     F: Fn(u64) -> u64,
 {
-    let mut bb = dest_squares;
-
-    while bb != 0 {
-        let lsb = bb & (!bb + 1);
-        let origin = calculate_origin(lsb);
-        moves.extend(SimpleMove::new_promotion(origin, lsb));
-        bb &= bb - 1;
+    for dest in dest_squares.bits() {
+        let orig = calculate_origin(dest);
+        moves.push(SimpleMove::new_with_promotion(orig, dest, 1));
+        moves.push(SimpleMove::new_with_promotion(orig, dest, 2));
+        moves.push(SimpleMove::new_with_promotion(orig, dest, 3));
+        moves.push(SimpleMove::new_with_promotion(orig, dest, 4));
     }
 }
 

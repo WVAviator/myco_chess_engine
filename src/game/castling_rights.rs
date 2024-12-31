@@ -1,5 +1,6 @@
 use anyhow::bail;
 
+#[repr(transparent)]
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct CastlingRights(u8);
 
