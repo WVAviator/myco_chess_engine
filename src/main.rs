@@ -1,16 +1,11 @@
-use std::{
-    io::{BufRead, BufReader},
-    time::Instant,
-};
+use std::io::{BufRead, BufReader};
 
 use anyhow::{anyhow, bail, Context};
 use clap::Parser;
 use myco_chess_engine::{
     database::build::DatabaseTrainingSession,
     game::game::Game,
-    hash::zobrist::{generate_hash_values, ZobristHash},
     magic::{get_bishop_magic_map, get_rook_magic_map},
-    movegen::MoveGen,
     moves::simple_move::SimpleMove,
     performance::perft::perft_test,
     search::quiescence::QuiescenceSearch,

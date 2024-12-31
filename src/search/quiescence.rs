@@ -8,7 +8,7 @@ use rayon::prelude::*;
 use crate::{
     cache::eval::EvaluationCache,
     database::{connection::get_connection, retrieve::MoveRetrieval},
-    eval::{mvvlva::MVVLVAEval, piece::PieceEval, threats::ThreatEval},
+    eval::{mvvlva::MVVLVAEval, piece::PieceEval},
     game::game::{Game, Turn},
     hash::zobrist::ZobristHash,
     movegen::MoveGen,
@@ -43,12 +43,7 @@ impl<'a> QuiescenceSearch<'a> {
 
         let mut evaluations: Vec<MoveEvaluation> = legal_moves
             .into_par_iter()
-            .map(|lmove| {
-                MoveEvaluation(
-                    lmove,
-                    self.root.evaluate_mvv_lva(lmove) + self.root.evaluate_threats(lmove),
-                )
-            })
+            .map(|lmove| MoveEvaluation(lmove, self.root.evaluate_mvv_lva(lmove)))
             .collect();
 
         evaluations.sort_unstable_by(|a, b| b.cmp(a));
@@ -123,7 +118,7 @@ impl QuiescenceEval for Game {
                 let mut tactical_moves = legal_moves
                     .into_iter()
                     .map(|lmove| {
-                        let eval = self.evaluate_mvv_lva(&lmove) + self.evaluate_threats(&lmove);
+                        let eval = self.evaluate_mvv_lva(&lmove);
                         TacticalEvaluation(lmove, eval)
                     })
                     .collect::<Vec<TacticalEvaluation>>();
@@ -150,7 +145,7 @@ impl QuiescenceEval for Game {
                 let mut tactical_moves = legal_moves
                     .into_iter()
                     .map(|lmove| {
-                        let eval = self.evaluate_mvv_lva(&lmove) + self.evaluate_threats(&lmove);
+                        let eval = self.evaluate_mvv_lva(&lmove);
                         TacticalEvaluation(lmove, eval)
                     })
                     .collect::<Vec<TacticalEvaluation>>();

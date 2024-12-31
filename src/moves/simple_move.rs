@@ -234,19 +234,6 @@ impl fmt::Display for SimpleMove {
     }
 }
 
-impl SimpleMove {
-    pub fn print_list(moves: &Vec<SimpleMove>) {
-        println!(
-            "Moves: {}",
-            moves
-                .iter()
-                .map(|m| m.to_algebraic())
-                .collect::<Vec<_>>()
-                .join(", ")
-        );
-    }
-}
-
 impl PartialEq for SimpleMove {
     fn eq(&self, other: &Self) -> bool {
         self.orig == other.orig && self.dest == other.dest && self.promotion == other.promotion

@@ -203,7 +203,7 @@ impl ContextualMove {
         }
 
         Ok(ContextualMove {
-            turn: game.turn.clone(),
+            turn: game.turn,
             castle,
             piece,
             orig,

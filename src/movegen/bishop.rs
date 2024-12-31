@@ -92,7 +92,7 @@ mod test {
             Game::from_fen("rn2k1r1/pbpp1ppp/1p6/2b1p3/4P3/1PNP3N/PBPQBnPP/R3K2R w KQq - 0 1")
                 .unwrap();
         let mut vision = [0; 8];
-        let bishop_vision = game.generate_bishop_vision(&Turn::Black, &mut vision);
+        game.generate_bishop_vision(&Turn::Black, &mut vision);
 
         assert_eq!(vision[3], 0x25100f081a112000);
         assert_eq!(vision[4], 0x25100f081a112000);

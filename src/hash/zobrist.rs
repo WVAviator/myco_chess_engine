@@ -82,13 +82,7 @@ pub fn generate_hash_values(n: usize) {
     let file_path = "./src/hash/random_hash_values.rs";
 
     let mut values = vec![1, 1];
-    while values.len()
-        != values
-            .iter()
-            .map(|v| v.clone())
-            .collect::<HashSet<u64>>()
-            .len()
-    {
+    while values.len() != values.iter().copied().collect::<HashSet<u64>>().len() {
         values = (0..n).map(|_| random::<u64>()).collect::<Vec<u64>>();
     }
 
@@ -199,10 +193,7 @@ mod test {
 
     #[test]
     fn all_hash_values_unique() {
-        let hash_values_set = RANDOM_HASH_VALUES
-            .iter()
-            .map(|v| v.clone())
-            .collect::<HashSet<u64>>();
+        let hash_values_set = RANDOM_HASH_VALUES.iter().copied().collect::<HashSet<u64>>();
         // Minus the twelve zeroes (eleven redundant) for the 64th index of each board
         assert_eq!(RANDOM_HASH_VALUES.len() - 11, hash_values_set.len());
     }

@@ -2,10 +2,7 @@ use arrayvec::ArrayVec;
 
 use crate::{
     game::game::{Game, Turn},
-    magic::{
-        get_rook_magic_map,
-        masks::{get_rook_mask, ROOK_MASKS},
-    },
+    magic::{get_rook_magic_map, masks::ROOK_MASKS},
     moves::simple_move::SimpleMove,
     util::iter::{BitIndexIterable, BitIterable},
 };

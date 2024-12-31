@@ -59,6 +59,7 @@ impl CastlingRights {
         self.0 & value > 0
     }
 
+    #[inline(always)]
     pub fn forfeit(&mut self, orig: u64) {
         let unset = (orig & 1) // WQ Rook
             | ((orig & 128) >> 6) // WK Rook

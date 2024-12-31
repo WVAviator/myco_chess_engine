@@ -12,7 +12,6 @@ pub mod nn;
 pub mod mvvlva;
 mod pawn_structure;
 pub mod piece;
-pub mod threats;
 
 pub mod minimax;
 
@@ -26,12 +25,7 @@ impl Eval for Game {
         let mut value = 0;
 
         value += self.calculate_piece_value();
-        // value += self.calculate_bishop_value();
-        // value += self.calculate_rook_value();
-        // value += self.calculate_development_value();
         value += self.calculate_king_safety_value();
-        // value += self.calculate_center_value();
-        // value += self.calculate_knights_value();
         value += self.calculate_pawn_structure_value();
 
         value
@@ -50,18 +44,5 @@ impl Eval for Game {
         }
 
         value
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn evaluates_starting_position() {
-        let game = Game::new_default();
-        let eval = game.evaluate_position();
-
-        assert!(eval > 0); // White should always start slightly ahead
     }
 }

@@ -40,14 +40,9 @@ impl Simulate for Game {
 
         match self.turn {
             Turn::White => {
-                // let superking = if self.board.white[5] & lmove.orig != 0 {
-                //     lmove.dest
-                // } else {
-                //     self.board.white[5]
-                // };
-
                 let superking = ((self.board.white[5] & lmove.orig != 0) as u64 * lmove.dest)
-                    | (!(self.board.white[5] & lmove.orig != 0) as u64 * self.board.white[5]);
+                    | ((self.board.white[5] & lmove.orig == 0) as u64 * self.board.white[5]);
+
                 let superking_index = superking.trailing_zeros() as usize;
 
                 attacks |=
@@ -66,11 +61,9 @@ impl Simulate for Game {
                     & (self.board.black[1] | self.board.black[4]);
             }
             Turn::Black => {
-                let superking = if self.board.black[5] & lmove.orig != 0 {
-                    lmove.dest
-                } else {
-                    self.board.black[5]
-                };
+                let superking = ((self.board.black[5] & lmove.orig != 0) as u64 * lmove.dest)
+                    | ((self.board.black[5] & lmove.orig == 0) as u64 * self.board.black[5]);
+
                 let superking_index = superking.trailing_zeros() as usize;
 
                 attacks |=
