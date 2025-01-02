@@ -100,7 +100,7 @@ where
     F: Fn(u64) -> u64,
 {
     for dest in dest_squares.bits() {
-        moves.push(SimpleMove::new(calculate_origin(dest), dest));
+        unsafe { moves.push_unchecked(SimpleMove::new(calculate_origin(dest), dest)) }
     }
 }
 
@@ -114,10 +114,12 @@ fn backtrack_moves_promotion<F>(
 {
     for dest in dest_squares.bits() {
         let orig = calculate_origin(dest);
-        moves.push(SimpleMove::new_with_promotion(orig, dest, 1));
-        moves.push(SimpleMove::new_with_promotion(orig, dest, 2));
-        moves.push(SimpleMove::new_with_promotion(orig, dest, 3));
-        moves.push(SimpleMove::new_with_promotion(orig, dest, 4));
+        unsafe {
+            moves.push_unchecked(SimpleMove::new_with_promotion(orig, dest, 1));
+            moves.push_unchecked(SimpleMove::new_with_promotion(orig, dest, 2));
+            moves.push_unchecked(SimpleMove::new_with_promotion(orig, dest, 3));
+            moves.push_unchecked(SimpleMove::new_with_promotion(orig, dest, 4));
+        }
     }
 }
 

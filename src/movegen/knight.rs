@@ -30,7 +30,7 @@ impl KnightMoveGen for Game {
             let possible_destinations =
                 KNIGHT_MOVES[current_knight.trailing_zeros() as usize] & !own_pieces;
             for dest in possible_destinations.bits() {
-                moves.push(SimpleMove::new(current_knight, dest));
+                unsafe { moves.push_unchecked(SimpleMove::new(current_knight, dest)) }
             }
         }
     }

@@ -50,7 +50,7 @@ impl RookMoveGen for Game {
             let rook_moves = get_rook_magic_map()[index].get(blockers) & !own_pieces;
 
             for dest in rook_moves.bits() {
-                moves.push(SimpleMove::new(current_rook, dest));
+                unsafe { moves.push_unchecked(SimpleMove::new(current_rook, dest)) }
             }
         }
     }

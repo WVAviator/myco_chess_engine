@@ -50,7 +50,9 @@ impl BishopMoveGen for Game {
             let bishop_moves = get_bishop_magic_map()[index].get(blockers) & !own_pieces;
 
             for dest in bishop_moves.bits() {
-                moves.push(SimpleMove::new(current_bishop, dest));
+                unsafe {
+                    moves.push_unchecked(SimpleMove::new(current_bishop, dest));
+                }
             }
         }
     }

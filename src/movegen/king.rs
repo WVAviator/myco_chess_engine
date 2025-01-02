@@ -53,21 +53,21 @@ impl KingMoveGen for Game {
                     & !opponent_vision;
 
                 for dest in destination_squares.bits() {
-                    moves.push(SimpleMove::new(king, dest));
+                    unsafe { moves.push_unchecked(SimpleMove::new(king, dest)) }
                 }
 
                 if self.castling_rights.is_set(CastlingRights::WHITE_KINGSIDE)
                     && occupied & CASTLE_MOVE_WK_MASK == 0
                     && opponent_vision & CASTLE_CHECK_WK_MASK == 0
                 {
-                    moves.push(SimpleMove::new(king, 0x40))
+                    unsafe { moves.push_unchecked(SimpleMove::new(king, 0x40)) }
                 }
 
                 if self.castling_rights.is_set(CastlingRights::WHITE_QUEENSIDE)
                     && occupied & CASTLE_MOVE_WQ_MASK == 0
                     && opponent_vision & CASTLE_CHECK_WQ_MASK == 0
                 {
-                    moves.push(SimpleMove::new(king, 0x4))
+                    unsafe { moves.push_unchecked(SimpleMove::new(king, 0x4)) }
                 }
             }
             Turn::Black => {
@@ -83,21 +83,23 @@ impl KingMoveGen for Game {
                     & !opponent_vision;
 
                 for dest in destination_squares.bits() {
-                    moves.push(SimpleMove::new(king, dest));
+                    unsafe {
+                        moves.push_unchecked(SimpleMove::new(king, dest));
+                    }
                 }
 
                 if self.castling_rights.is_set(CastlingRights::BLACK_KINGSIDE)
                     && occupied & CASTLE_MOVE_BK_MASK == 0
                     && opponent_vision & CASTLE_CHECK_BK_MASK == 0
                 {
-                    moves.push(SimpleMove::new(king, 0x4000000000000000))
+                    unsafe { moves.push_unchecked(SimpleMove::new(king, 0x4000000000000000)) }
                 }
 
                 if self.castling_rights.is_set(CastlingRights::BLACK_QUEENSIDE)
                     && occupied & CASTLE_MOVE_BQ_MASK == 0
                     && opponent_vision & CASTLE_CHECK_BQ_MASK == 0
                 {
-                    moves.push(SimpleMove::new(king, 0x400000000000000))
+                    unsafe { moves.push_unchecked(SimpleMove::new(king, 0x400000000000000)) }
                 }
             }
         }
