@@ -264,7 +264,6 @@ impl Board {
         }
     }
 
-    #[inline(never)]
     pub fn apply_move(&mut self, lmove: &SimpleMove) {
         if (self.white[5] | self.black[5]) & lmove.orig != 0 {
             self.handle_castling(lmove);

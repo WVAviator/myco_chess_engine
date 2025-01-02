@@ -16,13 +16,7 @@ pub trait Simulate {
 impl Simulate for Game {
     fn check_move_legality(&self, lmove: &SimpleMove) -> bool {
         // Castle legality was checked during psuedolegal move gen
-        match (lmove.orig & (self.board.black[5] | self.board.white[5])) | lmove.dest {
-            0x5000000000000000 => return true, // Castle kingside
-            0x1400000000000000 => return true, // Castle queenside
-            0x50 => return true,               // Castle kingside
-            0x14 => return true,               // Castle queenside
-            _ => {}
-        }
+        // Returning early in this case is slightly less performant due to pipeline stalls
 
         // Uses a 'shadow board' and 'superking' to compute potentially illegal moves.
         // Leverages the fact that orig will always be unset and dest will always be set with the
