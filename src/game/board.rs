@@ -264,8 +264,12 @@ impl Board {
         }
     }
 
+    #[inline(never)]
     pub fn apply_move(&mut self, lmove: &SimpleMove) {
-        self.handle_castling(lmove);
+        if (self.white[5] | self.black[5]) & lmove.orig != 0 {
+            self.handle_castling(lmove);
+        }
+
         self.handle_enpassant(lmove);
 
         let move_shift =
@@ -285,9 +289,12 @@ impl Board {
             self.black ^= (self.black & orig) | (self.black & orig).rotate_right(move_shift);
         }
 
-        self.handle_promotions(lmove);
+        if (self.white[0] & EIGHTH_RANK & lmove.dest) | (self.black[0] & FIRST_RANK & lmove.dest) != 0 {
+            self.handle_promotions(lmove);
+        } 
     }
 
+    #[cold]
     #[inline(always)]
     pub fn handle_castling(&mut self, lmove: &SimpleMove) {
         // Matches the orig king and dest squares to castle patterns (i.e. e1g1)
@@ -319,6 +326,7 @@ impl Board {
         }
     }
 
+    #[cold]
     #[inline(always)]
     pub fn handle_promotions(&mut self, lmove: &SimpleMove) {
         self.black[lmove.promotion] |= self.black[0] & FIRST_RANK;

@@ -153,7 +153,6 @@ impl Game {
         // Note: promotions handled by the board apply_move function
 
         new_game.update_turn();
-
         new_game.board.apply_move(lmove);
 
         new_game
@@ -290,4 +289,5 @@ mod test {
             Game::from_fen(fen_str).unwrap()
         )
     }
+
 }

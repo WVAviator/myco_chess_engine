@@ -108,22 +108,25 @@ impl SimpleMove {
 
         if ep_orig == 0 || ep_dest == 0 {
             return 0;
+        } else {
+            get_enpassant_capture(ep_orig, ep_dest)
         }
-
-        let ep_dest_index = ep_dest.trailing_zeros() as usize;
-
-        let orig_file = ep_orig_index % 8;
-        let dest_file = ep_dest_index % 8;
-
-        // let direction = (orig_file < dest_file) as usize;
-        // let side = (ep_orig_index & 8) << 1;
-        // let index = (orig_file << 1) + direction + side;
-
-        let index =
-            ((ep_orig_index & 8) << 1) | (orig_file << 1) | ((orig_file < dest_file) as usize);
-
-        ENPASSANT_CAPTURES[index]
     }
+
+}
+
+#[cold]
+fn get_enpassant_capture(ep_orig: u64, ep_dest: u64) -> u64 {
+    let ep_orig_index = ep_orig.trailing_zeros() as usize;
+    let ep_dest_index = ep_dest.trailing_zeros() as usize;
+
+    let orig_file = ep_orig_index % 8;
+    let dest_file = ep_dest_index % 8;
+
+    let index =
+        ((ep_orig_index & 8) << 1) | (orig_file << 1) | ((orig_file < dest_file) as usize);
+
+    ENPASSANT_CAPTURES[index]
 }
 
 const ENPASSANT_CAPTURES: [u64; 32] = [
