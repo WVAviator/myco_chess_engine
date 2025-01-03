@@ -10,6 +10,7 @@ use crate::{
 
 use super::{board::Board, castling_rights::CastlingRights};
 
+#[repr(align(64))]
 #[derive(Debug, Eq, Clone, PartialEq, Copy)]
 pub struct Game {
     pub board: Board,
@@ -289,5 +290,4 @@ mod test {
             Game::from_fen(fen_str).unwrap()
         )
     }
-
 }

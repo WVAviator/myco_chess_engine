@@ -19,7 +19,7 @@ impl MagicHashMap {
 
     pub fn get(&self, key: u64) -> u64 {
         let hash = self.hash(key);
-        self.table[hash]
+        unsafe { *self.table.get_unchecked(hash) }
     }
 
     pub fn set(&mut self, key: u64, value: u64) -> Result<(), MagicCollisionError> {

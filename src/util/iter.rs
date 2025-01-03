@@ -9,6 +9,7 @@ impl BitIndexIterator {
 impl Iterator for BitIndexIterator {
     type Item = usize;
 
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         if self.0 == 0 {
             return None;
@@ -41,6 +42,7 @@ impl BitIterator {
 impl Iterator for BitIterator {
     type Item = u64;
 
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         if self.0 == 0 {
             return None;

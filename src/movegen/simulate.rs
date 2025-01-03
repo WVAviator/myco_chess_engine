@@ -39,19 +39,21 @@ impl Simulate for Game {
 
                 let superking_index = superking.trailing_zeros() as usize;
 
+                attacks |= unsafe { WHITE_PAWN_ATTACKS.get_unchecked(superking_index) }
+                    & (self.board.black[0] & !enpassant_target);
+
                 attacks |=
-                    WHITE_PAWN_ATTACKS[superking_index] & (self.board.black[0] & !enpassant_target);
+                    unsafe { KNIGHT_MOVES.get_unchecked(superking_index) } & self.board.black[2];
 
-                attacks |= KNIGHT_MOVES[superking_index] & self.board.black[2];
+                attacks |=
+                    unsafe { KING_MOVES.get_unchecked(superking_index) } & self.board.black[5];
 
-                attacks |= KING_MOVES[superking_index] & self.board.black[5];
-
-                attacks |= get_bishop_magic_map(superking_index)
-                    .get(BISHOP_MASKS[superking_index] & adjusted_occupied)
-                    & (self.board.black[3] | self.board.black[4]);
+                attacks |= get_bishop_magic_map(superking_index).get(
+                    unsafe { BISHOP_MASKS.get_unchecked(superking_index) } & adjusted_occupied,
+                ) & (self.board.black[3] | self.board.black[4]);
 
                 attacks |= get_rook_magic_map(superking_index)
-                    .get(ROOK_MASKS[superking_index] & adjusted_occupied)
+                    .get(unsafe { ROOK_MASKS.get_unchecked(superking_index) } & adjusted_occupied)
                     & (self.board.black[1] | self.board.black[4]);
             }
             Turn::Black => {
@@ -60,19 +62,21 @@ impl Simulate for Game {
 
                 let superking_index = superking.trailing_zeros() as usize;
 
+                attacks |= unsafe { BLACK_PAWN_ATTACKS.get_unchecked(superking_index) }
+                    & (self.board.white[0] & !enpassant_target);
+
                 attacks |=
-                    BLACK_PAWN_ATTACKS[superking_index] & (self.board.white[0] & !enpassant_target);
+                    unsafe { KNIGHT_MOVES.get_unchecked(superking_index) } & self.board.white[2];
 
-                attacks |= KNIGHT_MOVES[superking_index] & self.board.white[2];
+                attacks |=
+                    unsafe { KING_MOVES.get_unchecked(superking_index) } & self.board.white[5];
 
-                attacks |= KING_MOVES[superking_index] & self.board.white[5];
-
-                attacks |= get_bishop_magic_map(superking_index)
-                    .get(BISHOP_MASKS[superking_index] & adjusted_occupied)
-                    & (self.board.white[3] | self.board.white[4]);
+                attacks |= get_bishop_magic_map(superking_index).get(
+                    unsafe { BISHOP_MASKS.get_unchecked(superking_index) } & adjusted_occupied,
+                ) & (self.board.white[3] | self.board.white[4]);
 
                 attacks |= get_rook_magic_map(superking_index)
-                    .get(ROOK_MASKS[superking_index] & adjusted_occupied)
+                    .get(unsafe { ROOK_MASKS.get_unchecked(superking_index) } & adjusted_occupied)
                     & (self.board.white[1] | self.board.white[4]);
             }
         }

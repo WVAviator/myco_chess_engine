@@ -19,6 +19,7 @@ const BLACK_KINGSIDE_CASTLE_MASK: Simd<u64, 8> =
 const BLACK_QUEENSIDE_CASTLE_MASK: Simd<u64, 8> =
     Simd::from_array([0, 0x900000000000000, 0, 0, 0, 0, 0x900000000000000, 0]);
 
+#[repr(align(64))]
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Copy)]
 pub struct Board {
     pub white: Simd<u64, 8>, // pawns, rooks, knights, bishops, queens, king, all, unused
@@ -288,9 +289,11 @@ impl Board {
             self.black ^= (self.black & orig) | (self.black & orig).rotate_right(move_shift);
         }
 
-        if (self.white[0] & EIGHTH_RANK & lmove.dest) | (self.black[0] & FIRST_RANK & lmove.dest) != 0 {
+        if (self.white[0] & EIGHTH_RANK & lmove.dest) | (self.black[0] & FIRST_RANK & lmove.dest)
+            != 0
+        {
             self.handle_promotions(lmove);
-        } 
+        }
     }
 
     #[cold]
