@@ -21,13 +21,13 @@ impl RookMoveGen for Game {
 
         for index in rooks.bit_indexes() {
             let blockers = self.board.all() & ROOK_MASKS[index];
-            let rook_moves = get_rook_magic_map()[index].get(blockers);
+            let rook_moves = get_rook_magic_map(index).get(blockers);
             vision[1] |= rook_moves;
         }
 
         for index in queens.bit_indexes() {
             let blockers = self.board.all() & ROOK_MASKS[index];
-            let queen_moves = get_rook_magic_map()[index].get(blockers);
+            let queen_moves = get_rook_magic_map(index).get(blockers);
             vision[4] |= queen_moves;
         }
     }
@@ -47,7 +47,7 @@ impl RookMoveGen for Game {
         for current_rook in rooks.bits() {
             let index = current_rook.trailing_zeros() as usize;
             let blockers = self.board.all() & ROOK_MASKS[index];
-            let rook_moves = get_rook_magic_map()[index].get(blockers) & !own_pieces;
+            let rook_moves = get_rook_magic_map(index).get(blockers) & !own_pieces;
 
             for dest in rook_moves.bits() {
                 unsafe { moves.push_unchecked(SimpleMove::new(current_rook, dest)) }

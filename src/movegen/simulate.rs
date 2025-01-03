@@ -46,11 +46,11 @@ impl Simulate for Game {
 
                 attacks |= KING_MOVES[superking_index] & self.board.black[5];
 
-                attacks |= get_bishop_magic_map()[superking_index]
+                attacks |= get_bishop_magic_map(superking_index)
                     .get(BISHOP_MASKS[superking_index] & adjusted_occupied)
                     & (self.board.black[3] | self.board.black[4]);
 
-                attacks |= get_rook_magic_map()[superking_index]
+                attacks |= get_rook_magic_map(superking_index)
                     .get(ROOK_MASKS[superking_index] & adjusted_occupied)
                     & (self.board.black[1] | self.board.black[4]);
             }
@@ -67,11 +67,11 @@ impl Simulate for Game {
 
                 attacks |= KING_MOVES[superking_index] & self.board.white[5];
 
-                attacks |= get_bishop_magic_map()[superking_index]
+                attacks |= get_bishop_magic_map(superking_index)
                     .get(BISHOP_MASKS[superking_index] & adjusted_occupied)
                     & (self.board.white[3] | self.board.white[4]);
 
-                attacks |= get_rook_magic_map()[superking_index]
+                attacks |= get_rook_magic_map(superking_index)
                     .get(ROOK_MASKS[superking_index] & adjusted_occupied)
                     & (self.board.white[1] | self.board.white[4]);
             }

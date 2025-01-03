@@ -21,13 +21,13 @@ impl BishopMoveGen for Game {
 
         for index in bishops.bit_indexes() {
             let blockers = self.board.all() & BISHOP_MASKS[index];
-            let bishop_moves = get_bishop_magic_map()[index].get(blockers);
+            let bishop_moves = get_bishop_magic_map(index).get(blockers);
             vision[3] |= bishop_moves;
         }
 
         for index in queens.bit_indexes() {
             let blockers = self.board.all() & BISHOP_MASKS[index];
-            let queen_moves = get_bishop_magic_map()[index].get(blockers);
+            let queen_moves = get_bishop_magic_map(index).get(blockers);
             vision[4] |= queen_moves;
         }
     }
@@ -47,7 +47,7 @@ impl BishopMoveGen for Game {
         for current_bishop in bishops.bits() {
             let index = current_bishop.trailing_zeros() as usize;
             let blockers = self.board.all() & BISHOP_MASKS[index];
-            let bishop_moves = get_bishop_magic_map()[index].get(blockers) & !own_pieces;
+            let bishop_moves = get_bishop_magic_map(index).get(blockers) & !own_pieces;
 
             for dest in bishop_moves.bits() {
                 unsafe {

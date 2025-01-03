@@ -226,22 +226,14 @@ impl OriginMask for Game {
         match piece {
             PieceType::King => KING_MOVES[dest.trailing_zeros() as usize],
             PieceType::Knight => KNIGHT_MOVES[dest.trailing_zeros() as usize],
-            PieceType::Bishop => get_bishop_magic_map()
-                .get(dest.trailing_zeros() as usize)
-                .expect("failed to load bishop magic bitboard")
+            PieceType::Bishop => get_bishop_magic_map(dest.trailing_zeros() as usize)
                 .get(self.board.all() & get_bishop_mask(dest)),
-            PieceType::Rook => get_rook_magic_map()
-                .get(dest.trailing_zeros() as usize)
-                .expect("failed to load rook magic bitboard")
+            PieceType::Rook => get_rook_magic_map(dest.trailing_zeros() as usize)
                 .get(self.board.all() & get_rook_mask(dest)),
             PieceType::Queen => {
-                get_bishop_magic_map()
-                    .get(dest.trailing_zeros() as usize)
-                    .expect("failed to load bishop magic bitboard")
+                get_bishop_magic_map(dest.trailing_zeros() as usize)
                     .get(self.board.all() & get_bishop_mask(dest))
-                    | get_rook_magic_map()
-                        .get(dest.trailing_zeros() as usize)
-                        .expect("failed to load rook magic bitboard")
+                    | get_rook_magic_map(dest.trailing_zeros() as usize)
                         .get(self.board.all() & get_rook_mask(dest))
             }
             PieceType::Pawn => match (&self.turn, capture) {

@@ -5,7 +5,7 @@ use clap::Parser;
 use myco_chess_engine::{
     database::build::DatabaseTrainingSession,
     game::game::Game,
-    magic::{get_bishop_magic_map, get_rook_magic_map},
+    magic::{get_bishop_magic_map, get_rook_magic_map, initialize_magic_maps},
     moves::simple_move::SimpleMove,
     performance::perft::perft_test,
     search::quiescence::QuiescenceSearch,
@@ -13,6 +13,9 @@ use myco_chess_engine::{
 use rayon::ThreadPoolBuilder;
 
 fn main() {
+    // Do not remove - will cause undefined behavior
+    initialize_magic_maps();
+
     let args = Args::parse();
 
     if let Some(threads) = args.threads {
@@ -51,8 +54,8 @@ struct Args {
 }
 
 fn initialize() {
-    get_rook_magic_map();
-    get_bishop_magic_map();
+    get_rook_magic_map(0);
+    get_bishop_magic_map(0);
 }
 
 fn train_pgn(pgn_path: String) {

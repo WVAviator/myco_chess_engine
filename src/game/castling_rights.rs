@@ -47,14 +47,17 @@ impl CastlingRights {
         fen_str
     }
 
+    #[inline]
     pub fn set(&mut self, value: u8) {
         self.0 |= value;
     }
 
+    #[inline]
     pub fn unset(&mut self, value: u8) {
         self.0 &= !value;
     }
 
+    #[inline]
     pub fn is_set(&self, value: u8) -> bool {
         self.0 & value > 0
     }

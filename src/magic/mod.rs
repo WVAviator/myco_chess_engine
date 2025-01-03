@@ -13,13 +13,27 @@ mod subsets;
 pub mod hashmap;
 
 static ROOK_MAGIC_MAP: OnceLock<ArrayVec<MagicHashMap, 64>> = OnceLock::new();
+static mut ROOK_MAGIC_MAP_PTR: *const ArrayVec<MagicHashMap, 64> = std::ptr::null();
+
 static BISHOP_MAGIC_MAP: OnceLock<ArrayVec<MagicHashMap, 64>> = OnceLock::new();
+static mut BISHOP_MAGIC_MAP_PTR: *const ArrayVec<MagicHashMap, 64> = std::ptr::null();
+
+pub fn initialize_magic_maps() {
+    let rook_map = ROOK_MAGIC_MAP.get_or_init(compute_rook_magic_map);
+    let bishop_map = BISHOP_MAGIC_MAP.get_or_init(compute_bishop_magic_map);
+
+    unsafe {
+        ROOK_MAGIC_MAP_PTR = rook_map;
+        BISHOP_MAGIC_MAP_PTR = bishop_map;
+    }
+}
 
 fn compute_rook_magic_map() -> ArrayVec<MagicHashMap, 64> {
     let mut maps: ArrayVec<MagicHashMap, 64> = ArrayVec::new();
     for square in 0..64 {
         maps.push(generate_rook_magic_hashmap(1 << square));
     }
+
     maps
 }
 
@@ -31,12 +45,12 @@ fn compute_bishop_magic_map() -> ArrayVec<MagicHashMap, 64> {
     maps
 }
 
-pub fn get_rook_magic_map() -> &'static ArrayVec<MagicHashMap, 64> {
-    ROOK_MAGIC_MAP.get_or_init(compute_rook_magic_map)
+pub fn get_rook_magic_map(square_index: usize) -> &'static MagicHashMap {
+    unsafe { (*ROOK_MAGIC_MAP_PTR).get_unchecked(square_index & 63) }
 }
 
-pub fn get_bishop_magic_map() -> &'static ArrayVec<MagicHashMap, 64> {
-    BISHOP_MAGIC_MAP.get_or_init(compute_bishop_magic_map)
+pub fn get_bishop_magic_map(square_index: usize) -> &'static MagicHashMap {
+    unsafe { (*BISHOP_MAGIC_MAP_PTR).get_unchecked(square_index & 63) }
 }
 
 fn generate_rook_magic_hashmap(rook: u64) -> MagicHashMap {
@@ -117,10 +131,8 @@ mod test {
 
     #[test]
     fn computes_rook_map() {
-        let rook_magic_map = get_rook_magic_map();
-
         let rook: u64 = 0x8000000;
-        let magic_hashmap = rook_magic_map.get(rook.trailing_zeros() as usize).unwrap();
+        let magic_hashmap = get_rook_magic_map(rook.trailing_zeros() as usize);
 
         assert_eq!(magic_hashmap.get(8796361457664), 8830839162888);
         assert_eq!(magic_hashmap.get(2251800920983552), 2260632246683648);
@@ -129,12 +141,8 @@ mod test {
 
     #[test]
     fn computes_bishop_map() {
-        let bishop_magic_map = get_bishop_magic_map();
-
         let bishop: u64 = 0x8000000;
-        let magic_hashmap = bishop_magic_map
-            .get(bishop.trailing_zeros() as usize)
-            .unwrap();
+        let magic_hashmap = get_bishop_magic_map(bishop.trailing_zeros() as usize);
 
         assert_eq!(magic_hashmap.get(18051850624303104), 2284923920961);
         assert_eq!(magic_hashmap.get(85899354624), 85900665344);

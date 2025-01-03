@@ -17,6 +17,6 @@ criterion_group!(benches, criterion_benchmark);
 criterion_main!(benches);
 
 fn initialize() {
-    get_rook_magic_map();
-    get_bishop_magic_map();
+    get_rook_magic_map(0);
+    get_bishop_magic_map(0);
 }

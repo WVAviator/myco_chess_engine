@@ -1,8 +1,13 @@
 use std::time::Instant;
 
-use crate::{game::game::Game, movegen::MoveGen};
+use crate::{
+    game::game::Game,
+    magic::{get_bishop_magic_map, get_rook_magic_map},
+    movegen::MoveGen,
+};
 
 pub fn perft_test(depth: u8) {
+    initialize();
     let start = Instant::now();
 
     let count = perft(depth, Game::new_default());
@@ -27,4 +32,9 @@ pub fn perft(depth: u8, game: Game) -> usize {
             perft(depth - 1, new_game)
         })
         .sum()
+}
+
+fn initialize() {
+    get_rook_magic_map(0);
+    get_bishop_magic_map(0);
 }
