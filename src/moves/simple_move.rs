@@ -7,7 +7,7 @@ use super::{
     contextual_move::ContextualMove,
 };
 
-#[derive(Debug, Clone, Eq)]
+#[derive(Debug, Clone, Eq, Copy)]
 pub struct SimpleMove {
     pub orig: u64,
     pub dest: u64,

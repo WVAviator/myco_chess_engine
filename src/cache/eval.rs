@@ -1,26 +1,28 @@
-use std::sync::{OnceLock, RwLock};
+use std::sync::{Arc, OnceLock};
 
-use nohash_hasher::IntMap;
+use super::{CacheConfiguration, ZobristMap};
 
-static EVAL_CACHE: OnceLock<RwLock<IntMap<u64, i32>>> = OnceLock::new();
+type Value = i32;
 
-pub struct EvaluationCache {}
+static EVAL_CACHE: OnceLock<Arc<ZobristMap<Value>>> = OnceLock::new();
+
+#[inline]
+fn get_eval_cache() -> &'static ZobristMap<Value> {
+    EVAL_CACHE
+        .get_or_init(|| Arc::new(ZobristMap::default()))
+        .as_ref()
+}
+
+pub struct EvaluationCache;
 
 impl EvaluationCache {
-    pub fn get(zobrist: u64) -> Option<i32> {
-        EVAL_CACHE
-            .get_or_init(|| RwLock::new(IntMap::default()))
-            .read()
-            .expect("failed to read eval cache")
-            .get(&zobrist)
-            .copied()
+    pub fn get(zobrist: u64) -> Option<Value> {
+        get_eval_cache().get(&zobrist).map(|v| *v)
     }
 
-    pub fn insert(zobrist: u64, eval: i32) {
-        EVAL_CACHE
-            .get_or_init(|| RwLock::new(IntMap::default()))
-            .write()
-            .expect("failed to write eval cache")
-            .insert(zobrist, eval);
+    pub fn insert(zobrist: u64, eval: Value) {
+        if CacheConfiguration::get().use_eval_cache {
+            get_eval_cache().insert(zobrist, eval);
+        }
     }
 }

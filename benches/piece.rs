@@ -1,10 +1,16 @@
 use arrayvec::ArrayVec;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use myco_chess_engine::{eval::piece::PieceEval, game::game::Game, magic::initialize_magic_maps};
+use myco_chess_engine::{
+    cache::{configure_global_cache, CacheConfiguration},
+    eval::piece::PieceEval,
+    game::game::Game,
+    magic::initialize_magic_maps,
+};
 
 pub fn criterion_benchmark(c: &mut Criterion) {
     c.bench_function("piece eval", |b| {
         initialize_magic_maps();
+        configure_global_cache(CacheConfiguration::disabled());
         let games: ArrayVec<Game, 100> = FEN_STRS
             .into_iter()
             .map(|s| Game::from_fen(s).unwrap())
