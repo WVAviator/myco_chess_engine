@@ -13,7 +13,7 @@ pub fn perft_test(depth: u8) {
     println!("Average NPS: {}", count as f32 / elapsed.as_secs_f32())
 }
 
-fn perft(depth: u8, game: Game) -> usize {
+pub fn perft(depth: u8, game: Game) -> usize {
     if depth == 0 {
         return 1;
     }

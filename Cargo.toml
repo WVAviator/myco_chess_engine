@@ -18,5 +18,13 @@ regex = "1.11.1"
 rusqlite = { version = "0.32.1", features = ["bundled"] }
 tch = { version = "0.18.1", optional = true, default-features = false }
 
+[dev-dependencies]
+criterion = "0.3"
+
+[[bench]]
+name = "perft"
+path = "benches/perft.rs"
+harness = false
+
 [features]
 pytorch = ["tch"]
