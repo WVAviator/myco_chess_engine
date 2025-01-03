@@ -11,6 +11,7 @@ anyhow = "1.0.93"
 arrayvec = "0.7.6"
 bitflags = "2.6.0"
 clap = { version = "4.5.23", features = ["derive"] }
+dashmap = "6.1.0"
 nohash-hasher = "0.2.0"
 rand = "0.8.5"
 rayon = "1.10.0"
@@ -19,11 +20,21 @@ rusqlite = { version = "0.32.1", features = ["bundled"] }
 tch = { version = "0.18.1", optional = true, default-features = false }
 
 [dev-dependencies]
-criterion = "0.3"
+criterion = "0.5.1"
 
 [[bench]]
 name = "perft"
 path = "benches/perft.rs"
+harness = false
+
+[[bench]]
+name = "piece_evaluation"
+path = "benches/piece.rs"
+harness = false
+
+[[bench]]
+name = "zobrist"
+path = "benches/zobrist.rs"
 harness = false
 
 [features]

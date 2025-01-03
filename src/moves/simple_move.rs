@@ -23,6 +23,7 @@ impl SimpleMove {
         }
     }
 
+    #[inline]
     pub fn new_with_promotion(orig: u64, dest: u64, promotion: usize) -> Self {
         SimpleMove {
             orig,
@@ -31,6 +32,7 @@ impl SimpleMove {
         }
     }
 
+    #[inline]
     pub fn new_promotion(orig: u64, dest: u64) -> [Self; 4] {
         [
             SimpleMove {
@@ -104,7 +106,8 @@ impl SimpleMove {
         let ep_orig = self.orig & pawns;
         let ep_orig_index = ep_orig.trailing_zeros() as usize;
 
-        let ep_dest = self.dest & empty & PAWN_ATTACKS[ep_orig_index & !64];
+        let ep_dest =
+            self.dest & empty & unsafe { PAWN_ATTACKS.get_unchecked(ep_orig_index & !64) };
 
         if ep_orig == 0 || ep_dest == 0 {
             return 0;
@@ -112,7 +115,6 @@ impl SimpleMove {
             get_enpassant_capture(ep_orig, ep_dest)
         }
     }
-
 }
 
 #[cold]
@@ -123,10 +125,9 @@ fn get_enpassant_capture(ep_orig: u64, ep_dest: u64) -> u64 {
     let orig_file = ep_orig_index % 8;
     let dest_file = ep_dest_index % 8;
 
-    let index =
-        ((ep_orig_index & 8) << 1) | (orig_file << 1) | ((orig_file < dest_file) as usize);
+    let index = ((ep_orig_index & 8) << 1) | (orig_file << 1) | ((orig_file < dest_file) as usize);
 
-    ENPASSANT_CAPTURES[index]
+    unsafe { *ENPASSANT_CAPTURES.get_unchecked(index) }
 }
 
 const ENPASSANT_CAPTURES: [u64; 32] = [

@@ -1,3 +1,4 @@
+#[repr(transparent)]
 pub struct BitIndexIterator(u64);
 
 impl BitIndexIterator {
@@ -31,6 +32,7 @@ impl BitIndexIterable for u64 {
     }
 }
 
+#[repr(transparent)]
 pub struct BitIterator(u64);
 
 impl BitIterator {
