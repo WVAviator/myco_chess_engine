@@ -154,7 +154,7 @@ fn extract_moves(command: &str) -> Result<Game, anyhow::Error> {
 }
 
 fn get_best_move(game: &Game) -> Result<SimpleMove, anyhow::Error> {
-    let engine = QuiescenceSearch::new(game, 8, 8);
-    let best_move = engine.search();
+    let engine = QuiescenceSearch::new(game, 8, 30);
+    let best_move = engine.search().expect("no legal moves for position");
     Ok(best_move)
 }

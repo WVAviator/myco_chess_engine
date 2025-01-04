@@ -1,8 +1,9 @@
-use std::{cell::OnceCell, simd::Simd};
+use std::{simd::Simd, sync::OnceLock};
 
 use arrayvec::ArrayVec;
 
 use crate::{
+    cache::eval::EvaluationCache,
     eval::{mvvlva::MVVLVAEval, piece::PieceEval},
     game::game::{Game, Turn},
     hash::zobrist::ZobristHash,
@@ -12,21 +13,21 @@ use crate::{
 
 #[derive(Debug)]
 pub struct Node {
-    game: Game,
-    black_vision: OnceCell<Simd<u64, 8>>,
-    white_vision: OnceCell<Simd<u64, 8>>,
-    zobrist: OnceCell<u64>,
-    legal_moves: OnceCell<ArrayVec<SimpleMove, 256>>,
-    static_eval: OnceCell<i32>,
+    pub game: Game,
+    black_vision: OnceLock<Simd<u64, 8>>,
+    white_vision: OnceLock<Simd<u64, 8>>,
+    zobrist: OnceLock<u64>,
+    legal_moves: OnceLock<ArrayVec<SimpleMove, 256>>,
+    static_eval: OnceLock<i32>,
 }
 
 impl Node {
     pub fn new(game: Game) -> Self {
-        let black_vision = OnceCell::new();
-        let white_vision = OnceCell::new();
-        let zobrist = OnceCell::new();
-        let legal_moves = OnceCell::new();
-        let static_eval = OnceCell::new();
+        let black_vision = OnceLock::new();
+        let white_vision = OnceLock::new();
+        let zobrist = OnceLock::new();
+        let legal_moves = OnceLock::new();
+        let static_eval = OnceLock::new();
 
         Node {
             game,
@@ -68,8 +69,10 @@ impl Node {
     }
 
     pub fn get_static_eval(&self) -> &i32 {
-        self.static_eval
-            .get_or_init(|| self.game.calculate_piece_value())
+        self.static_eval.get_or_init(|| {
+            EvaluationCache::get(*self.get_zobrist())
+                .unwrap_or_else(|| self.game.calculate_piece_value())
+        })
     }
 
     pub fn apply_move(&self, lmove: &SimpleMove) -> Node {
