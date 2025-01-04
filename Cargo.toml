@@ -8,9 +8,11 @@ debug = true
 
 [dependencies]
 anyhow = "1.0.93"
+array-init = "2.1.0"
 arrayvec = "0.7.6"
 bitflags = "2.6.0"
 clap = { version = "4.5.23", features = ["derive"] }
+crossbeam = "0.8.4"
 dashmap = "6.1.0"
 nohash-hasher = "0.2.0"
 rand = "0.8.5"

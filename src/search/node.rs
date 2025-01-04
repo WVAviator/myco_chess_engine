@@ -3,7 +3,7 @@ use std::{simd::Simd, sync::OnceLock};
 use arrayvec::ArrayVec;
 
 use crate::{
-    cache::eval::EvaluationCache,
+    cache::{eval::EvaluationCache, killer::KillerCache},
     eval::{mvvlva::MVVLVAEval, piece::PieceEval},
     game::game::{Game, Turn},
     hash::zobrist::ZobristHash,
@@ -54,18 +54,8 @@ impl Node {
     }
 
     pub fn get_legal_moves(&self) -> &ArrayVec<SimpleMove, 256> {
-        self.legal_moves.get_or_init(|| {
-            let mut legal_moves: ArrayVec<(i32, SimpleMove), 256> = self
-                .game
-                .generate_legal_moves()
-                .into_iter()
-                .map(|lmove| (self.game.evaluate_mvv_lva(&lmove), lmove))
-                .collect();
-
-            legal_moves.sort_unstable_by_key(|eval| eval.0);
-
-            legal_moves.into_iter().map(|eval| eval.1).collect()
-        })
+        self.legal_moves
+            .get_or_init(|| self.game.generate_legal_moves())
     }
 
     pub fn get_static_eval(&self) -> &i32 {

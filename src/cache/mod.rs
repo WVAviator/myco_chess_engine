@@ -4,6 +4,7 @@ use dashmap::DashMap;
 use nohash_hasher::BuildNoHashHasher;
 
 pub mod eval;
+pub mod killer;
 pub mod moves;
 pub mod vision;
 

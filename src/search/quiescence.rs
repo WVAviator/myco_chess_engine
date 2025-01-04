@@ -1,15 +1,12 @@
 use std::{
     cmp,
-    sync::OnceLock,
     time::{Duration, Instant},
 };
 
-use arrayvec::ArrayVec;
-use dashmap::{DashMap, DashSet};
 use rayon::prelude::*;
 
 use crate::{
-    cache::eval::EvaluationCache,
+    cache::{eval::EvaluationCache, killer::KillerCache},
     database::{connection::get_connection, retrieve::MoveRetrieval},
     eval::{mvvlva::MVVLVAEval, piece::PieceEval},
     game::game::{Game, Turn},
@@ -48,22 +45,28 @@ impl<'a> QuiescenceSearch<'a> {
 
         let root_node = Node::new(*self.root);
 
-        let legal_moves = root_node.get_legal_moves();
+        let mut legal_moves: Vec<MoveEvaluation> = root_node
+            .get_legal_moves()
+            .into_iter()
+            .map(|lmove| MoveEvaluation(lmove, self.root.evaluate_mvv_lva(&lmove)))
+            .collect();
+
+        legal_moves.sort_unstable_by_key(|eval| eval.1);
 
         let mut evaluations: Vec<MoveEvaluation> = legal_moves
             .into_par_iter()
-            .map(|lmove| {
-                println!("info currmove {}", lmove.to_algebraic());
+            .map(|eval| {
+                println!("info currmove {}", eval.0.to_algebraic());
                 MoveEvaluation(
-                    lmove,
+                    eval.0,
                     match self.root.turn {
-                        Turn::White => root_node.apply_move(&lmove).quiescence_eval(
+                        Turn::White => root_node.apply_move(eval.0).quiescence_eval(
                             self.max_depth,
                             self.deadline,
                             i32::MIN,
                             i32::MAX,
                         ),
-                        Turn::Black => -root_node.apply_move(&lmove).quiescence_eval(
+                        Turn::Black => -root_node.apply_move(eval.0).quiescence_eval(
                             self.max_depth,
                             self.deadline,
                             i32::MIN,
@@ -74,7 +77,7 @@ impl<'a> QuiescenceSearch<'a> {
             })
             .collect();
 
-        evaluations.sort_unstable();
+        evaluations.sort_unstable_by_key(|eval| eval.1);
 
         evaluations.last().map(|eval| *eval.0)
     }
@@ -97,7 +100,22 @@ impl QuiescenceEval for Node {
         let mut alpha = alpha;
         let mut beta = beta;
 
-        let legal_moves = self.get_legal_moves();
+        let mut legal_moves: Vec<MoveEvaluation> = self
+            .get_legal_moves()
+            .into_iter()
+            .map(|lmove| {
+                MoveEvaluation(
+                    lmove,
+                    self.game.evaluate_mvv_lva(&lmove)
+                        * match KillerCache::is_killer(depth, lmove) {
+                            true => 100,
+                            false => 1,
+                        },
+                )
+            })
+            .collect();
+
+        legal_moves.sort_unstable_by_key(|eval| eval.1);
 
         match self.game.turn {
             Turn::White => {
@@ -110,14 +128,19 @@ impl QuiescenceEval for Node {
                 }
 
                 let mut highest_eval = -200000;
-                for lmove in legal_moves {
-                    let eval =
-                        self.apply_move(&lmove)
+                for eval in legal_moves {
+                    let value =
+                        self.apply_move(eval.0)
                             .quiescence_eval(depth - 1, deadline, alpha, beta);
-                    highest_eval = cmp::max(eval, highest_eval);
+                    highest_eval = cmp::max(value, highest_eval);
                     alpha = cmp::max(highest_eval, alpha);
                     if beta <= alpha {
-                        // TODO: Record this as a killer move
+                        // Record as killer if not a capture or in check
+                        if eval.0.dest & self.game.board.black[6] != 0
+                            && self.get_black_vision()[6] & self.game.board.white[5] == 0
+                        {
+                            KillerCache::add_killer(depth, eval.0);
+                        }
                         break;
                     }
                 }
@@ -138,14 +161,19 @@ impl QuiescenceEval for Node {
                 }
 
                 let mut lowest_eval = 200000;
-                for lmove in legal_moves {
-                    let eval =
-                        self.apply_move(&lmove)
+                for eval in legal_moves {
+                    let value =
+                        self.apply_move(eval.0)
                             .quiescence_eval(depth - 1, deadline, alpha, beta);
-                    lowest_eval = cmp::min(eval, lowest_eval);
+                    lowest_eval = cmp::min(value, lowest_eval);
                     beta = cmp::min(lowest_eval, beta);
                     if beta <= alpha {
-                        // TODO: Record this as a killer move
+                        // Record as killer if not a capture or in check
+                        if eval.0.dest & self.game.board.white[6] != 0
+                            && self.get_white_vision()[6] & self.game.board.black[5] == 0
+                        {
+                            KillerCache::add_killer(depth, eval.0);
+                        }
                         break;
                     }
                 }
@@ -160,128 +188,5 @@ impl QuiescenceEval for Node {
     }
 }
 
-impl QuiescenceEval for Game {
-    fn quiescence_eval(&self, depth: usize, deadline: Instant, alpha: i32, beta: i32) -> i32 {
-        let zobrist = self.zobrist();
-
-        if let Some(eval) = EvaluationCache::get(zobrist) {
-            return eval;
-        }
-
-        if depth == 0 || Instant::now() > deadline {
-            // Don't insert into the cache in this case since the eval might be premature
-            return self.calculate_piece_value();
-        }
-
-        let mut alpha = alpha;
-        let mut beta = beta;
-
-        let pseudolegal_moves = self.generate_pseudolegal_moves();
-
-        match self.turn {
-            Turn::White => {
-                if self.board.white[5] == 0 {
-                    return -200000;
-                }
-
-                if self.generate_vision(&Turn::White)[6] & self.board.black[6] == 0 {
-                    let eval = self.calculate_piece_value();
-                    EvaluationCache::insert(zobrist, eval);
-                    return eval;
-                }
-
-                let mut tactical_moves = pseudolegal_moves
-                    .into_iter()
-                    .map(|lmove| {
-                        let eval = self.evaluate_mvv_lva(&lmove);
-                        TacticalEvaluation(lmove, eval)
-                    })
-                    .collect::<Vec<TacticalEvaluation>>();
-
-                tactical_moves.sort_unstable_by(|a, b| b.cmp(a));
-
-                let mut highest_eval = i32::MIN;
-
-                for tmove in tactical_moves {
-                    let eval =
-                        self.apply_move(&tmove.0)
-                            .quiescence_eval(depth - 1, deadline, alpha, beta);
-                    highest_eval = cmp::max(eval, highest_eval);
-                    alpha = cmp::max(highest_eval, alpha);
-                    if beta <= alpha {
-                        break;
-                    }
-                }
-
-                highest_eval
-            }
-
-            Turn::Black => {
-                if self.board.black[5] == 0 {
-                    return 200000;
-                }
-
-                if self.generate_vision(&Turn::Black)[6] & self.board.white[6] == 0 {
-                    let eval = self.calculate_piece_value();
-                    EvaluationCache::insert(zobrist, eval);
-                    return eval;
-                }
-
-                let mut tactical_moves = pseudolegal_moves
-                    .into_iter()
-                    .map(|lmove| {
-                        let eval = self.evaluate_mvv_lva(&lmove);
-                        TacticalEvaluation(lmove, eval)
-                    })
-                    .collect::<Vec<TacticalEvaluation>>();
-
-                tactical_moves.sort_unstable_by(|a, b| b.cmp(a));
-
-                let mut lowest_eval = i32::MAX;
-
-                for tmove in tactical_moves {
-                    let eval =
-                        self.apply_move(&tmove.0)
-                            .quiescence_eval(depth - 1, deadline, alpha, beta);
-                    lowest_eval = cmp::min(eval, lowest_eval);
-                    beta = cmp::min(lowest_eval, beta);
-                    if beta <= alpha {
-                        break;
-                    }
-                }
-
-                lowest_eval
-            }
-        }
-    }
-}
-
 #[derive(Debug, PartialEq, Eq, Clone)]
 struct MoveEvaluation<'a>(&'a SimpleMove, i32);
-
-impl PartialOrd for MoveEvaluation<'_> {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.1.cmp(&other.1))
-    }
-}
-
-impl Ord for MoveEvaluation<'_> {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.1.cmp(&other.1)
-    }
-}
-
-#[derive(Debug, PartialEq, Eq, Clone)]
-struct TacticalEvaluation(SimpleMove, i32);
-
-impl PartialOrd for TacticalEvaluation {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.1.cmp(&other.1))
-    }
-}
-
-impl Ord for TacticalEvaluation {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.1.cmp(&other.1)
-    }
-}
