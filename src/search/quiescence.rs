@@ -34,9 +34,11 @@ impl<'a> QuiescenceSearch<'a> {
     pub fn search(&self) -> SimpleMove {
         println!("info score cp {}", self.root.calculate_piece_value());
 
-        if let Ok(Some(database_move)) = self.root.random_database_move(&get_connection()) {
-            println!("info string book move {}", database_move);
-            return database_move;
+        if let Ok(connection) = get_connection() {
+            if let Ok(Some(database_move)) = self.root.random_database_move(&connection) {
+                println!("info string book move {}", database_move);
+                return database_move;
+            }
         }
 
         let legal_moves = self.root.generate_legal_moves();

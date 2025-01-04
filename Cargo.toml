@@ -28,6 +28,11 @@ path = "benches/perft.rs"
 harness = false
 
 [[bench]]
+name = "search"
+path = "benches/search.rs"
+harness = false
+
+[[bench]]
 name = "piece_evaluation"
 path = "benches/piece.rs"
 harness = false

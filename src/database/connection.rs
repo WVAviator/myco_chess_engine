@@ -1,9 +1,11 @@
 use std::{env, path::PathBuf};
 
+use anyhow::anyhow;
 use rusqlite::Connection;
 
-pub fn get_connection() -> Connection {
-    Connection::open(get_database_path()).expect("failed to create database connection")
+pub fn get_connection() -> Result<Connection, anyhow::Error> {
+    Connection::open(get_database_path())
+        .map_err(|e| anyhow!("failed to open database connection: {}", e))
 }
 
 fn get_database_path() -> PathBuf {

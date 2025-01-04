@@ -24,7 +24,7 @@ pub struct DatabaseTrainingSession {
 impl DatabaseTrainingSession {
     pub fn new(file_path: &str) -> Result<Self, anyhow::Error> {
         let pgn_data = parse_pgn_file(file_path)?;
-        let connection = get_connection();
+        let connection = get_connection().expect("could not create connection to build database");
 
         MovesEntry::create_tables(&connection)?;
 
