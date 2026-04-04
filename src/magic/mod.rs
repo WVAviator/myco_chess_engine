@@ -46,11 +46,11 @@ fn compute_bishop_magic_map() -> ArrayVec<MagicHashMap, 64> {
 }
 
 pub fn get_rook_magic_map(square_index: usize) -> &'static MagicHashMap {
-    unsafe { (*ROOK_MAGIC_MAP_PTR).get_unchecked(square_index & 63) }
+    unsafe { (&(*ROOK_MAGIC_MAP_PTR)).get_unchecked(square_index & 63) }
 }
 
 pub fn get_bishop_magic_map(square_index: usize) -> &'static MagicHashMap {
-    unsafe { (*BISHOP_MAGIC_MAP_PTR).get_unchecked(square_index & 63) }
+    unsafe { (&(*BISHOP_MAGIC_MAP_PTR)).get_unchecked(square_index & 63) }
 }
 
 fn generate_rook_magic_hashmap(rook: u64) -> MagicHashMap {

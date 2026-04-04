@@ -40,8 +40,8 @@ impl PieceEval for Game {
     fn calculate_piece_value(&self) -> i32 {
         let mut value = 0;
 
-        value += (self.board.white.count_ones() * PIECE_VALUES).reduce_sum() as i32;
-        value -= (self.board.black.count_ones() * PIECE_VALUES).reduce_sum() as i32;
+        value += (SimdUint::count_ones(self.board.white) * PIECE_VALUES).reduce_sum() as i32;
+        value -= (SimdUint::count_ones(self.board.black) * PIECE_VALUES).reduce_sum() as i32;
 
         let is_endgame = self.board.all().count_ones() < 14
             || (self.board.all().count_ones() < 20

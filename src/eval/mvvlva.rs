@@ -27,13 +27,13 @@ impl MVVLVAEval for Game {
 
         match self.turn {
             Turn::White => {
-                let attacker = (self.board.white & orig).count_ones().cast::<i32>();
-                let victim = (self.board.black & dest).count_ones().cast::<i32>();
+                let attacker = SimdUint::count_ones(self.board.white & orig).cast::<i32>();
+                let victim = SimdUint::count_ones(self.board.black & dest).cast::<i32>();
                 ((victim - attacker) * PIECE_VALUE).reduce_sum()
             }
             Turn::Black => {
-                let attacker = (self.board.black & orig).count_ones().cast::<i32>();
-                let victim = (self.board.white & dest).count_ones().cast::<i32>();
+                let attacker = SimdUint::count_ones(self.board.black & orig).cast::<i32>();
+                let victim = SimdUint::count_ones(self.board.white & dest).cast::<i32>();
                 ((victim - attacker) * PIECE_VALUE).reduce_sum()
             }
         }
